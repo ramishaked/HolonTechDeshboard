@@ -2169,6 +2169,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
+const BUILD = 'v4';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -2402,7 +2403,7 @@ function stamp(){
   if(!el||!LAST_LOAD) return;
   const p=n=>String(n).padStart(2,'0');
   el.textContent='עודכן '+p(LAST_LOAD.getHours())+':'+p(LAST_LOAD.getMinutes())+
-                 ' · '+Object.keys(ALLDATA).length+' תקופות';
+                 ' · '+Object.keys(ALLDATA).length+' תקופות · '+BUILD;
 }
 
 // ── החלת תקופה על התצוגות הקיימות ───────────────────────────────
