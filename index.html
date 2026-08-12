@@ -245,7 +245,7 @@ body{
 /* המדד לפי המכנה השני — קטן ובהיר, בסוגריים ליד המספר הראשי */
 .alt-num{font-weight:500;color:var(--muted);white-space:nowrap;cursor:help;}
 .kpi-val .alt-num{font-size:15px;margin-inline-start:7px;vertical-align:2px;}
-.kpi-sub .alt-num,.card-sub .alt-num{font-size:11.5px;margin-inline-start:4px;}
+.kpi-sub .alt-num,.card-sub .alt-num,.ref-pill .alt-num{font-size:11.5px;margin-inline-start:4px;}
 
 /* ─── SINGLE-GENDER SCHOOL CARDS ─── */
 .sg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -393,20 +393,6 @@ body{
 }
 .sb-select:hover{background-color:rgba(255,255,255,0.13);}
 .sb-select option{background:#2a1a4d;color:#fff;}
-.sb-live .sb-section + .sb-seg + .sb-section{padding-top:11px;}
-.sb-seg{
-  display:flex;gap:4px;padding:3px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.14);border-radius:9px;
-}
-.sb-seg button{
-  flex:1;font-family:'Heebo',sans-serif;font-size:11.5px;font-weight:700;
-  color:rgba(255,255,255,0.6);background:transparent;border:0;border-radius:7px;
-  padding:6px 4px;cursor:pointer;transition:background .15s,color .15s;
-}
-.sb-seg button:hover:not(.on):not(:disabled){color:#fff;background:rgba(255,255,255,0.07);}
-.sb-seg button.on{color:#fff;background:var(--accent);}
-.sb-seg button:disabled{opacity:.3;cursor:not-allowed;}
 .sb-refresh{
   width:100%;margin-top:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;
   color:#fff;background:var(--accent);border:0;border-radius:9px;padding:9px 10px;
@@ -504,22 +490,12 @@ body{
 
     <div class="sb-section" style="margin-top:14px;">בקרוב</div>
     <div class="sb-item" style="opacity:0.4;cursor:not-allowed;">
-      <span class="sb-ico">♀</span>
-      <span>פילוח מגדרי</span>
-    </div>
-    <div class="sb-item" style="opacity:0.4;cursor:not-allowed;">
       <span class="sb-ico">📈</span>
       <span>תחזית רב-שנתית</span>
     </div>
   </nav>
 
   <div class="sb-live">
-    <div class="sb-section">מכנה החישוב</div>
-    <div class="sb-seg" id="denomSeg">
-      <button type="button" data-denom="students" class="on">כמות תלמידים</button>
-      <button type="button" data-denom="matzevet">מצבת</button>
-    </div>
-
     <div class="sb-section">תקופת דגימה</div>
     <select class="sb-select" id="periodSelect"></select>
     <button class="sb-refresh" id="btnRefresh"><span class="ic">↻</span><span>רענן נתונים</span></button>
@@ -554,17 +530,17 @@ body{
     <!-- KPIs -->
     <div class="kpi-grid">
       <div class="kpi pri">
-        <div class="kpi-lbl">מדד טק שכבת י׳ <i class="ti" id="tip10" data-tip="לומדי טק בשכבה י׳ חלקי סך תלמידי י׳. נקודת הפתיחה של מסלול הבחירה.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת י׳ <i class="ti" id="tip10" data-tip="לומדי טק בשכבה י׳ חלקי סך תלמידי י׳ — סכום שורות &quot;כמות תלמידים&quot; של בתי הספר. המספר שבסוגריים: אותו מדד על שורת המצבת של משרד החינוך. נקודת הפתיחה של מסלול הבחירה.">i</i></div>
         <div class="kpi-val" id="kPct10">—</div>
         <div class="kpi-sub" id="kPct10Sub">—</div>
       </div>
       <div class="kpi pri">
-        <div class="kpi-lbl">מדד טק שכבת יא׳ <i class="ti" id="tip11" data-tip="לומדי טק בשכבה יא׳ חלקי סך תלמידי יא׳.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת יא׳ <i class="ti" id="tip11" data-tip="לומדי טק בשכבה יא׳ חלקי סך תלמידי יא׳ — סכום שורות &quot;כמות תלמידים&quot; של בתי הספר. המספר שבסוגריים: אותו מדד על שורת המצבת של משרד החינוך.">i</i></div>
         <div class="kpi-val" id="kPct11">—</div>
         <div class="kpi-sub" id="kPct11Sub">—</div>
       </div>
       <div class="kpi acc">
-        <div class="kpi-lbl">מדד טק שכבת יב׳ <i class="ti" id="tip12" data-tip="לומדי טק בשכבה יב׳ בלבד חלקי סך תלמידי יב׳. המדד הקרוב ביותר לזכאות בפועל — ההשוואה לארצי.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת יב׳ <i class="ti" id="tip12" data-tip="לומדי טק בשכבה יב׳ בלבד חלקי סך תלמידי יב׳. המספר שבסוגריים: אותו מדד על שורת המצבת של משרד החינוך. המדד הקרוב ביותר לזכאות בפועל — ההשוואה לארצי.">i</i></div>
         <div class="kpi-val" id="k12Pct">—</div>
         <div class="kpi-sub" id="k12Sub">—</div>
       </div>
@@ -919,7 +895,7 @@ body{
       <div class="card-head">
         <div>
           <div class="card-title">בתי ספר חד-מגדריים — מקרה מבחן</div>
-          <div class="card-sub">יבנה (בנות בלבד) והראל (בנים בלבד) — מה אפשר ללמוד מהם?</div>
+          <div class="card-sub" id="sgSub">—</div>
         </div>
       </div>
       <div id="singleGenderBox"></div>
@@ -979,11 +955,13 @@ if(typeof Chart==='undefined' || typeof ChartDataLabels==='undefined'){
 Chart.register(ChartDataLabels);
 
 // ════════════════════════════════════════════════════════════════
-// DATA LAYER — נטען מ-holon_data.json (קובץ נפרד!)
-// שדות לכל שכבה: [total, cs, ph, ma, ht, cs_g, ph_g, ht_g, amat, ma_g]
+// DATA LAYER — נטען חי מהגיליון המפורסם (ראה שכבת הנתונים בסוף הקובץ)
+// 15 שדות לכל שכבה:
+//   0 total  1 cs  2 ph  3 ma5  4 ht  5 cs_g  6 ph_g  7 ht_g
+//   8 amat   9 ma5_g  10 ft  11 ft_g  12 ma3  13 ma4  14 en5
 //   amat=1 → שכבת ז'-ט' שבה פיזיקה=מדמ"ח=בגרוטק (רישום קבוצת עמ"ט,
 //            לא בחירת מקצוע אמיתית). מוצגת כקו אחד, לא שלושה.
-// לעדכון נתונים: החלף את holon_data.json בלבד. אין לגעת בקובץ הזה.
+// לעדכון נתונים: עורכים את הגיליון ולוחצים "רענן נתונים". אין נתונים בקוד.
 // ════════════════════════════════════════════════════════════════
 let SCHOOLS = [];
 let FULL = [];
@@ -994,11 +972,6 @@ let DATA_LABEL = '';
 const GRADES = ['י','יא','יב'];                       // בסיס המדד העירוני
 const ALL_GRADES = ['ז','ח','ט','י','יא','יב'];       // למסע התלמיד בהעמקה
 
-// מכנה המדד העירוני (§3.2). ברירת המחדל: סכום שורות 'כמות תלמידים' של בתי הספר.
-// 'matzevet' = שורת המצבת של משרד החינוך. המונה לעולם אינו מושפע.
-let DENOM = 'students';                               // 'students' | 'matzevet'
-try{ if(localStorage.getItem('holon_denom')==='matzevet') DENOM='matzevet'; }catch(_){}
-const DENOM_LBL = { students:'כמות תלמידים', matzevet:'מצבת' };
 
 // האם שכבה זו היא "קבוצת עמ"ט" (ז'-ט' ללא הפרדת מקצועות)?
 function isAmat(school, gi){ const r = school.grades[ALL_GRADES[gi]]; return !!(r && r[8]); }
@@ -1059,31 +1032,22 @@ function schoolDropPct(school){
 // FULL נשמר רק לדירוג בין בתי ספר ולחישוב נשירה (דורשים י׳–יב׳ מלאים).
 function cityTotal(gi){ return SCHOOLS.reduce((s,sch)=> s+totalTech(sch,gi), 0); }
 
-// שני המכנים האפשריים לשכבה (§3.2). matzevet=null כשאין לשכבה שורת מצבת.
+// שני המכנים לשכבה (§3.2). matzevet=null כשאין לשכבה שורת מצבת בגיליון.
 function cityDenomPair(g){
   const students = SCHOOLS.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[0]:0); }, 0);
   const m = MATZEVET[g];
   return { students, matzevet: (m>0? m : null) };
 }
-// המכנה הפעיל. במצב 'מצבת' — שורת המצבת; אם אין לה ערך לשכבה הזו,
-// נפילה חזרה לסכום בתי הספר, כדי לא להשאיר שכבה בלי מכנה.
-function cityDenomByName(g){
-  const p = cityDenomPair(g);
-  return (DENOM==='matzevet' && p.matzevet) ? p.matzevet : p.students;
-}
-// המכנה השני — להצגה בסוגריים. null כשאין מכנה חלופי לשכבה.
-function cityDenomAlt(g){
-  const p = cityDenomPair(g);
-  if(!p.matzevet) return null;
-  return DENOM==='matzevet' ? p.students : p.matzevet;
-}
+// המכנה הקובע — תמיד סכום שורות 'כמות תלמידים' של בתי הספר.
+// שורת המצבת מוצגת לצדו כמספר ייחוס (ראה altSpan), ואינה מחליפה אותו.
+function cityDenomByName(g){ return cityDenomPair(g).students; }
+function cityDenomAlt(g){    return cityDenomPair(g).matzevet; }
 function cityStudents(gi){    return cityDenomByName(GRADES[gi]); }        // י׳–יב׳
 function cityStudentsAll(gi){ return cityDenomByName(ALL_GRADES[gi]); }    // ז׳–יב׳
-// האם השכבה הזו מוצגת כרגע על מכנה המצבת (לתיוג בממשק)
-function denomIsMatzevet(g){ return DENOM==='matzevet' && MATZEVET[g]>0; }
 
-// ── המדד לפי המכנה השני — למספר הקטן שבסוגריים ──────────────────
-const ALT_LBL = { students:'מצבת', matzevet:'תלמידים' };   // תווית המכנה השני
+// ── המדד לפי המצבת — למספר הקטן שבסוגריים ───────────────────────
+const ALT_TIP = 'אותו מדד, מחושב על שורת המצבת של משרד החינוך '+
+                'במקום על סכום שורות "כמות תלמידים" של בתי הספר';
 function cityPctAlt(gi){
   const a = cityDenomAlt(GRADES[gi]);
   return a? cityTotal(gi)/a*100 : null;
@@ -1094,17 +1058,14 @@ function cityOverallPctAlt(){
     const alt = cityDenomAlt(GRADES[i]);
     if(alt) anyAlt = true;
     tech += cityTotal(i);
-    st   += (alt || cityStudents(i));      // שכבה בלי מכנה חלופי נשארת על הפעיל
+    st   += (alt || cityStudents(i));      // שכבה בלי מצבת נשארת על סכום בתי הספר
   });
   return (anyAlt && st)? tech/st*100 : null;
 }
-// <span> קטן ובהיר בסוגריים. מחזיר '' כשאין מכנה שני להציג.
-function altSpan(pct, note){
-  if(pct==null) return '';
-  const lbl = ALT_LBL[DENOM];
-  return ` <span class="alt-num" title="אותו מדד, מחושב על מכנה ${
-    DENOM==='matzevet'? 'סכום שורות "כמות תלמידים" של בתי הספר' : 'שורת המצבת של משרד החינוך'
-  }${note||''}">(${lbl} ${pct.toFixed(1)}%)</span>`;
+// <span> קטן ובהיר בסוגריים. מחזיר '' כשאין למדד ערך מצבת להציג.
+function altSpan(pct){
+  return pct==null ? ''
+    : ` <span class="alt-num" title="${ALT_TIP}">(מצבת ${pct.toFixed(1)}%)</span>`;
 }
 
 function cityPct(gi){ const t=cityStudents(gi); return t? cityTotal(gi)/t*100 : 0; }
@@ -1166,20 +1127,11 @@ function renderOverview(){
     if(!t) return '';
     return ` <span class="g-chip" title="${g} בנות מתוך ${t} לומדי טק בשכבה">♀ ${(g/t*100).toFixed(0)}%</span>`;
   };
-  // המכנה השני, בסוגריים — כדי שרואים משני הבסיסים באותה נשימה
+  // מכנה המצבת, בסוגריים — כדי שרואים את שני הבסיסים באותה נשימה
   const dAlt = gi => {
     const a = cityDenomAlt(GRADES[gi]);
-    return a? ` <span class="alt-num" title="המכנה החלופי לאותה שכבה">(${ALT_LBL[DENOM]} ${a})</span>` : '';
+    return a? ` <span class="alt-num" title="שורת המצבת של משרד החינוך לאותה שכבה">(מצבת ${a})</span>` : '';
   };
-
-  // הטולטיפים אומרים לפי איזה מכנה חושב — מתעדכן עם המתג
-  ['tip10','tip11','tip12'].forEach((id,gi)=>{
-    const el=document.getElementById(id); if(!el) return;
-    if(!el.dataset.tipBase) el.dataset.tipBase = el.dataset.tip;
-    el.dataset.tip = el.dataset.tipBase + ' המכנה: ' +
-      (denomIsMatzevet(GRADES[gi]) ? 'שורת המצבת של משרד החינוך.'
-                                   : 'סכום שורות "כמות תלמידים" של בתי הספר.');
-  });
   document.getElementById('kPct10Sub').innerHTML =
     `${t10} מתוך ${cityStudents(0)} תלמידים${dAlt(0)}${gPill(0)}`;
   document.getElementById('kPct11Sub').innerHTML =
@@ -1361,7 +1313,7 @@ function badge(s){ return s.note ? `<span style="font-size:10px;font-weight:700;
 
 function renderSchools(){
   const cityAvg = cityOverallPct();
-  document.getElementById('refCityAvg').textContent = cityAvg.toFixed(1)+'%';
+  document.getElementById('refCityAvg').innerHTML = cityAvg.toFixed(1)+'%'+altSpan(cityOverallPctAlt());
   // כרטיסים: FULL ממוין, ואז חלקיים בסוף
   const fullSorted = [...FULL].sort((a,b)=> schoolTechPct(b)-schoolTechPct(a));
   const partials = SCHOOLS.filter(s=> s.partial);
@@ -2167,43 +2119,64 @@ function renderGender(){
   });
 
   // === בתי ספר חד-מגדריים ===
-  const yavne = SCHOOLS.find(s=> s.name==='יבנה');
-  const harel = SCHOOLS.find(s=> s.name==='הראל');
-  const rY = yavne.grades['יב'], rH = harel.grades['יב'];
-  document.getElementById('singleGenderBox').innerHTML = `
-    <div class="sg-grid">
-      <div class="sg-card girls">
-        <h4>♀ יבנה — בנות בלבד</h4>
-        <div class="sg-sub">בית ספר דתי לבנות. שכבת יב׳: ${rY[0]} בנות.</div>
-        <div class="sg-rows">
-          <div class="sg-stat"><span>זכאיות בגרוטק יב׳</span><span class="sg-num">${rY[4]} (${(rY[4]/rY[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל מתמ׳ יב׳</span><span class="sg-num">${rY[3]} (${(rY[3]/rY[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל מדמ"ח יב׳</span><span class="sg-num">${rY[1]} (${(rY[1]/rY[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל פיזיקה יב׳</span><span class="sg-num" style="color:#c5221f;">${rY[2]} (${(rY[2]/rY[0]*100).toFixed(1)}%)</span></div>
-        </div>
-        <div style="margin-top:10px;padding:8px 10px;background:#fff3e0;border-right:3px solid #f47b20;border-radius:6px;font-size:12px;line-height:1.6;color:#5f3300;">
-          <strong>הקריאה הקרה:</strong> כמעט אין פיזיקה. כל מי שיוצאת עם בגרוטק עושה זאת דרך מדמ"ח. זה לא בחירה אישית, זה חוסר אופציה.
-        </div>
-      </div>
-      <div class="sg-card boys">
-        <h4>♂ הראל — בנים בלבד</h4>
-        <div class="sg-sub">ישיבה תיכונית. שכבת יב׳: ${rH[0]} בנים.</div>
-        <div class="sg-rows">
-          <div class="sg-stat"><span>זכאי בגרוטק יב׳</span><span class="sg-num">${rH[4]} (${(rH[4]/rH[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל מתמ׳ יב׳</span><span class="sg-num">${rH[3]} (${(rH[3]/rH[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל מדמ"ח יב׳</span><span class="sg-num">${rH[1]} (${(rH[1]/rH[0]*100).toFixed(0)}%)</span></div>
-          <div class="sg-stat"><span>5 יח"ל פיזיקה יב׳</span><span class="sg-num">${rH[2]} (${(rH[2]/rH[0]*100).toFixed(0)}%)</span></div>
-        </div>
-        <div style="margin-top:10px;padding:8px 10px;background:#fff3e0;border-right:3px solid #f47b20;border-radius:6px;font-size:12px;line-height:1.6;color:#5f3300;">
-          <strong>הקריאה הקרה:</strong> שני המקצועות זמינים. בית הספר מפיק בוגרי בגרוטק בשיעור גבוה. גם הראל וגם יבנה ב-23% — אבל דרך מסלול אחר.
-        </div>
-      </div>
-    </div>
-  `;
+  // נגזר מהנתונים (§3.5) ולא מרשימת שמות קשיחה. בית ספר ששמו ישתנה, שייגרע
+  // מהגיליון או שאין לו שכבת יב׳ — פשוט לא יוצג, במקום להפיל את כל התצוגה.
+  const singles = SCHOOLS
+    .filter(s=> /בנות בלבד|בנים בלבד/.test(s.note||'') && s.grades['יב'])
+    .map(s=> ({ s, r:s.grades['יב'], girlsOnly:/בנות בלבד/.test(s.note) }));
+
+  document.getElementById('sgSub').textContent = singles.length
+    ? singles.map(x=> x.s.name+' ('+(x.girlsOnly?'בנות':'בנים')+' בלבד)').join(' ו-')+' — מה אפשר ללמוד מהם?'
+    : 'אין בתי ספר חד-מגדריים בנתוני התקופה הזו.';
+
+  document.getElementById('singleGenderBox').innerHTML = singles.length
+    ? '<div class="sg-grid">'+singles.map(sgCard).join('')+'</div>'
+    : '<div style="padding:18px;color:var(--muted);font-size:13px;">'+
+      'לא נמצא בגיליון בית ספר שכל תלמידיו בני מגדר אחד בשכבות י׳–יב׳.</div>';
 
   // === תובנות מגדריות אוטומטיות ===
   document.getElementById('genderInsights').innerHTML = generateGenderInsights({pAll,p12,phP,csP:cs12t?cs12g/cs12t*100:0,regular});
 }
+
+// כרטיס בית ספר חד-מגדרי — אותו מבנה ועיצוב, הנתונים והנוסח נגזרים מהשכבה
+function sgCard({s, r, girlsOnly}){
+  const tot=r[0], ht=r[4], cs=r[1], ph=r[2], ma=r[3];
+  const pc  = v => tot? v/tot*100 : 0;
+  const lowPh = pc(ph) < 3;                       // פיזיקה שולית — מסומנת באדום
+  const noun  = girlsOnly ? 'בנות' : 'בנים';
+  const stat = (label, v, style, dec) =>
+    `<div class="sg-stat"><span>${label}</span>`+
+    `<span class="sg-num"${style||''}>${v} (${pc(v).toFixed(dec||0)}%)</span></div>`;
+  return `
+      <div class="sg-card ${girlsOnly?'girls':'boys'}">
+        <h4>${girlsOnly?'♀':'♂'} ${s.name} — ${noun} בלבד</h4>
+        <div class="sg-sub">שכבת יב׳: ${tot} ${noun}.</div>
+        <div class="sg-rows">
+          ${stat(girlsOnly?'זכאיות בגרוטק יב׳':'זכאי בגרוטק יב׳', ht)}
+          ${stat('5 יח"ל מתמ׳ יב׳', ma)}
+          ${stat('5 יח"ל מדמ"ח יב׳', cs)}
+          ${stat('5 יח"ל פיזיקה יב׳', ph, lowPh?' style="color:#c5221f;"':'', lowPh?1:0)}
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;background:#fff3e0;border-right:3px solid #f47b20;border-radius:6px;font-size:12px;line-height:1.6;color:#5f3300;">
+          <strong>הקריאה הקרה:</strong> ${sgRead(r, girlsOnly)}
+        </div>
+      </div>`;
+}
+
+// "הקריאה הקרה" — נגזרת מהמספרים של אותה שכבה, לא טקסט קבוע
+function sgRead(r, girlsOnly){
+  const tot=r[0], ht=r[4], cs=r[1], ph=r[2];
+  const phP = tot? ph/tot*100 : 0, htP = tot? ht/tot*100 : 0;
+  const city = cityPct(2);                        // מדד יב׳ העירוני — אותה שכבה
+  const who  = girlsOnly ? 'מי שיוצאת' : 'מי שיוצא';
+  if(ph===0)
+    return `אין פיזיקה בשכבה כלל. כל ${who} עם בגרוטק עושה זאת דרך מדמ"ח — זו לא בחירה אישית, זו חוסר אופציה.`;
+  if(lowShare(phP))
+    return `כמעט אין פיזיקה — ${ph} תלמידים בלבד (${phP.toFixed(1)}% מהשכבה). כמעט כל הבגרוטק כאן עובר דרך מדמ"ח.`;
+  return `שני המקצועות זמינים — מדמ"ח ${cs}, פיזיקה ${ph}. שיעור הבגרוטק בשכבה ` +
+         `<strong>${htP.toFixed(0)}%</strong>, ${htP>=city?'מעל ':'מתחת ל'}ממוצע יב׳ העירוני (${city.toFixed(0)}%).`;
+}
+function lowShare(p){ return p < 3; }
 
 function generateGenderInsights(ctx){
   const ins=[];
@@ -2290,39 +2263,12 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
 });
 
-// ── מתג המכנה (§3.2) ────────────────────────────────────────────
-// הכפתורים אינם .sb-item בכוונה — switchView מנקה active מכל .sb-item.
-function syncDenomUI(){
-  const has = Object.keys(MATZEVET).length > 0;
-  if(!has && DENOM==='matzevet') DENOM='students';      // תקופה ללא שורת מצבת
-  document.querySelectorAll('#denomSeg button').forEach(b=>{
-    b.classList.toggle('on', b.dataset.denom===DENOM);
-    if(b.dataset.denom==='matzevet'){
-      b.disabled = !has;
-      b.title = has ? 'מכנה משרד החינוך — שורת "מצבת" בגיליון'
-                    : 'אין שורת "מצבת" בתקופה זו';
-    } else {
-      b.title = 'סכום שורות "כמות תלמידים" של בתי הספר';
-    }
-  });
-}
-function setDenom(mode){
-  if(mode===DENOM) return;
-  DENOM = mode;
-  try{ localStorage.setItem('holon_denom', mode); }catch(_){}
-  syncDenomUI(); stamp();
-  switchView(CURRENT_VIEW);                             // רינדור מחדש של התצוגה הפעילה
-}
-document.querySelectorAll('#denomSeg button').forEach(b=>{
-  b.addEventListener('click', ()=> setDenom(b.dataset.denom));
-});
-
 // ════════════════════════════════════════════════════════════════
 // שכבת נתונים חיה — גיליון גוגל מפורסם
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v11';
+const BUILD = 'v12';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -2586,8 +2532,7 @@ function stamp(){
   if(!el||!LAST_LOAD) return;
   const p=n=>String(n).padStart(2,'0');
   el.textContent='עודכן '+p(LAST_LOAD.getHours())+':'+p(LAST_LOAD.getMinutes())+
-                 ' · '+Object.keys(ALLDATA).length+' תקופות · '+BUILD+
-                 ' · מכנה: '+DENOM_LBL[DENOM];
+                 ' · '+Object.keys(ALLDATA).length+' תקופות · '+BUILD;
 }
 
 // ── החלת תקופה על התצוגות הקיימות ───────────────────────────────
@@ -2598,7 +2543,7 @@ function applyPeriod(key){
   FULL       = SCHOOLS.filter(s=> !s.partial);
   MATZEVET   = d.matzevet;
   DATA_LABEL = d.label;
-  syncDenomUI(); stamp();          // תקופה ללא מצבת מחזירה את המתג ל'כמות תלמידים'
+  stamp();
   document.getElementById('dataLabel').textContent=d.label;
   document.getElementById('periodSelect').value=key;
 
