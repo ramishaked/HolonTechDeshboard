@@ -242,6 +242,9 @@ body{
 /* ♀ chip inside KPI cards */
 .g-chip{display:inline-block;background:#fce4ec;color:#ad1457;font-size:11px;font-weight:900;
   padding:1px 7px;border-radius:7px;margin-right:4px;vertical-align:middle;cursor:help;}
+/* תגית מכנה — מופיעה רק כשהמדד מחושב על שורת המצבת */
+.d-chip{display:inline-block;background:var(--primary-l);color:var(--primary-d);font-size:11px;font-weight:900;
+  padding:1px 7px;border-radius:7px;margin-right:4px;vertical-align:middle;cursor:help;}
 
 /* ─── SINGLE-GENDER SCHOOL CARDS ─── */
 .sg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -389,6 +392,20 @@ body{
 }
 .sb-select:hover{background-color:rgba(255,255,255,0.13);}
 .sb-select option{background:#2a1a4d;color:#fff;}
+.sb-live .sb-section + .sb-seg + .sb-section{padding-top:11px;}
+.sb-seg{
+  display:flex;gap:4px;padding:3px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.14);border-radius:9px;
+}
+.sb-seg button{
+  flex:1;font-family:'Heebo',sans-serif;font-size:11.5px;font-weight:700;
+  color:rgba(255,255,255,0.6);background:transparent;border:0;border-radius:7px;
+  padding:6px 4px;cursor:pointer;transition:background .15s,color .15s;
+}
+.sb-seg button:hover:not(.on):not(:disabled){color:#fff;background:rgba(255,255,255,0.07);}
+.sb-seg button.on{color:#fff;background:var(--accent);}
+.sb-seg button:disabled{opacity:.3;cursor:not-allowed;}
 .sb-refresh{
   width:100%;margin-top:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;
   color:#fff;background:var(--accent);border:0;border-radius:9px;padding:9px 10px;
@@ -496,6 +513,12 @@ body{
   </nav>
 
   <div class="sb-live">
+    <div class="sb-section">מכנה החישוב</div>
+    <div class="sb-seg" id="denomSeg">
+      <button type="button" data-denom="students" class="on">כמות תלמידים</button>
+      <button type="button" data-denom="matzevet">מצבת</button>
+    </div>
+
     <div class="sb-section">תקופת דגימה</div>
     <select class="sb-select" id="periodSelect"></select>
     <button class="sb-refresh" id="btnRefresh"><span class="ic">↻</span><span>רענן נתונים</span></button>
@@ -530,17 +553,17 @@ body{
     <!-- KPIs -->
     <div class="kpi-grid">
       <div class="kpi pri">
-        <div class="kpi-lbl">מדד טק שכבת י׳ <i class="ti" data-tip="לומדי טק בשכבה י׳ חלקי סך תלמידי י׳ בכל בתי הספר. נקודת הפתיחה של מסלול הבחירה.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת י׳ <i class="ti" id="tip10" data-tip="לומדי טק בשכבה י׳ חלקי סך תלמידי י׳. נקודת הפתיחה של מסלול הבחירה.">i</i></div>
         <div class="kpi-val" id="kPct10">—</div>
         <div class="kpi-sub" id="kPct10Sub">—</div>
       </div>
       <div class="kpi pri">
-        <div class="kpi-lbl">מדד טק שכבת יא׳ <i class="ti" data-tip="לומדי טק בשכבה יא׳ חלקי סך תלמידי יא׳ בכל בתי הספר.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת יא׳ <i class="ti" id="tip11" data-tip="לומדי טק בשכבה יא׳ חלקי סך תלמידי יא׳.">i</i></div>
         <div class="kpi-val" id="kPct11">—</div>
         <div class="kpi-sub" id="kPct11Sub">—</div>
       </div>
       <div class="kpi acc">
-        <div class="kpi-lbl">מדד טק שכבת יב׳ <i class="ti" data-tip="לומדי טק בשכבה יב׳ בלבד חלקי סך תלמידי יב׳. המדד הקרוב ביותר לזכאות בפועל — ההשוואה לארצי.">i</i></div>
+        <div class="kpi-lbl">מדד טק שכבת יב׳ <i class="ti" id="tip12" data-tip="לומדי טק בשכבה יב׳ בלבד חלקי סך תלמידי יב׳. המדד הקרוב ביותר לזכאות בפועל — ההשוואה לארצי.">i</i></div>
         <div class="kpi-val" id="k12Pct">—</div>
         <div class="kpi-sub" id="k12Sub">—</div>
       </div>
@@ -970,6 +993,12 @@ let DATA_LABEL = '';
 const GRADES = ['י','יא','יב'];                       // בסיס המדד העירוני
 const ALL_GRADES = ['ז','ח','ט','י','יא','יב'];       // למסע התלמיד בהעמקה
 
+// מכנה המדד העירוני (§3.2). ברירת המחדל: סכום שורות 'כמות תלמידים' של בתי הספר.
+// 'matzevet' = שורת המצבת של משרד החינוך. המונה לעולם אינו מושפע.
+let DENOM = 'students';                               // 'students' | 'matzevet'
+try{ if(localStorage.getItem('holon_denom')==='matzevet') DENOM='matzevet'; }catch(_){}
+const DENOM_LBL = { students:'כמות תלמידים', matzevet:'מצבת' };
+
 // האם שכבה זו היא "קבוצת עמ"ט" (ז'-ט' ללא הפרדת מקצועות)?
 function isAmat(school, gi){ const r = school.grades[ALL_GRADES[gi]]; return !!(r && r[8]); }
 
@@ -987,8 +1016,10 @@ function totalGirlsPH(school, gi){ const r=row(school,GRADES[gi]); return r? r[6
 function rowAll(school, gi){ return school.grades[ALL_GRADES[gi]] || null; }
 function subjPctAtGrade(school, gi, idx){ const r=rowAll(school,gi); return r&&r[0]? r[idx]/r[0]*100 : null; }
 function citySubjPctAtGrade(gi, idx){
-  let sub=0, tot=0;
-  SCHOOLS.forEach(s=>{ const r=rowAll(s,gi); if(r){ sub+=r[idx]; tot+=r[0]; } });
+  let sub=0, any=0;
+  SCHOOLS.forEach(s=>{ const r=rowAll(s,gi); if(r){ sub+=r[idx]; any+=r[0]; } });
+  if(!any) return null;                       // אין נתונים לשכבה — לא מציירים קו
+  const tot = cityStudentsAll(gi);            // מכבד את מתג המכנה
   return tot? sub/tot*100 : null;
 }
 
@@ -1026,7 +1057,19 @@ function schoolDropPct(school){
 // City aggregates — כל בית ספר נכלל בכל שכבה שיש לו נתונים עבורה.
 // FULL נשמר רק לדירוג בין בתי ספר ולחישוב נשירה (דורשים י׳–יב׳ מלאים).
 function cityTotal(gi){ return SCHOOLS.reduce((s,sch)=> s+totalTech(sch,gi), 0); }
-function cityStudents(gi){ return SCHOOLS.reduce((s,sch)=> s+totalStudents(sch,gi), 0); }
+
+// המכנה העירוני לשכבה (§3.2). במצב 'מצבת' — שורת המצבת מהגיליון; אם אין לה
+// ערך לשכבה הזו, נפילה חזרה לסכום בתי הספר, כדי לא להשאיר שכבה בלי מכנה.
+function cityDenomByName(g){
+  const sum = SCHOOLS.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[0]:0); }, 0);
+  if(DENOM==='matzevet'){ const m=MATZEVET[g]; if(m>0) return m; }
+  return sum;
+}
+function cityStudents(gi){    return cityDenomByName(GRADES[gi]); }        // י׳–יב׳
+function cityStudentsAll(gi){ return cityDenomByName(ALL_GRADES[gi]); }    // ז׳–יב׳
+// האם השכבה הזו מוצגת כרגע על מכנה המצבת (לתיוג בממשק)
+function denomIsMatzevet(g){ return DENOM==='matzevet' && MATZEVET[g]>0; }
+
 function cityPct(gi){ const t=cityStudents(gi); return t? cityTotal(gi)/t*100 : 0; }
 function cityGirlsPctOfTech(){
   let g=0,t=0; SCHOOLS.forEach(s=> GRADES.forEach((_,i)=>{g+=totalGirlsTech(s,i);t+=totalTech(s,i);}));
@@ -1034,7 +1077,7 @@ function cityGirlsPctOfTech(){
 }
 function cityOverallPct(){
   let tech=0, st=0;
-  SCHOOLS.forEach(sch => GRADES.forEach((_,i)=>{ tech+=totalTech(sch,i); st+=totalStudents(sch,i); }));
+  GRADES.forEach((_,i)=>{ tech+=cityTotal(i); st+=cityStudents(i); });
   return st? tech/st*100 : 0;
 }
 function citySubjectByGrade(idx){ return GRADES.map((_,gi)=> SCHOOLS.reduce((s,sch)=> s+subjVal(sch,gi,idx),0)); }
@@ -1085,13 +1128,25 @@ function renderOverview(){
     if(!t) return '';
     return ` <span class="g-chip" title="${g} בנות מתוך ${t} לומדי טק בשכבה">♀ ${(g/t*100).toFixed(0)}%</span>`;
   };
+  // תגית מקור המכנה — מוצגת רק כשהשכבה מחושבת על שורת המצבת
+  const dPill = gi => denomIsMatzevet(GRADES[gi])
+    ? ` <span class="d-chip" title="המכנה הוא שורת המצבת של משרד החינוך, לא סכום שורות בתי הספר">מצבת</span>` : '';
+
+  // הטולטיפים אומרים לפי איזה מכנה חושב — מתעדכן עם המתג
+  ['tip10','tip11','tip12'].forEach((id,gi)=>{
+    const el=document.getElementById(id); if(!el) return;
+    if(!el.dataset.tipBase) el.dataset.tipBase = el.dataset.tip;
+    el.dataset.tip = el.dataset.tipBase + ' המכנה: ' +
+      (denomIsMatzevet(GRADES[gi]) ? 'שורת המצבת של משרד החינוך.'
+                                   : 'סכום שורות "כמות תלמידים" של בתי הספר.');
+  });
   document.getElementById('kPct10Sub').innerHTML =
-    `${t10} מתוך ${cityStudents(0)} תלמידים${gPill(0)}`;
+    `${t10} מתוך ${cityStudents(0)} תלמידים${dPill(0)}${gPill(0)}`;
   document.getElementById('kPct11Sub').innerHTML =
-    `${t11} מתוך ${cityStudents(1)} תלמידים${gPill(1)}`;
+    `${t11} מתוך ${cityStudents(1)} תלמידים${dPill(1)}${gPill(1)}`;
   const dn = p12 - NATIONAL;
   document.getElementById('k12Sub').innerHTML =
-    `${t12} מתוך ${cityStudents(2)}${gPill(2)}<br><strong style="color:${dn>=0?'#137333':'#c5221f'}">${dn>=0?'+':''}${dn.toFixed(1)} נק׳ מול ארצי ${NATIONAL}%</strong>`;
+    `${t12} מתוך ${cityStudents(2)}${dPill(2)}${gPill(2)}<br><strong style="color:${dn>=0?'#137333':'#c5221f'}">${dn>=0?'+':''}${dn.toFixed(1)} נק׳ מול ארצי ${NATIONAL}%</strong>`;
 
   const dropI12 = ((p10-p12)/p10*100);
   document.getElementById('kDrop').textContent = '▼ ' + dropI12.toFixed(1) + '%';
@@ -1547,8 +1602,9 @@ function generateSchoolInsights(school){
     const r9 = school.grades['ט'];
     const ma9 = r9[3], ht9 = r9[4], tot9 = r9[0], g9 = r9[7];
     // ממוצע עירוני של % עמ"ט בשכבה ט'
-    let cHt=0, cTot=0;
-    SCHOOLS.forEach(s=>{ const r=s.grades['ט']; if(r){ cHt+=r[4]; cTot+=r[0]; } });
+    let cHt=0, cAny=0;
+    SCHOOLS.forEach(s=>{ const r=s.grades['ט']; if(r){ cHt+=r[4]; cAny+=r[0]; } });
+    const cTot = cAny? cityDenomByName('ט') : 0;      // מכבד את מתג המכנה
     const cityP9 = cTot? cHt/cTot*100 : 0;
     const p9 = tot9? ht9/tot9*100 : 0;
     const above = p9 >= cityP9;
@@ -2191,12 +2247,39 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
 });
 
+// ── מתג המכנה (§3.2) ────────────────────────────────────────────
+// הכפתורים אינם .sb-item בכוונה — switchView מנקה active מכל .sb-item.
+function syncDenomUI(){
+  const has = Object.keys(MATZEVET).length > 0;
+  if(!has && DENOM==='matzevet') DENOM='students';      // תקופה ללא שורת מצבת
+  document.querySelectorAll('#denomSeg button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.denom===DENOM);
+    if(b.dataset.denom==='matzevet'){
+      b.disabled = !has;
+      b.title = has ? 'מכנה משרד החינוך — שורת "מצבת" בגיליון'
+                    : 'אין שורת "מצבת" בתקופה זו';
+    } else {
+      b.title = 'סכום שורות "כמות תלמידים" של בתי הספר';
+    }
+  });
+}
+function setDenom(mode){
+  if(mode===DENOM) return;
+  DENOM = mode;
+  try{ localStorage.setItem('holon_denom', mode); }catch(_){}
+  syncDenomUI(); stamp();
+  switchView(CURRENT_VIEW);                             // רינדור מחדש של התצוגה הפעילה
+}
+document.querySelectorAll('#denomSeg button').forEach(b=>{
+  b.addEventListener('click', ()=> setDenom(b.dataset.denom));
+});
+
 // ════════════════════════════════════════════════════════════════
 // שכבת נתונים חיה — גיליון גוגל מפורסם
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v9';
+const BUILD = 'v10';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -2460,7 +2543,8 @@ function stamp(){
   if(!el||!LAST_LOAD) return;
   const p=n=>String(n).padStart(2,'0');
   el.textContent='עודכן '+p(LAST_LOAD.getHours())+':'+p(LAST_LOAD.getMinutes())+
-                 ' · '+Object.keys(ALLDATA).length+' תקופות · '+BUILD;
+                 ' · '+Object.keys(ALLDATA).length+' תקופות · '+BUILD+
+                 ' · מכנה: '+DENOM_LBL[DENOM];
 }
 
 // ── החלת תקופה על התצוגות הקיימות ───────────────────────────────
@@ -2471,6 +2555,7 @@ function applyPeriod(key){
   FULL       = SCHOOLS.filter(s=> !s.partial);
   MATZEVET   = d.matzevet;
   DATA_LABEL = d.label;
+  syncDenomUI(); stamp();          // תקופה ללא מצבת מחזירה את המתג ל'כמות תלמידים'
   document.getElementById('dataLabel').textContent=d.label;
   document.getElementById('periodSelect').value=key;
 
