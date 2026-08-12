@@ -910,6 +910,21 @@ body{
 </main>
 
 
+<div id="srcModal" class="src-modal">
+  <div class="src-card">
+    <h3>מקור הנתונים — רשימת הטאבים</h3>
+    <div class="src-status" id="srcStatus"></div>
+    <p>פתח את גיליון ההזנה, לחץ על כל טאב, והעתק את המספר שאחרי <code>#gid=</code> בשורת הכתובת.
+       שורה לכל טאב, בפורמט <code>שם הטאב = gid</code>. הרשימה נשמרת בדפדפן.</p>
+    <textarea id="srcTxt" placeholder='תשפ&quot;ה (סוף שנה) = 0&#10;תשפ&quot;ו (תחילת שנה) = 123456789&#10;תשפ&quot;ו (2) = 987654321'></textarea>
+    <div class="src-btns">
+      <button class="p" id="srcSave">שמור וטען מחדש</button>
+      <button class="s" id="srcClear">נקה · גילוי אוטומטי</button>
+      <button class="s" id="srcCancel">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
@@ -2185,7 +2200,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v6';
+const BUILD = 'v7';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -2541,19 +2556,5 @@ boot();
 
 
 </script>
-<div id="srcModal" class="src-modal">
-  <div class="src-card">
-    <h3>מקור הנתונים — רשימת הטאבים</h3>
-    <div class="src-status" id="srcStatus"></div>
-    <p>פתח את גיליון ההזנה, לחץ על כל טאב, והעתק את המספר שאחרי <code>#gid=</code> בשורת הכתובת.
-       שורה לכל טאב, בפורמט <code>שם הטאב = gid</code>. הרשימה נשמרת בדפדפן.</p>
-    <textarea id="srcTxt" placeholder='תשפ&quot;ה (סוף שנה) = 0&#10;תשפ&quot;ו (תחילת שנה) = 123456789&#10;תשפ&quot;ו (2) = 987654321'></textarea>
-    <div class="src-btns">
-      <button class="p" id="srcSave">שמור וטען מחדש</button>
-      <button class="s" id="srcClear">נקה · גילוי אוטומטי</button>
-      <button class="s" id="srcCancel">ביטול</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
