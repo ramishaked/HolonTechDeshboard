@@ -207,6 +207,27 @@ body{
 .bar-cell{display:flex;align-items:center;gap:7px;}
 .bar{height:7px;border-radius:4px;flex-shrink:0;}
 
+/* View 7 — עתיד טק. כללים מקומיים בלבד; לא נוגעים במחלקות המשותפות. */
+#view-futuretech .kpi::before{background:var(--ft,var(--border));}
+/* מספר העמודות נקבע ב-renderFutureTech לפי מספר התקופות שנטענו */
+/* בועת הטולטיפ ממורכזת, ובגלולה השמאלית היא חורגת משמאל לדף ומוסיפה
+   גלילה אופקית (visibility:hidden עדיין נכנס ל-scrollWidth). מעגנים אותה
+   פנימה. מוגבל לתצוגה הזו — לא לגעת בתצוגות שאושרו. */
+#view-futuretech .page-meta > .meta-pill:last-child .ti::after{right:auto;left:0;transform:none;}
+#view-futuretech .page-meta > .meta-pill:last-child .ti::before{right:6px;transform:translateY(-99%);}
+#view-futuretech .tbl th{cursor:default;}
+#view-futuretech .tbl th:hover{color:var(--muted);}
+#view-futuretech .tbl th.per{text-align:center;}
+#view-futuretech .tbl td.ft-cell{text-align:center;padding:9px 12px;}
+#view-futuretech .tbl td.ft-none{text-align:center;color:var(--muted);}
+#view-futuretech .tbl tr.ft-city td{font-weight:900;border-top:1.5px solid var(--border);}
+#view-futuretech .tbl tr.ft-city td.nm,
+#view-futuretech .tbl tr.ft-city td.ft-none{background:var(--bg);}
+.ft-n{font-size:15px;font-weight:900;color:var(--text);line-height:1.2;}
+.ft-p{font-size:12px;font-weight:700;line-height:1.3;}
+.ft-key{display:inline-flex;align-items:center;gap:5px;margin-left:14px;}
+.ft-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
 /* Selector */
 .selector{
   background:var(--card);border:0.5px solid var(--border);
@@ -486,6 +507,10 @@ body{
     <div class="sb-item" data-view="gender">
       <span class="sb-ico">👥</span>
       <span>פילוח מגדרי</span>
+    </div>
+    <div class="sb-item" data-view="futuretech">
+      <span class="sb-ico">🚦</span>
+      <span>עתיד טק</span>
     </div>
 
     <div class="sb-section" style="margin-top:14px;">בקרוב</div>
@@ -914,6 +939,32 @@ body{
 
   </section>
 
+  <!-- VIEW 7: עתיד טק — היקף ההשתתפות לאורך התקופות -->
+  <section class="view" id="view-futuretech">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">עתיד טק — היקף ההשתתפות</h1>
+        <p class="page-sub">כמות ואחוז המשתתפים בתוכנית, בכל בית ספר ובכל תקופות הדגימה</p>
+      </div>
+      <div class="page-meta">
+        <div class="meta-pill"><strong>כל התקופות</strong> <i class="ti" data-tip="בניגוד לשאר התצוגות, הטבלה כאן מציגה את כל תקופות הדגימה זו לצד זו ואינה מושפעת מבורר התקופה שבסיידבר.">i</i></div>
+        <div class="meta-pill"><strong id="ftGradePill">—</strong> שכבת התוכנית <i class="ti" data-tip="השכבה שבה מוזנת שורת &quot;עתיד טק&quot; בגיליון. נגזרת מהנתונים ואינה מקובעת בקוד.">i</i></div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="ftKpis"></div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">רמזור עתיד טק — בית ספר על פני תקופות</div>
+          <div class="card-sub">בכל תא: כמות המשתתפים, ומתחתיה שיעורם מהשכבה</div>
+        </div>
+      </div>
+      <div id="ftMatrix"></div>
+    </div>
+  </section>
+
 </main>
 
 
@@ -1032,9 +1083,15 @@ function schoolDropPct(school){
 // FULL נשמר רק לדירוג בין בתי ספר ולחישוב נשירה (דורשים י׳–יב׳ מלאים).
 function cityTotal(gi){ return SCHOOLS.reduce((s,sch)=> s+totalTech(sch,gi), 0); }
 
+// סכום שורות 'כמות תלמידים' בשכבה, על מערך בתי ספר נתון.
+// חוק המכנה יושב כאן בלבד: cityDenomPair עובדת על הגלובל SCHOOLS,
+// ותצוגת עתיד טק (חוצת-תקופות) מעבירה את מערך בתי הספר של תקופה אחרת.
+function studentsAtGrade(schools, g){
+  return schools.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[0]:0); }, 0);
+}
 // שני המכנים לשכבה (§3.2). matzevet=null כשאין לשכבה שורת מצבת בגיליון.
 function cityDenomPair(g){
-  const students = SCHOOLS.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[0]:0); }, 0);
+  const students = studentsAtGrade(SCHOOLS, g);
   const m = MATZEVET[g];
   return { students, matzevet: (m>0? m : null) };
 }
@@ -1080,6 +1137,43 @@ function cityOverallPct(){
 }
 function citySubjectByGrade(idx){ return GRADES.map((_,gi)=> SCHOOLS.reduce((s,sch)=> s+subjVal(sch,gi,idx),0)); }
 function citySubjPctByGrade(idx){ return GRADES.map((_,gi)=>{ const t=cityStudents(gi); return t? SCHOOLS.reduce((s,sch)=>s+subjVal(sch,gi,idx),0)/t*100 : 0; }); }
+
+// ── עתיד טק — היקף ההשתתפות (§3.6) ──────────────────────────────
+// זו התצוגה היחידה שקוראת מ-ALLDATA ישירות ולא מהגלובלים ש-applyPeriod
+// מחליף, ולכן כל עזר כאן מקבל את מערך בתי הספר של תקופה מפורשת.
+const FT = 10;                                  // מיקום 'עתיד טק' במערך השכבה
+const FT_STEPS = {
+  good: { color:'var(--good)', tint:'rgba(52,168,83,0.10)',  word:'מצוין' },
+  warn: { color:'var(--warn)', tint:'rgba(251,188,4,0.15)',  word:'טוב' },
+  bad:  { color:'var(--bad)',  tint:'rgba(232,66,53,0.09)',  word:'דורש שיפור' }
+};
+function ftStep(pct){
+  if(pct > 50) return FT_STEPS.good;            // §3.6
+  if(pct >= 30) return FT_STEPS.warn;
+  return FT_STEPS.bad;
+}
+// כל התקופות שנטענו, כרונולוגית. לא נשענים על סדר המפתחות של ALLDATA.
+function ftPeriods(){
+  return Object.values(ALLDATA).slice().sort((a,b)=> (a.year-b.year)||(a.half-b.half));
+}
+function ftSumAtGrade(schools, g){
+  return schools.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[FT]:0); }, 0);
+}
+// השכבה שבה התוכנית מוזנת — נגזרת מהנתונים ולא מקובעת (§3.6: "בד"כ ט׳").
+function ftGrade(periods){
+  return ALL_GRADES.find(g=> periods.some(p=> ftSumAtGrade(p.schools, g) > 0)) || null;
+}
+// null = לא הוזן. מובחן מ-0% כדי שתקופה ריקה לא תיראה כתוכנית שקרסה.
+function ftCell(school, g){
+  const r = school && school.grades[g];
+  if(!r || !r[FT] || !r[0]) return null;
+  return { n:r[FT], pct:r[FT]/r[0]*100 };
+}
+function ftCity(schools, g){
+  const n = ftSumAtGrade(schools, g);
+  const t = studentsAtGrade(schools, g);        // אותו חוק מכנה כמו כל מדד עירוני
+  return (n && t)? { n, pct:n/t*100 } : null;
+}
 
 // ════════════════════════════════════════════════════════════════
 // CHART HELPERS
@@ -2243,6 +2337,108 @@ function generateGenderInsights(ctx){
 }
 
 // ════════════════════════════════════════════════════════════════
+// VIEW 7 — עתיד טק: היקף ההשתתפות לאורך התקופות
+// מטריצה בית ספר × תקופה. תמונה חד-תקופתית מטעה כאן, כי תקופה שבה
+// השורה לא הוזנה נראית זהה לתוכנית שנעלמה.
+// ════════════════════════════════════════════════════════════════
+function renderFutureTech(){
+  const periods = ftPeriods();
+  const g       = ftGrade(periods);
+  const kpis    = document.getElementById('ftKpis');
+  const box     = document.getElementById('ftMatrix');
+  document.getElementById('ftGradePill').textContent = g? ('שכבה '+g+'׳') : '—';
+
+  if(!g){
+    kpis.innerHTML = '';
+    box.innerHTML = `<div class="insight warn">
+      <div class="insight-t">לא נמצאו נתוני עתיד טק</div>
+      <div class="insight-b">שורת <strong>עתיד טק</strong> ריקה בכל ${periods.length} תקופות הדגימה שנטענו מהגיליון.
+        ברגע שיוזנו נתונים באחת התקופות, הטבלה תיבנה כאן מעצמה.</div>
+    </div>`;
+    return;
+  }
+
+  // ── אריח לכל תקופה — השיעור העירוני, ברצועה בצבע הרמזור ──
+  // .kpi-grid קבוע על 4 עמודות; כאן מספר התקופות משתנה (המפרט מזכיר
+  // שני טאבים עתידיים), אז נקבע לפי מה שנטען בפועל.
+  kpis.style.gridTemplateColumns = `repeat(${periods.length},minmax(0,1fr))`;
+  kpis.innerHTML = periods.map(p=>{
+    const c = ftCity(p.schools, g);
+    if(!c) return `<div class="kpi" style="--ft:var(--border);">
+        <div class="kpi-lbl">${p.label}</div>
+        <div class="kpi-val" style="color:var(--muted);">—</div>
+        <div class="kpi-sub">לא הוזן בגיליון</div>
+      </div>`;
+    const st = ftStep(c.pct);
+    return `<div class="kpi" style="--ft:${st.color};">
+        <div class="kpi-lbl">${p.label}</div>
+        <div class="kpi-val" style="color:${st.color};">${c.pct.toFixed(1)}%</div>
+        <div class="kpi-sub">${c.n.toLocaleString('he-IL')} משתתפים · ${st.word}</div>
+      </div>`;
+  }).join('');
+
+  // ── בתי הספר: איחוד מכל התקופות. הרשימה עשויה להשתנות בין טאבים,
+  //    ובית ספר שנעדר מתקופה מקבל תא ריק במקום להיעלם מהטבלה. ──
+  const names = [], meta = {}, cells = {};
+  periods.forEach(p=> p.schools.forEach(s=>{ if(names.indexOf(s.name)<0) names.push(s.name); }));
+  names.forEach(n=>{
+    cells[n] = periods.map(p=>{
+      const s = p.schools.find(x=> x.name===n);
+      if(s) meta[n] = s;
+      return ftCell(s, g);
+    });
+  });
+
+  // מיון על עמודת ייחוס אחת — התקופה האחרונה שיש בה נתונים עירוניים.
+  // מיון לפי "התקופה האחרונה של כל בית ספר" היה מדרג בתי ספר זה מול זה
+  // על תקופות שונות.
+  let refIdx = -1;
+  periods.forEach((p,i)=>{ if(ftCity(p.schools, g)) refIdx = i; });
+  const hasAny = n=> cells[n].some(Boolean);
+  names.sort((a,b)=>{
+    const ca = cells[a][refIdx], cb = cells[b][refIdx];
+    if(ca && cb) return cb.pct - ca.pct;
+    if(ca) return -1;
+    if(cb) return 1;
+    if(hasAny(a) !== hasAny(b)) return hasAny(a)? -1 : 1;
+    return a.localeCompare(b,'he');
+  });
+
+  const cell = c=>{
+    if(!c) return `<td class="ft-none">—</td>`;
+    const st = ftStep(c.pct);
+    return `<td class="ft-cell" style="background:${st.tint};">
+      <div class="ft-n">${c.n.toLocaleString('he-IL')}</div>
+      <div class="ft-p" style="color:${st.color};">${c.pct.toFixed(1)}%</div>
+    </td>`;
+  };
+  const key = st=> `<span class="ft-key"><span class="ft-dot" style="background:${st.color};"></span>${st.word}</span>`;
+
+  box.innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>בית ספר</th>
+        ${periods.map(p=> `<th class="per">${p.label}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${names.map(n=> `<tr${hasAny(n)? '' : ' style="opacity:.6;"'}>
+            <td class="nm">${n}${badge(meta[n]||{})}</td>
+            ${cells[n].map(cell).join('')}
+          </tr>`).join('')}
+        <tr class="ft-city">
+          <td class="nm">סה"כ עיר</td>
+          ${periods.map(p=> cell(ftCity(p.schools, g))).join('')}
+        </tr>
+        <tr><td colspan="${periods.length+1}" style="background:var(--bg);font-size:11px;color:var(--muted);line-height:1.9;">
+          <div>מעל 50% ${key(FT_STEPS.good)} · 30–50% ${key(FT_STEPS.warn)} · מתחת ל-30% ${key(FT_STEPS.bad)}</div>
+          <div>המדד: <strong>עתיד טק</strong> חלקי <strong>כמות תלמידים</strong> באותה שכבה. תא ריק (—) = לא הוזן בגיליון לאותה תקופה, ואינו אפס.</div>
+          <div>המדד מציג <strong>היקף השתתפות בלבד</strong>. הגיליון אינו מכיל נתוני פרט, ולכן אי אפשר להסיק ממנו על השפעת התוכנית על הישגי המשתתפים.</div>
+        </td></tr>
+      </tbody>
+    </table>`;
+}
+
+// ════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
@@ -2258,6 +2454,7 @@ function switchView(viewId){
   if(viewId==='deepdive') renderDeepDive();
   if(viewId==='insights') renderInsights();
   if(viewId==='gender') renderGender();
+  if(viewId==='futuretech') renderFutureTech();
 }
 document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
@@ -2268,7 +2465,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v12';
+const BUILD = 'v13';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
