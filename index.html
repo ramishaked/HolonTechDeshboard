@@ -910,10 +910,26 @@ body{
 </main>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
+// ── מלכודת שגיאות: במקום מסך טעינה קפוא — הודעה ברורה ─────────────
+window.addEventListener('error', function(ev){
+  var o=document.getElementById('loadOverlay');
+  if(!o || o.style.display==='none') return;
+  document.getElementById('loadMsg').textContent='שגיאה בטעינת הדשבורד';
+  document.getElementById('loadSub').innerHTML=
+    String(ev.message||'').replace(/</g,'&lt;')+
+    '<br><br>אם מופיע כאן שם של ספרייה (Chart / ChartDataLabels), הדפדפן או הרשת חוסמים את cdnjs.cloudflare.com.';
+});
+
+if(typeof Chart==='undefined' || typeof ChartDataLabels==='undefined'){
+  document.getElementById('loadMsg').textContent='ספריית הגרפים לא נטענה';
+  document.getElementById('loadSub').innerHTML=
+    'הדשבורד טוען את Chart.js מ-<b>cdnjs.cloudflare.com</b>.<br>'+
+    'הכתובת הזו חסומה ברשת שלך או ע"י תוסף בדפדפן. יש לאפשר אותה.';
+  throw new Error('Chart.js unavailable');
+}
 Chart.register(ChartDataLabels);
 
 // ════════════════════════════════════════════════════════════════
@@ -2169,7 +2185,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v5';
+const BUILD = 'v6';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -2311,13 +2327,32 @@ async function discoverTabs(){
   return periods;
 }
 
+// ── פרסר CSV מובנה (ללא תלות בספרייה חיצונית) ───────────────────
+// מטפל בשדות במרכאות, בפסיקים בתוכם, ובמרכאות כפולות ("סה""כ")
+function csvParse(text){
+  const rows=[]; let row=[], f='', q=false;
+  const t = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){
+      if(c==='"'){ if(t[i+1]==='"'){ f+='"'; i++; } else q=false; }
+      else f+=c;
+    } else if(c==='"'){ q=true; }
+    else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'){ row.push(f); f=''; rows.push(row); row=[]; }
+    else f+=c;
+  }
+  row.push(f); rows.push(row);
+  return rows;
+}
+
 // ── טעינת CSV של טאב ────────────────────────────────────────────
 async function fetchRows(gid){
   const res = await fetchT(PUB+'?output=csv&single=true'+(gid?'&gid='+gid:'')+'&_='+Date.now(), 20000);
   if(!res.ok) throw new Error('HTTP '+res.status);
   const text = await res.text();
   if(/^\s*<(!DOCTYPE|html)/i.test(text)) throw new Error('התקבל HTML במקום CSV');
-  return Papa.parse(text, {skipEmptyLines:false}).data;
+  return csvParse(text);
 }
 
 // ── הפרסר ───────────────────────────────────────────────────────
