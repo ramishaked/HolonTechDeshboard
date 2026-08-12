@@ -413,6 +413,25 @@ body{
   background:var(--primary);color:#fff;border:0;border-radius:10px;padding:11px 26px;cursor:pointer;
 }
 .err-box code{background:#f1eef6;color:var(--primary-d);padding:2px 7px;border-radius:5px;direction:ltr;display:inline-block;}
+
+.sb-cog{
+  display:block;margin-top:10px;font-family:'Heebo',sans-serif;font-size:11px;font-weight:700;
+  color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:6px 10px;cursor:pointer;width:100%;
+}
+.sb-cog:hover{color:#fff;background:rgba(255,255,255,0.13);}
+.src-modal{position:fixed;inset:0;z-index:950;background:rgba(31,21,48,.55);display:none;align-items:center;justify-content:center;padding:24px;}
+.src-card{background:var(--card);border-radius:16px;padding:26px 28px;max-width:540px;width:100%;box-shadow:0 12px 40px rgba(42,26,77,.28);}
+.src-card h3{font-size:17px;font-weight:900;color:var(--primary-d);margin-bottom:12px;}
+.src-status{font-size:12px;font-weight:500;color:var(--primary-d);background:var(--primary-l);border-radius:9px;padding:10px 12px;line-height:1.7;margin-bottom:12px;}
+.src-card p{font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:12px;}
+.src-card code{background:#f1eef6;color:var(--primary-d);padding:1px 6px;border-radius:5px;direction:ltr;display:inline-block;}
+#srcTxt{width:100%;min-height:120px;font-family:monospace;font-size:12px;direction:ltr;text-align:left;
+  border:1px solid var(--border);border-radius:10px;padding:11px;resize:vertical;}
+.src-btns{display:flex;gap:8px;margin-top:14px;}
+.src-btns button{font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;border:0;border-radius:9px;padding:10px 16px;cursor:pointer;}
+.src-btns .p{background:var(--primary);color:#fff;flex:1;}
+.src-btns .s{background:var(--primary-l);color:var(--primary-d);}
 </style>
 </head>
 <body>
@@ -479,6 +498,7 @@ body{
   <div class="sb-foot">
     מקור: <span id="dataLabel">—</span><br>
     גיליון גוגל מפורסם · נטען חי
+    <button id="btnSource" class="sb-cog">⚙ מקור הנתונים</button>
   </div>
 </aside>
 
@@ -2152,6 +2172,15 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
+// ── מקור הטאבים ─────────────────────────────────────────────────
+// אם המפה הזו מלאה — היא הקובעת, ואין תלות בגילוי אוטומטי.
+// פורמט: 'שם הטאב כפי שהוא בגיליון': 'GID'
+const GID_MAP = {
+  'תשפ"ה (סוף שנה)'   : '392061415',
+  'תשפ"ו (תחילת שנה)' : '1592440184',
+  'תשפ"ו (2)'         : '543820427',
+};
+
 const JUN3 = ['ז','ח','ט'];
 let PERIODS = [], ALLDATA = {}, CURRENT_PERIOD = null, MATZEVET = {}, LAST_LOAD = null;
 
@@ -2178,13 +2207,75 @@ function parsePeriodName(raw){
   const name=_clean(raw), bare=_strip(raw);
   if(!bare) return null;
   if(/גיבוי|טיוטה|עזר|backup|copy|עותק/i.test(bare)) return null;
-  const y = bare.match(/^ת[א-ת]{2,4}/);
+
+  // חצי השנה — נקבע מהשם המלא, לפני קיצוץ מילות התיאור
+  let half = /\(?2\)?$|סוףשנה|סוף/.test(bare) ? 2
+           : /\(?1\)?$|תחילתשנה|תחילת/.test(bare) ? 1 : 1;
+
+  // מסירים מילות תיאור כדי שהגימטריה לא תבלע אותן ("תשפוסוף" → "תשפו")
+  const core = bare.replace(/סוףשנה|תחילתשנה|תחילת|תחילה|סוף|שנה/g,'');
+  const y = core.match(/^ת[א-ת]{2,4}/);
   if(!y) return null;
   const year = hebYear(y[0]);
   if(year<2015 || year>2100) return null;
-  let half = /2\)?$|סוףשנה/.test(bare) ? 2 : 1;
+
   const yl = y[0].slice(0,-1)+'"'+y[0].slice(-1);
   return { key:y[0]+'-'+half, label:yl+(half===1?' תחילה':' סוף'), year, half, sheetName:name };
+}
+
+// ── מקור ידני: GID_MAP או localStorage ──────────────────────────
+let SOURCE_MODE = '—', MANUAL_SRC = '';
+
+function toPeriods(pairs){
+  return pairs.map(p=>{
+    const parsed = parsePeriodName(p.name);
+    return parsed ? Object.assign({gid:String(p.gid)}, parsed)
+                  : { gid:String(p.gid), key:'x'+p.gid, label:_clean(p.name), year:0, half:1, sheetName:_clean(p.name) };
+  }).sort((a,b)=> (a.year-b.year)||(a.half-b.half));
+}
+
+function readManualGids(){
+  const fromConst = Object.keys(GID_MAP).filter(k=> GID_MAP[k]).map(k=> ({name:k, gid:GID_MAP[k]}));
+  if(fromConst.length){ MANUAL_SRC='רשימה צרובה בקוד'; return toPeriods(fromConst); }
+  try{
+    const raw = localStorage.getItem('holon_gids');
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(Array.isArray(arr) && arr.length){ MANUAL_SRC='רשימה שנשמרה בדפדפן'; return toPeriods(arr); }
+    }
+  }catch(_){}
+  return [];
+}
+
+function parseGidText(txt){
+  return txt.split('\n').map(l=> l.trim()).filter(Boolean).map(l=>{
+    const m = l.match(/^(.*?)\s*[=\t,|]\s*(\d+)\s*$/);
+    return m ? { name:m[1].trim(), gid:m[2] } : null;
+  }).filter(Boolean);
+}
+
+function openSource(){
+  const box = document.getElementById('srcModal');
+  const cur = readManualGids();
+  document.getElementById('srcTxt').value =
+    cur.map(p=> (p.sheetName||p.label)+' = '+p.gid).join('\n');
+  document.getElementById('srcStatus').innerHTML =
+    'מצב נוכחי: <b>'+SOURCE_MODE+'</b> · נטענו '+Object.keys(ALLDATA).length+' תקופות'+
+    (Object.keys(ALLDATA).length ? '<br>'+Object.keys(ALLDATA).map(k=> ALLDATA[k].label).join(' · ') : '');
+  box.style.display='flex';
+}
+function closeSource(){ document.getElementById('srcModal').style.display='none'; }
+function saveSource(){
+  const arr = parseGidText(document.getElementById('srcTxt').value);
+  try{
+    if(arr.length) localStorage.setItem('holon_gids', JSON.stringify(arr));
+    else localStorage.removeItem('holon_gids');
+  }catch(_){ alert('הדפדפן חוסם שמירה מקומית'); }
+  closeSource(); PERIODS=[]; CURRENT_PERIOD=null; boot(true);
+}
+function clearSource(){
+  try{ localStorage.removeItem('holon_gids'); }catch(_){}
+  closeSource(); PERIODS=[]; CURRENT_PERIOD=null; boot(true);
 }
 
 // ── גילוי הטאבים מדף ה-pubhtml ──────────────────────────────────
@@ -2311,7 +2402,7 @@ function stamp(){
   if(!el||!LAST_LOAD) return;
   const p=n=>String(n).padStart(2,'0');
   el.textContent='עודכן '+p(LAST_LOAD.getHours())+':'+p(LAST_LOAD.getMinutes())+
-                 ' · '+p(LAST_LOAD.getDate())+'.'+p(LAST_LOAD.getMonth()+1);
+                 ' · '+Object.keys(ALLDATA).length+' תקופות';
 }
 
 // ── החלת תקופה על התצוגות הקיימות ───────────────────────────────
@@ -2345,12 +2436,17 @@ async function boot(force){
   showLoad(force?'מרענן מהגיליון…':'טוען נתונים מהגיליון…','מאתר את טאבי הדגימה');
   try{
     if(!PERIODS.length || force){
-      try{
-        PERIODS = await discoverTabs();
-      }catch(e){
-        // נפילה חיננית: לפחות טאב ברירת המחדל, כדי שהדשבורד לא ימות
-        console.warn('גילוי טאבים נכשל:', e.message, '— נטען טאב ברירת המחדל בלבד');
-        PERIODS = [{ gid:'', key:'default', label:'טאב ברירת מחדל', year:0, half:1 }];
+      const manual = readManualGids();
+      if(manual.length){
+        PERIODS = manual; SOURCE_MODE = MANUAL_SRC || 'ידני';
+      } else {
+        try{
+          PERIODS = await discoverTabs(); SOURCE_MODE = 'גילוי אוטומטי';
+        }catch(e){
+          console.warn('גילוי טאבים נכשל:', e.message, '— נטען טאב ברירת המחדל בלבד');
+          PERIODS = [{ gid:'', key:'default', label:'⚠ טאב ברירת מחדל', year:0, half:1 }];
+          SOURCE_MODE = 'נפילה — טאב יחיד';
+        }
       }
     }
 
@@ -2384,9 +2480,27 @@ async function boot(force){
 }
 
 document.getElementById('btnRefresh').addEventListener('click', ()=> boot(true));
+document.getElementById('btnSource').addEventListener('click', openSource);
+document.getElementById('srcSave').addEventListener('click', saveSource);
+document.getElementById('srcClear').addEventListener('click', clearSource);
+document.getElementById('srcCancel').addEventListener('click', closeSource);
 boot();
 
 
 </script>
+<div id="srcModal" class="src-modal">
+  <div class="src-card">
+    <h3>מקור הנתונים — רשימת הטאבים</h3>
+    <div class="src-status" id="srcStatus"></div>
+    <p>פתח את גיליון ההזנה, לחץ על כל טאב, והעתק את המספר שאחרי <code>#gid=</code> בשורת הכתובת.
+       שורה לכל טאב, בפורמט <code>שם הטאב = gid</code>. הרשימה נשמרת בדפדפן.</p>
+    <textarea id="srcTxt" placeholder='תשפ&quot;ה (סוף שנה) = 0&#10;תשפ&quot;ו (תחילת שנה) = 123456789&#10;תשפ&quot;ו (2) = 987654321'></textarea>
+    <div class="src-btns">
+      <button class="p" id="srcSave">שמור וטען מחדש</button>
+      <button class="s" id="srcClear">נקה · גילוי אוטומטי</button>
+      <button class="s" id="srcCancel">ביטול</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
