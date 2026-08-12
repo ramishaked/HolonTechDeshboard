@@ -924,6 +924,12 @@ body{
         </div>
       </div>
       <div id="singleGenderBox"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
+        ⚠ הזיהוי נגזר מהגיליון ולא מרשימת שמות: בית ספר נחשב חד-מגדרי כשכל
+        עמודות הבנים — או כל עמודות הבנות — אצלו אפס בשכבות י׳–יב׳. אם בגיליון
+        יוזן ולו ערך אחד שאינו אפס בעמודת המגדר השני, בית הספר לא יופיע כאן.
+        התיאורים המילוליים (למשל אופי בית הספר) אינם בגיליון ולכן אינם מוצגים.
+      </div>
     </div>
 
     <!-- Auto insights -->
@@ -1286,13 +1292,15 @@ function renderOverview(){
                y:{beginAtZero:true,suggestedMax:Math.ceil(p10*1.25),
                   ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
-  const drop=((p10-p12)/p10*100).toFixed(1);
+  const dropN=(p10-p12)/p10*100, drop=Math.abs(dropN).toFixed(1);
+  const grew = dropN < 0;                       // המסלול גדל במקום להצטמצם
+  const overNat = p12 >= NATIONAL;              // הטענה נגזרת מהמספר, לא צרובה
   document.getElementById('insightJourney').innerHTML = `
     <div class="insight-t">תקופת הבחירה האמיתית — י׳ עד יב׳</div>
     <div class="insight-b">
       בשכבה י׳ ${t10} תלמידים במסלול הטק (<strong>${p10.toFixed(1)}%</strong> מהשכבה).
-      עד יב׳ זה יורד ל-${t12} (<strong>${p12.toFixed(1)}%</strong>) — נשירה יחסית של <strong>${drop}%</strong>.
-      שכבת יב׳ של חולון (${p12.toFixed(1)}%) עדיין <strong>מעל</strong> הממוצע הארצי (${NATIONAL}%), אבל הדלף בדרך הוא צוואר הבקבוק המרכזי.
+      עד יב׳ זה ${grew?'עולה':'יורד'} ל-${t12} (<strong>${p12.toFixed(1)}%</strong>) — ${grew?'גידול':'נשירה'} יחסי${grew?'':'ת'} של <strong>${drop}%</strong>.
+      שכבת יב׳ של חולון (${p12.toFixed(1)}%) <strong>${overNat?'מעל':'מתחת ל'}</strong>ממוצע הארצי (${NATIONAL}%)${grew?'.':', אבל הדלף בדרך הוא צוואר הבקבוק המרכזי.'}
     </div>`;
 }
 
@@ -1898,176 +1906,319 @@ const JUNIOR = new Proxy({}, {
   has:(_,k)=> !!juniorRow(k)
 });
 
-function renderInsights(){
-  const cityAvg = cityOverallPct().toFixed(1);
-  const p10=cityPct(0), p12=cityPct(2);
-  const drop1012=((p10-p12)/p10*100).toFixed(0);
+// ════════════════════════════════════════════════════════════════
+// מנוע התובנות העירוניות
+// ────────────────────────────────────────────────────────────────
+// כל גלאי בודק את הנתונים ומחזיר ממצא — או null אם אינו רלוונטי לתקופה.
+// cost() מחזיר את אותה יחידה לכולם: **כמה תלמידים הבעיה עולה לעיר**.
+// לפי זה נבחרים ומדורגים חמשת הכרטיסים. אין כאן טענה שלא נמדדה.
+// ════════════════════════════════════════════════════════════════
 
-  // נשירת מתמטיקה ט→יב (השער הארצי)
+// ההקשר שכל הגלאים חולקים. הכל מהעוזרים הקיימים — אין נוסחה חדשה.
+function insightCtx(){
+  const pct   = [0,1,2].map(gi=> cityPct(gi));
+  const tech  = [0,1,2].map(gi=> cityTotal(gi));
+  const studs = [0,1,2].map(gi=> cityStudents(gi));
+  const ma5   = citySubjectByGrade(3);
+  const cs    = citySubjectByGrade(1);
+  const ph    = citySubjectByGrade(2);
+
+  // צומת ט׳→י׳ ושער המתמטיקה — נגזרים מ-JUNIOR (חט"ב) מול י׳/יב׳
+  const seam = SCHOOLS.filter(s=> hasGrade(s,0) && JUNIOR[s.name]).map(s=>{
+    const t9 = JUNIOR[s.name][5], t10 = s.grades['י'][4];
+    return {name:s.name, t9, t10, drop: t9? (t9-t10)/t9*100 : 0};
+  }).sort((a,b)=> b.drop-a.drop);
   const math9to12 = SCHOOLS.filter(s=> hasGrade(s,2) && JUNIOR[s.name]).map(s=>{
     const t9 = JUNIOR[s.name][2], t12 = s.grades['יב'][3];
     return {name:s.name, t9, t12, drop: t9? (t9-t12)/t9*100 : 0};
   }).sort((a,b)=> b.drop-a.drop);
 
-  // צומת ט→י (לומדי טק)
-  const seam = SCHOOLS.filter(s=> hasGrade(s,0) && JUNIOR[s.name]).map(s=>{
-    const t9 = JUNIOR[s.name][5], t10 = s.grades['י'][4];
-    return {name:s.name, t9, t10, drop: t9? (t9-t10)/t9*100 : 0};
-  }).sort((a,b)=> b.drop-a.drop);
+  const feeders = SCHOOLS.filter(s=> !hasGrade(s,0) && s.grades['ט']);
+  const avg     = cityOverallPct();
+  const drops   = FULL.map(s=> ({s, d:schoolDropPct(s)})).filter(x=> x.d!=null)
+                      .sort((a,b)=> a.d-b.d);
 
-  const list = (arr, cls)=> arr.map(x=>
-    `<div><span class="nm ${cls}">${x.name}</span> · ט=<span class="num">${x.t9}</span> → ${x.t12!==undefined?'יב':'י'}=<span class="num">${x.t12!==undefined?x.t12:x.t10}</span> · <span class="num">▼ ${x.drop.toFixed(0)}%</span></div>`).join('');
+  // עתיד טק בשכבה ט׳ (שדה 10) — מקור הרמזור §3.6
+  let ft9=0, tot9=0;
+  SCHOOLS.forEach(s=>{ const r=s.grades['ט']; if(r){ ft9+=r[10]; tot9+=r[0]; } });
 
-  const html = `
-  <div class="ins-hero">
-    <h2>איפה המנופים? שלוש שאלות אחת מעל השנייה.</h2>
-    <p>חולון מסיים <strong>${p12.toFixed(1)}%</strong> בגרוטק ב-יב׳, מעל הארצי (${NATIONAL}%). אבל מתחיל את י׳ עם <strong>${p10.toFixed(1)}%</strong> פוטנציאל — ומאבד <strong>${drop1012}%</strong> מהם בדרך לבגרות. הדלף הוא הסיפור, לא המספר הסופי.</p>
-  </div>
+  return { pct, tech, studs, ma5, cs, ph, seam, math9to12, feeders, avg, drops,
+           ft9, tot9,
+           seamIn:  seam.reduce((a,x)=> a+x.t9, 0),
+           seamOut: seam.reduce((a,x)=> a+x.t10,0),
+           girlsPct: cityGirlsPctOfTech(),
+           girlsN:  SCHOOLS.reduce((a,s)=> a+GRADES.reduce((b,_,i)=> b+totalGirlsTech(s,i),0),0) };
+}
 
-  <div class="ins-card urgent">
-    <div class="ins-head"><span class="ins-num">1</span>
-      <div class="ins-title">השער החסום: 5 יח"ל מתמטיקה בין ט׳ ל-יב׳</div>
-      <span class="ins-tag">צוואר בקבוק ארצי</span></div>
-    <div class="ins-body">
-      בכל הארץ, בגרוטק מותנית ב-<strong>5 יח"ל מתמטיקה + פיזיקה או מדמ"ח 5 יח"ל</strong>. אם המתמטיקה נופלת ל-4 יח"ל, התלמיד יוצא מהמסלול גם אם הוא חזק במדעי המחשב. בחולון 880 תלמידים נכנסים ל-י׳ ב-5 יח"ל מתמ׳, רק <strong>523</strong> מסיימים. זה הפילטר היחיד.
-    </div>
+const num = v => Math.round(v).toLocaleString('he-IL');
+// "בית ספר אחד" / "3 בתי ספר" — כדי שלא ייצא "1 בתי ספר"
+const nSchools = n => n===1? 'בית ספר אחד' : n+' בתי ספר';
+const insList = (arr, cls)=> arr.map(x=>
+  `<div><span class="nm ${cls}">${x.name}</span> · ט=<span class="num">${x.t9}</span> → ${x.t12!==undefined?'יב':'י'}=<span class="num">${x.t12!==undefined?x.t12:x.t10}</span> · <span class="num">▼ ${x.drop.toFixed(0)}%</span></div>`).join('');
+const insCols = (a,b)=> `
     <div class="ins-grid">
+      <div class="ins-col bad"><div class="ins-col-h">${a.h}</div><div class="ins-list">${a.b}</div></div>
+      <div class="ins-col good"><div class="ins-col-h">${b.h}</div><div class="ins-list">${b.b}</div></div>
+    </div>`;
+
+const CITY_DETECTORS = [
+
+  // 1. המעבר הדולף ביותר — נמדד, לא מונח מראש
+  { id:'worstTransition', kind:'urgent', tag:'דלף בין שלבים',
+    test(c){
+      const legs = [];
+      if(c.seamIn) legs.push({from:'ט׳', to:'י׳', a:c.seamIn, b:c.seamOut});
+      if(c.tech[0]) legs.push({from:'י׳', to:'יא׳', a:c.tech[0], b:c.tech[1]});
+      if(c.tech[1]) legs.push({from:'יא׳', to:'יב׳', a:c.tech[1], b:c.tech[2]});
+      const withLoss = legs.map(l=> Object.assign({lost:l.a-l.b, pct:(l.a-l.b)/l.a*100}, l))
+                           .filter(l=> l.lost>0);
+      if(!withLoss.length) return null;
+      const worst = withLoss.sort((a,b)=> b.lost-a.lost)[0];
+      return { worst, all:withLoss, isSeam: worst.from==='ט׳' };
+    },
+    cost: ev=> ev.worst.lost,
+    title: ev=> `המעבר שדולף הכי הרבה: ${ev.worst.from} → ${ev.worst.to}`,
+    body: ev=> `מכל המעברים בעיר, כאן נאבדים הכי הרבה תלמידי טק במספרים מוחלטים: `+
+      `<strong>${ev.worst.a}</strong> ב-${ev.worst.from} יורדים ל-<strong>${ev.worst.b}</strong> ב-${ev.worst.to} — `+
+      `<strong>${num(ev.worst.lost)} תלמידים</strong> (${ev.worst.pct.toFixed(0)}%) במעבר אחד. `+
+      (ev.all.length>1 ? `לשם השוואה, שאר המעברים: ${ev.all.filter(l=>l!==ev.worst).map(l=> `${l.from}→${l.to} ${num(l.lost)}`).join(' · ')}.` : '')+
+      (ev.isSeam? ' זהו גם מעבר מוסדי — חלק מהתלמידים מחליפים בית ספר בנקודה הזו.' : ''),
+    cols: ev=> ev.isSeam && ev.all.length ? insCols(
+      {h:'⚠ דלף קיצוני בצומת ט→י', b:insList(CTX.seam.slice(0,4),'bad')},
+      {h:'✓ שימור מצוין בצומת',    b:insList(CTX.seam.slice(-2),'good')}) : '',
+    action: ev=> ev.isSeam
+      ? 'ראיון אישי לכל תלמיד עמ"ט בסוף ט׳ — לא טופס, ראיון. ליווי מובנה בחודשי ההתאמה הראשונים בי׳.'
+      : `מיפוי פרטני של התלמידים שעזבו את המסלול בין ${ev.worst.from} ל-${ev.worst.to}, ובירור מה הניע אותם. זו הנקודה היקרה ביותר בעיר.` },
+
+  // 2. שער המתמטיקה — יורה רק כשהמתמטיקה נושרת מהר יותר מהטק עצמו
+  { id:'mathGate', kind:'urgent', tag:'צוואר בקבוק ארצי',
+    test(c){
+      if(!c.ma5[0] || !c.tech[0]) return null;
+      const maDrop  = (c.ma5[0]-c.ma5[2])/c.ma5[0]*100;
+      const techDrop= (c.tech[0]-c.tech[2])/c.tech[0]*100;
+      if(maDrop <= techDrop) return null;         // המתמטיקה אינה האילוץ הכובל
+      return { maDrop, techDrop, lost:c.ma5[0]-c.ma5[2], ma5:c.ma5, gap:maDrop-techDrop };
+    },
+    cost: ev=> ev.lost,
+    title: ()=> 'השער החסום: 5 יח"ל מתמטיקה בין י׳ ל-יב׳',
+    body: ev=> `בגרוטק מותנית ב-<strong>5 יח"ל מתמטיקה + פיזיקה או מדמ"ח</strong>. תלמיד שיורד ל-4 יח"ל יוצא מהמסלול גם אם הוא חזק במדעי המחשב. `+
+      `בחולון <strong>${ev.ma5[0]}</strong> תלמידים נכנסים ל-י׳ ב-5 יח"ל מתמ׳, רק <strong>${ev.ma5[2]}</strong> מסיימים — נשירה של <strong>${ev.maDrop.toFixed(0)}%</strong>. `+
+      `זה <strong>${ev.gap.toFixed(0)} נקודות מהר יותר</strong> מקצב הנשירה של הטק עצמו (${ev.techDrop.toFixed(0)}%), כלומר המתמטיקה היא הפילטר הכובל — לא בחירת המקצוע.`,
+    cols: ()=> CTX.math9to12.length? insCols(
+      {h:'⚠ דלף קיצוני (5 יח"ל מתמ׳, ט→יב)', b:insList(CTX.math9to12.slice(0,4),'bad')},
+      {h:'✓ מודלים לחיקוי',                   b:insList(CTX.math9to12.slice(-2),'good')}) : '',
+    action: ()=> 'מערך תגבור מתמטיקה עירוני בין-בית-ספרי, חצי-שנתי, בחינם. מיפוי תלמידים בסיכון בסוף יא׳ — לפני שהם "מתפטרים" ל-4 יח"ל.' },
+
+  // 3. מתחת לארצי ביב׳ — יורה רק אם זה באמת המצב
+  { id:'belowNational', kind:'urgent', tag:'מתחת לארצי',
+    test(c){
+      if(c.pct[2] >= NATIONAL) return null;
+      const gapPts = NATIONAL - c.pct[2];
+      return { gapPts, need: gapPts/100*c.studs[2], p12:c.pct[2], n12:c.studs[2] };
+    },
+    cost: ev=> ev.need,
+    title: ev=> `שכבת יב׳ מתחת לממוצע הארצי — פער של ${ev.gapPts.toFixed(1)} נקודות`,
+    body: ev=> `<strong>${ev.p12.toFixed(1)}%</strong> מבוגרי יב׳ בעיר זכאים לבגרוטק, מול <strong>${NATIONAL}%</strong> ארצית. `+
+      `כדי להגיע לממוצע הארצי בלבד חסרים <strong>${num(ev.need)} בוגרים</strong> נוספים מתוך ${num(ev.n12)} תלמידי השכבה. `+
+      `זו לא בעיה של בית ספר בודד — זו התוצאה המצטברת של כל הדלף שלאורך המסלול.`,
+    action: ()=> 'יעד עירוני מספרי לשכבת יב׳ הקרובה, מתורגם ליעד לכל בית ספר, עם דיווח רבעוני לוועדת ההיגוי.' },
+
+  // 4. השפעה מוחלטת — איפה סגירת הפער שווה הכי הרבה תלמידים
+  { id:'absoluteImpact', kind:'urgent', tag:'heat list',
+    test(c){
+      const hot = FULL.map(s=> ({s, gap:(c.avg-schoolTechPct(s))/100*schoolStudentTotal(s)}))
+                      .filter(x=> x.gap>0).sort((a,b)=> b.gap-a.gap).slice(0,4);
+      return hot.length? {hot, avg:c.avg} : null;
+    },
+    cost: ev=> ev.hot.reduce((a,x)=> a+x.gap, 0),
+    title: ev=> `סדר עדיפויות: ${nSchools(ev.hot.length)} שבהם סגירת הפער שווה הכי הרבה`,
+    body: ev=> `לא בית הספר עם האחוז הנמוך ביותר — בית הספר שבו האחוז הנמוך <strong>כפול מספר התלמידים</strong> נותן את המספר הגדול ביותר. `+
+      `סגירת הפער מול הממוצע העירוני (${ev.avg.toFixed(1)}%) בארבעת אלה שווה יחד <strong>${num(ev.hot.reduce((a,x)=>a+x.gap,0))} תלמידי טק</strong>:`,
+    cols: ev=> `
+    <div class="ins-grid" style="grid-template-columns:1fr;">${ev.hot.map((x,i)=>{
+      const s=x.s, dr=schoolDropPct(s), g12=schoolGradePct(s,2);
+      return `
       <div class="ins-col bad">
-        <div class="ins-col-h">⚠ דלף קיצוני (5 יח"ל מתמ׳, ט→יב)</div>
-        <div class="ins-list">${list(math9to12.slice(0,4),'bad')}</div>
-      </div>
+        <div class="ins-col-h">${['🥇','🥈','🥉','🏅'][i]} ${s.name} — פער של ${num(x.gap)} תלמידי טק</div>
+        <div class="ins-list" style="font-size:13px;">
+          ${num(schoolStudentTotal(s))} תלמידים ב-י׳–יב׳, <span class="num">${schoolTechPct(s).toFixed(1)}%</span> טק${dr!=null?`. נשירה <span class="num">${dr.toFixed(0)}%</span>`:''}.
+          מסיימים <span class="num">${g12.toFixed(1)}%</span> ב-יב׳ — <span class="nm ${g12<NATIONAL?'bad':'good'}">${g12<NATIONAL?'מתחת לארצי':'מעל הארצי'}</span>.
+        </div>
+      </div>`;}).join('')}
+    </div>`,
+    action: ev=> `יעד שנתי ל${ev.hot.map(x=>x.s.name).join(', ')} — עם דיווח רבעוני. שיפור של נקודת אחוז אחת שם שווה יותר מחמש נקודות בבית ספר קטן.` },
+
+  // 5. חט"ב מזינות — יורה רק אם יש כאלה בגיליון
+  { id:'feederDisconnect', kind:'structural', tag:'חוסר חיבור מוסדי',
+    test(c){
+      if(!c.feeders.length) return null;
+      const ma = c.feeders.reduce((a,s)=> a+s.grades['ט'][3], 0);
+      const ht = c.feeders.reduce((a,s)=> a+s.grades['ט'][4], 0);
+      return ht||ma ? {feeders:c.feeders, ma, ht, names:c.feeders.map(s=>s.name).join('/')} : null;
+    },
+    cost: ev=> ev.ht,
+    title: ev=> `בתי הספר המזינים: ${ev.names} — ${ev.ma} תלמידי 5 יח"ל מתמ׳ ביציאה`,
+    body: ev=> `${ev.feeders.map(s=> `<strong>${s.name}</strong> מסיים ט׳ עם <strong>${s.grades['ט'][3]}</strong> ב-5 יח"ל מתמ׳ ו-<strong>${s.grades['ט'][4]}</strong> בעמ"ט`).join('. ')}. `+
+      `סך הכל <strong>${ev.ma} תלמידי מתמטיקה</strong> ו-<strong>${ev.ht} בעמ"ט</strong> שעוברים בית ספר לחט"ע — ואין מעקב מסודר לאן הם נוחתים ואיך הם מתחילים את י׳.`,
+    action: ev=> `דוח מיומנויות אישי שעובר עם התלמיד מ${ev.names} לבית הספר המקבל. ימי חשיפה לכל חט"ע במהלך ט׳. אחריות עירונית על המעבר.` },
+
+  // 6. הטיה בין פיזיקה למדמ"ח — יורה רק מעבר לסף
+  { id:'subjectImbalance', kind:'structural', tag:'תמהיל מקצועות',
+    test(c){
+      const cs=c.cs[2], ph=c.ph[2];
+      if(!cs && !ph) return null;
+      const big = cs>=ph? 'מדעי המחשב':'פיזיקה', small = cs>=ph? 'פיזיקה':'מדעי המחשב';
+      const hi=Math.max(cs,ph), lo=Math.min(cs,ph);
+      if(!hi || lo/hi > 0.5) return null;           // תמהיל סביר — אין מה לדווח
+      return { big, small, hi, lo, ratio: hi/Math.max(lo,1) };
+    },
+    cost: ev=> ev.hi - ev.lo,
+    title: ev=> `תמהיל מוטה: ${ev.big} גדול פי ${ev.ratio.toFixed(1)} מ${ev.small} ב-יב׳`,
+    body: ev=> `בשכבת יב׳ העירונית: <strong>${ev.hi}</strong> לומדי ${ev.big} מול <strong>${ev.lo}</strong> ב${ev.small}. `+
+      `שני המקצועות פותחים את אותו מסלול, אבל בעיר יש בפועל רק מסלול אחד. `+
+      `זה מצמצם את מרחב הבחירה של התלמיד ותלוי לרוב בזמינות מורים ובמסורת בית-ספרית — לא בביקוש.`,
+    action: ev=> `לבדוק בכמה בתי ספר ${ev.small} בכלל נפתח כמגמה, ומה חוסם — מורים, מעבדה, או מספר נרשמים מינימלי. פתיחת מסלול שני היא מנוף ישיר.` },
+
+  // 7. ייצוג בנות — יורה רק אם מתחת לארצי
+  { id:'genderGap', kind:'urgent', tag:'פער מגדרי',
+    test(c){
+      if(!c.girlsN || c.girlsPct >= NATIONAL_GIRLS) return null;
+      const gapPts = NATIONAL_GIRLS - c.girlsPct;
+      const techAll = [0,1,2].reduce((a,gi)=> a+c.tech[gi], 0);
+      return { gapPts, girlsPct:c.girlsPct, need: gapPts/100*techAll, girlsN:c.girlsN };
+    },
+    cost: ev=> ev.need,
+    title: ev=> `ייצוג בנות מתחת לארצי — פער של ${ev.gapPts.toFixed(1)} נקודות`,
+    body: ev=> `<strong>${ev.girlsPct.toFixed(1)}%</strong> מלומדי הטק בעיר (י׳–יב׳) הן בנות — <strong>${ev.girlsN}</strong> תלמידות — מול <strong>${NATIONAL_GIRLS}%</strong> ארצית. `+
+      `סגירת הפער הזה לבדה שווה <strong>${num(ev.need)} תלמידות</strong> נוספות במסלול, בלי לגייס אף תלמיד חדש. `+
+      `זהו מאגר הפוטנציאל הגדול והזול ביותר שיש לעיר.`,
+    action: ()=> 'לבחון את נקודת ההכוונה לי׳ בנפרד לבנים ולבנות. בתי הספר עם הייצוג הגבוה בעיר הם הבנצ׳מרק — לזמן אותם לשיתוף התהליך.' },
+
+  // 8. משפך עתיד טק — ט׳ מול י׳ (§3.6)
+  { id:'futureTechFunnel', kind:'structural', tag:'עתיד טק',
+    test(c){
+      if(!c.ft9 || !c.tot9) return null;
+      const p9 = c.ft9/c.tot9*100;
+      const converted = c.tech[0];
+      if(c.ft9 <= converted) return null;          // המשפך אינו מאבד
+      return { ft9:c.ft9, p9, converted, lost:c.ft9-converted };
+    },
+    cost: ev=> ev.lost,
+    title: ev=> `עתיד טק: ${ev.ft9} תלמידים בט׳, ${ev.converted} במסלול בי׳`,
+    body: ev=> `קבוצת החיזוק "עתיד טק" מגיעה ל-<strong>${ev.ft9}</strong> תלמידים בשכבה ט׳ (<strong>${ev.p9.toFixed(1)}%</strong> מהשכבה). `+
+      `בשכבה י׳ יש <strong>${ev.converted}</strong> תלמידים במסלול הטק — <strong>${num(ev.lost)}</strong> פחות. `+
+      `ההשקעה בחיזוק כבר נעשתה; השאלה היא למה היא לא מתורגמת לרישום בפועל.`,
+    action: ()=> 'לעקוב אחרי בוגרי קבוצות עתיד טק שמית לתוך י׳, ולבדוק מי מהם לא נרשם למסלול — ולמה. זו קבוצה שכבר סומנה כבעלת פוטנציאל.' },
+
+  // 9. בתי ספר חלקיים מחוץ לדירוג — יורה רק כשמשקלם מהותי
+  { id:'partialBlindSpot', kind:'structural', tag:'נקודה עיוורת',
+    test(c){
+      const partials = SCHOOLS.filter(s=> s.partial && hasGrade(s,0));
+      if(!partials.length) return null;
+      const techP = partials.reduce((a,s)=> a+schoolTechTotal(s), 0);
+      const techAll = [0,1,2].reduce((a,gi)=> a+c.tech[gi], 0);
+      if(!techAll || techP/techAll < 0.05) return null;     // זניח — לא מדווחים
+      return { partials, techP, share: techP/techAll*100 };
+    },
+    cost: ev=> ev.techP,
+    title: ev=> `${nSchools(ev.partials.length)} חלקיים מחזיקים ${ev.share.toFixed(0)}% מלומדי הטק — ומחוץ לדירוג`,
+    body: ev=> `${ev.partials.map(s=> `<strong>${s.name}</strong> (${s.note||'חלקי'})`).join(', ')} — יחד <strong>${ev.techP}</strong> לומדי טק. `+
+      `הם נכללים במדד העירוני בכל שכבה שיש להם, אבל לא בדירוג בין בתי הספר ולא בחישוב הנשירה, כי אי אפשר להשוות מדד מצטבר י׳–יב׳ בלי שלוש השכבות. `+
+      `כלומר: חלק מהתמונה העירונית אינו מנוהל דרך ההשוואה הרגילה.`,
+    action: ()=> 'להשלים את הנתונים החסרים בגיליון עבור בתי הספר האלה, או להגדיר להם מסלול מעקב נפרד. היום הם בשטח האפור.' },
+
+  // 10. רצפה — תמיד יש מה ללמוד מהמובילים
+  { id:'modelSchools', kind:'model', tag:'best practice',
+    test(c){
+      const models=[];
+      const topAbs = [...FULL].sort((a,b)=> schoolTechTotal(b)-schoolTechTotal(a))[0];
+      const bestSeam = c.seam[c.seam.length-1];
+      const lowDrop = c.drops[0];
+      if(topAbs) models.push({ h:`${topAbs.name} — הנפח הגדול בעיר`,
+        b:`<span class="num">${schoolTechTotal(topAbs)}</span> לומדי טק ב-י׳–יב׳ — הכי הרבה בעיר, ב-<span class="num">${schoolTechPct(topAbs).toFixed(1)}%</span> מהשכבות. <span class="nm good">מודל לבית ספר גדול</span>.` });
+      if(bestSeam) models.push({ h:`${bestSeam.name} — שולט בצומת ט׳→י׳`,
+        b:`שימור של <span class="num">${Math.min(100,100-bestSeam.drop).toFixed(0)}%</span> בצומת (${bestSeam.t9}→${bestSeam.t10}) — הגבוה בעיר. המעבר המנהלי שלהם הוא בנצ׳מרק.` });
+      if(lowDrop) models.push({ h:`${lowDrop.s.name} — הנשירה הנמוכה ביותר`,
+        b:`<span class="num">${lowDrop.d.toFixed(0)}%</span> נשירה י׳→יב׳ — הנמוכה בעיר. ${totalStudents(lowDrop.s,2)} תלמידים ב-יב׳. מנגנון שימור הכיתה לאורך שלוש שנים שווה ללמידה.` });
+      return models.length? {models} : null;
+    },
+    cost: ()=> 0.5,                                 // רצפה — נכנס רק אם יש מקום
+    title: ()=> 'ללמוד מהמובילים — דפוסים שעובדים',
+    body: ()=> 'לא לחקות בית ספר, לחקות תהליך. שלושת אלה מובילים כל אחד בממד אחר:',
+    cols: ev=> `
+    <div class="ins-grid" style="grid-template-columns:1fr;">${ev.models.map(m=>`
       <div class="ins-col good">
-        <div class="ins-col-h">✓ מודלים לחיקוי</div>
-        <div class="ins-list">${list(math9to12.slice(-2),'good')}</div>
-      </div>
-    </div>
+        <div class="ins-col-h">${m.h}</div>
+        <div class="ins-list" style="font-size:13px;">${m.b}</div>
+      </div>`).join('')}
+    </div>`,
+    action: ev=> `פורום מנהלים רבעוני: ${ev.models.map(m=> m.h.split(' — ')[0]).join(', ')} מארחים את המקרים החמים בסבב היכרות עם תהליכים. מנטורינג אופקי, לא מלמעלה.` },
+
+  // 11. רצפה שנייה — המצב מול הארצי, כשאין מספיק ממצאים אחרים
+  { id:'standing', kind:'model', tag:'תמונת מצב',
+    test(c){
+      if(c.pct[2] < NATIONAL) return null;          // אז belowNational מטפל
+      return { p12:c.pct[2], over:c.pct[2]-NATIONAL, t12:c.tech[2], n12:c.studs[2] };
+    },
+    cost: ()=> 0.4,
+    title: ev=> `חולון מעל הארצי ב-יב׳ — ${ev.over.toFixed(1)} נקודות`,
+    body: ev=> `<strong>${ev.t12}</strong> מתוך ${num(ev.n12)} בוגרי יב׳ זכאים לבגרוטק — <strong>${ev.p12.toFixed(1)}%</strong>, מול ${NATIONAL}% ארצית. `+
+      `זו נקודת פתיחה טובה, וכדאי להציג אותה ככזו. הכרטיסים שמעל מראים היכן הפער בין המצב הזה לבין מה שהעיר יכולה להגיע אליו.`,
+    action: ()=> 'לתעד את המצב הנוכחי כקו בסיס מוסכם מול משרד החינוך, ולגזור ממנו יעד רב-שנתי — לפני שהבסיס משתנה שוב.' },
+];
+
+let CTX = null;                                     // ההקשר הפעיל, לשימוש ה-cols
+
+function renderInsights(){
+  CTX = insightCtx();
+  const found = CITY_DETECTORS
+    .map(d=>{ const ev = d.test(CTX); return ev? {d, ev, cost:d.cost(ev)} : null; })
+    .filter(Boolean)
+    .sort((a,b)=> b.cost-a.cost)
+    .slice(0,5);
+
+  const lead = found[0];
+  const hero = lead
+    ? `<p>${lead.d.kind==='model'
+        ? `התמונה העירונית יציבה: <strong>${CTX.pct[2].toFixed(1)}%</strong> בגרוטק ב-יב׳, מול ${NATIONAL}% ארצית.`
+        : `הממצא היקר ביותר הפעם: <strong>${lead.d.title(lead.ev)}</strong> — שווה <strong>${num(lead.cost)} תלמידים</strong>. `}
+       חולון מסיימת <strong>${CTX.pct[2].toFixed(1)}%</strong> ב-יב׳ ומתחילה את י׳ עם <strong>${CTX.pct[0].toFixed(1)}%</strong>. הכרטיסים למטה מסודרים לפי כמה כל בעיה עולה לעיר בתלמידים.</p>`
+    : '<p>אין מספיק נתונים בתקופה זו כדי להפיק תובנות.</p>';
+
+  const cards = found.map((f,i)=>{
+    const {d, ev} = f;
+    return `
+  <div class="ins-card ${d.kind}">
+    <div class="ins-head"><span class="ins-num">${i+1}</span>
+      <div class="ins-title">${d.title(ev)}</div>
+      <span class="ins-tag">${d.tag}</span></div>
+    <div class="ins-body">${d.body(ev)}</div>
+    ${d.cols? d.cols(ev) : ''}
     <div class="ins-act">
-      <div class="ins-act-h">פעולה עירונית — השנה</div>
-      <div class="ins-act-b">מערך תגבור מתמטיקה עירוני בין-בית-ספרי, חצי-שנתי, בחינם. מיפוי תלמידים בסיכון בסוף יא׳ — לפני שהם "מתפטרים" ל-4 יח"ל. אורט מצליח לשמור 85% — לזמן את מנהלי המתמ׳ שלהם לפורום הוראת מקצוע.</div>
+      <div class="ins-act-h">פעולה עירונית</div>
+      <div class="ins-act-b">${d.action(ev)}</div>
     </div>
-  </div>
+  </div>`;
+  }).join('');
 
-  <div class="ins-card urgent">
-    <div class="ins-head"><span class="ins-num">2</span>
-      <div class="ins-title">צומת ט׳ → י׳: כאן רוב המסלול הולך לאיבוד</div>
-      <span class="ins-tag">דלף בין שלבים</span></div>
-    <div class="ins-body">
-      בסוף ט׳ <strong>917 תלמידים</strong> במסלולי הטק בבתי הספר עם המשך לחט"ע (ועוד <strong>103</strong> תלמידי עמ"ט באלון/ארן שעוברים בית ספר). בתחילת י׳ נשארים <strong>515</strong>. דלף של <strong>44%</strong> במעבר אחד — מעבר בית ספר, בחירה במסלול אחר, או אובדן ביטחון. זה לא קורה במחנך אחד, זה בכל אחד מהמעברים.
-    </div>
-    <div class="ins-grid">
-      <div class="ins-col bad">
-        <div class="ins-col-h">⚠ דלף קיצוני (ht_total, ט→י)</div>
-        <div class="ins-list">${list(seam.slice(0,4),'bad')}</div>
-      </div>
-      <div class="ins-col good">
-        <div class="ins-col-h">✓ שימור מצוין בצומת</div>
-        <div class="ins-list">${list(seam.slice(-2),'good')}</div>
-      </div>
-    </div>
-    <div class="ins-act">
-      <div class="ins-act-h">פעולה עירונית — השנה</div>
-      <div class="ins-act-b">ראיון אישי לכל תלמיד עמ"ט בסוף ט׳ — לא טופס, ראיון. ליווי מובנה בחודשי ההתאמה הראשונים בי׳. קציר שומרים 92% — לבדוק מה הם עושים בקיץ של אחרי ט׳.</div>
-    </div>
-  </div>
-
-  <div class="ins-card structural">
-    <div class="ins-head"><span class="ins-num">3</span>
-      <div class="ins-title">בתי הספר המזינים: אלון וארן — 219 תלמידי 5 יח"ל מתמ׳ ביציאה</div>
-      <span class="ins-tag">חוסר חיבור מוסדי</span></div>
-    <div class="ins-body">
-      אלון (ז-ט בלבד) מסיים ט׳ עם <strong>100</strong> תלמידי 5 יח"ל מתמ׳ ו-<strong>57</strong> בעמ"ט. ארן מסיים עם <strong>119</strong> ב-5 יח"ל מתמ׳ ו-<strong>46</strong> בעמ"ט. סך הכל <strong>219 תלמידי מתמטיקה</strong> ו-<strong>103 בעמ"ט</strong> שעוברים בית ספר לחט"ע — ואין מעקב מסודר לאן הם נוחתים ואיך הם מתחילים את י׳.
-    </div>
-    <div class="ins-act">
-      <div class="ins-act-h">פעולה עירונית — מבנית</div>
-      <div class="ins-act-b">דוח מיומנויות אישי שעובר עם התלמיד מאלון/ארן לבית הספר המקבל. ימי חשיפה לכל חט"ע במהלך ט׳. אחריות עירונית על המעבר — לא של בית הספר המקבל בלבד.</div>
-    </div>
-  </div>
-
-  <div class="ins-card urgent">
-    <div class="ins-head"><span class="ins-num">4</span>
-      <div class="ins-title">ארבע נקודות חמות — סדר עדיפויות להתערבות</div>
-      <span class="ins-tag">heat list</span></div>
-    <div class="ins-body">
-      ארבעת המקרים שצריכים יעד שנתי מוגדר, עם ועדת היגוי עירונית ודיווח רבעוני:
-    </div>
-    <div class="ins-grid" style="grid-template-columns:1fr;">
-      <div class="ins-col bad">
-        <div class="ins-col-h">🥇 קרית שרת — המנוף הגדול ביותר במספרים מוחלטים</div>
-        <div class="ins-list" style="font-size:13px;">
-          1,044 תלמידים ב-י-יב, רק <span class="num">13.7%</span> טק. נשירה <span class="num">58%</span>. מסיימים <span class="num">8.5%</span> ב-יב׳ — <span class="nm bad">מתחת לארצי</span>. שכבת יב׳ של 351 תלמידים שמייצרת רק 30 זכאי בגרוטק. שיפור של 3 נקודות אחוז שם שווה כל ההצלחה של הראל ביחד.
-        </div>
-      </div>
-      <div class="ins-col bad">
-        <div class="ins-col-h">🥈 הייטק היי — בעיית זהות</div>
-        <div class="ins-list" style="font-size:13px;">
-          בית ספר שנקרא "הייטק" מסיים <span class="num">6 זכאי בגרוטק</span> ב-יב׳. 9 תלמידים בלבד ב-5 יח"ל מתמ׳ ביב׳, אחרי שהיו 56 ב-ט׳ (<span class="num">▼ 84%</span>). זה לא דשבורד — זו תביעה לבחון מחדש את הזהות הפדגוגית של בית הספר.
-        </div>
-      </div>
-      <div class="ins-col bad">
-        <div class="ins-col-h">🥉 עתידים — נשירה גבוהה מהממוצע</div>
-        <div class="ins-list" style="font-size:13px;">
-          מתחיל ב-<span class="num">25.3%</span> בי׳, מסיים ב-<span class="num">12.1%</span> ב-יב׳ — נשירה <span class="num">52%</span>. הצוואר אצלם הוא יא׳→יב׳ (פילוח רחב יותר בדיוויזיה הבסיסית). לבדוק אם זו תופעה של מקצועות "כבדים" יותר ביב׳ (פרויקטים).
-        </div>
-      </div>
-      <div class="ins-col bad">
-        <div class="ins-col-h">🏅 הרצוג — מתחת לעירוני ולארצי בו-זמנית</div>
-        <div class="ins-list" style="font-size:13px;">
-          <span class="num">12.6%</span> טק כללי. 5 יח"ל מתמ׳ ב-ט׳ <span class="num">64</span>, ב-יב׳ <span class="num">23</span> בלבד (<span class="num">▼ 64%</span>). פיזיקה מתחילה רק בי׳ (אין נתוני ז-ט), משהו לא מתחבר.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="ins-card model">
-    <div class="ins-head"><span class="ins-num">5</span>
-      <div class="ins-title">ללמוד מהמובילים — שלושה דפוסים שעובדים</div>
-      <span class="ins-tag">best practice</span></div>
-    <div class="ins-body">
-      לא לחקות בית ספר, לחקות תהליך:
-    </div>
-    <div class="ins-grid" style="grid-template-columns:1fr;">
-      <div class="ins-col good">
-        <div class="ins-col-h">אורט — סדירות לאורך כל המסלול</div>
-        <div class="ins-list" style="font-size:13px;">
-          <span class="num">144</span> תלמידי 5 יח"ל מתמ׳ ב-ז׳, <span class="num">144</span> ב-ט׳, <span class="num">123</span> ב-יב׳. ההתמדה הזו נדירה. <span class="num">36.9%</span> טק, מספרי טק מוחלטים <span class="num">295</span> — הכי הרבה בעיר. <span class="nm good">מודל לבית ספר גדול</span>.
-        </div>
-      </div>
-      <div class="ins-col good">
-        <div class="ins-col-h">קציר — שולט בצומת ט→י</div>
-        <div class="ins-list" style="font-size:13px;">
-          שימור של <span class="num">92%</span> בצומת ט-י, גבוה משמעותית מכל היתר. גם הם נופלים אחר כך ב-מתמ׳ (188→64 ב-ט→יב, <span class="num">▼ 66%</span>) — לא הכל מושלם, אבל המעבר המנהלי שלהם הוא בנצ׳מרק.
-        </div>
-      </div>
-      <div class="ins-col good">
-        <div class="ins-col-h">הראל — הנשירה הנמוכה ביותר בעיר</div>
-        <div class="ins-list" style="font-size:13px;">
-          <span class="num">15%</span> נשירה י→יב — הכי נמוך בעיר. בית ספר קטן (75 ביב׳), בנים בלבד, אבל המנגנון של שימור כיתה לאורך 3 שנים שווה ללמידה. <span class="nm good">מודל לבית ספר קטן ולקבוצת ליבה</span>.
-        </div>
-      </div>
-    </div>
-    <div class="ins-act">
-      <div class="ins-act-h">פעולה עירונית — מבנית</div>
-      <div class="ins-act-b">פורום מנהלים רבעוני: אורט, קציר, הראל מארחים את ארבעת המקרים החמים בסבב היכרות עם תהליכים. מנטורינג אופקי, לא מלמעלה.</div>
-    </div>
-  </div>
-
-  <div class="ins-card">
+  const plan = found.length? `
+  <div class="ins-card" id="insPlan">
     <div class="ins-head"><span class="ins-num">⚡</span>
-      <div class="ins-title">סיכום פעולה לשנה הקרובה</div>
+      <div class="ins-title">סיכום פעולה — לפי סדר ההשפעה</div>
       <span class="ins-tag">תכנית עבודה</span></div>
     <div class="ins-body" style="font-size:14px;line-height:2;">
-      <strong>השנה (ספטמבר 2026 – יוני 2027):</strong><br>
-      • תגבור מתמ׳ עירוני משותף, חינם, לתלמידי יא׳-יב׳ בסיכון מ-5 יח"ל<br>
-      • ראיון אישי לכל תלמיד עמ"ט בסוף ט׳ — אצל קב"ס/יועצת, לא אצל הרכז<br>
-      • דוח מיומנויות שעובר עם תלמידי אלון/ארן לבית הספר המקבל<br>
-      • יעד שנתי לקרית שרת, הייטק היי, עתידים, הרצוג — עם דיווח רבעוני<br>
-      <strong>שנה הבאה (תשפ"ח):</strong><br>
-      • פורום מנהלי המתמטיקה — אורט מארחים<br>
-      • בחינה מחדש של הזהות הפדגוגית של הייטק היי
+      ${found.map((f,i)=> `<strong>${i+1}.</strong> ${f.d.action(f.ev)}`).join('<br>')}
     </div>
+  </div>` : '';
+
+  document.getElementById('insightsBox').innerHTML = `
+  <div class="ins-hero">
+    <h2>איפה המנופים? חמשת הממצאים היקרים ביותר בתקופה זו.</h2>
+    ${hero}
   </div>
+${cards}
+${plan}
   `;
-  document.getElementById('insightsBox').innerHTML = html;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2465,7 +2616,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v13';
+const BUILD = 'v15';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
