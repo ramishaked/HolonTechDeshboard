@@ -1193,6 +1193,10 @@ body{
         </div>
         <div class="chart-box tall"><canvas id="yyDecade"></canvas></div>
         <div id="yyDecadePills"></div>
+        <div class="insight" id="yyDiverge" style="display:none;">
+          <div class="insight-t">—</div>
+          <div class="insight-b">—</div>
+        </div>
         <div class="cmp-note" id="yyDecadeNote"></div>
       </div>
 
@@ -3291,11 +3295,11 @@ function yyGrade12(key){
     const techN = cityTotal(G12);
     const students = cityDenomByName('יב'), matz = cityDenomAlt('יב');
     if(!students) return null;
-    let ma5=0, gTech=0, gMa5=0;
+    let ma5=0, ph=0, cs=0, gTech=0, gMa5=0;
     SCHOOLS.forEach(s=>{ const r = s.grades['יב']; if(!r) return;
-      ma5 += r[3]; gTech += r[7]; gMa5 += r[9]; });
+      ma5 += r[3]; ph += r[2]; cs += r[1]; gTech += r[7]; gMa5 += r[9]; });
     return {
-      techN, ma5N: ma5, students, matz,
+      techN, ma5N: ma5, phN: ph, csN: cs, students, matz,
       tech:    cityPctAlt(G12),                      // המכנה של הדו"ח — null בלי מצבת
       techAlt: cityPct(G12),                         // סכום בתי הספר, לרפרנס
       ma5:     matz ? ma5/matz*100 : null,
@@ -3511,6 +3515,52 @@ function renderYYDecade(A, B){
       ${pill('לומדי מתמטיקה 5 יב׳', last.g.ma5N.toLocaleString('he-IL'), HOLON_HIST.ma5N, GOLD)}
       ${pill('♀ בנות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
     </div>` : '';
+
+  // ── למה המתמטיקה עולה בזמן שהמדד יורד ───────────────────────────
+  // שני גורמים **נפרדים**, ושניהם נגזרים מהמספרים ולא כתובים מראש:
+  //   מונה — מי שעבר את מחסום המתמטיקה ולא המשיך לפיזיקה/מדמ״ח.
+  //   מכנה — שכבה שגדלה מורידה את האחוז גם כשמספר הזכאים לא זז.
+  // בלי ההפרדה הזו הקורא מייחס את כל הירידה לביצועים, וזה פשוט לא נכון.
+  const dvBox = document.getElementById('yyDiverge');
+  dvBox.style.display = 'none';
+  if(ours.length > 1){
+    const a = ours[0].g, b = ours[1].g;
+    const den = g=> onMatz ? (g.matz || g.students) : g.students;
+    const dTech = tOf(b) - tOf(a), dMa5 = mOf(b) - mOf(a);
+
+    // רק המקרה שהמשתמש שאל עליו: מתמטיקה עולה והמדד יורד. בכיוון ההפוך
+    // ההסבר אחר לגמרי, ואין להמציא אותו.
+    if(dMa5 > 0.3 && dTech < -0.3){
+      const n = v=> v.toLocaleString('he-IL');
+      const sg = v=> (v >= 0 ? '+' : '−') + n(Math.abs(v));
+      const addMa5 = b.ma5N - a.ma5N, addPh = b.phN - a.phN, addCs = b.csN - a.csN;
+      const gapA = a.ma5N - a.techN, gapB = b.ma5N - b.techN;
+      const dTechN = b.techN - a.techN;
+      const denB = den(b);
+      const ifSame = denB ? a.techN / denB * 100 : null;      // אילו מספר הזכאים לא היה זז
+      const byDenom = ifSame == null ? null : tOf(a) - ifSame;
+
+      let body =
+        `<strong>מתמטיקה 5 יח״ל היא תנאי הכרחי למדד — אבל לא מספיק.</strong> ` +
+        `המדד דורש גם <strong>5 יח״ל פיזיקה או מדעי המחשב</strong>. ` +
+        `בשכבת יב׳ נוספו <strong>${sg(addMa5)} תלמידי מתמטיקה 5</strong>, ` +
+        `אך בפיזיקה ${sg(addPh)} ובמדעי המחשב ${sg(addCs)} בלבד — ` +
+        `כלומר כמעט כל התוספת <strong>עצרה במתמטיקה ולא המשיכה למקצוע המדעי</strong>, ולכן אינה נספרת במדד.` +
+        (gapA > 0 && gapB > 0
+          ? ` הפער בין לומדי מתמטיקה 5 לזכאי המדד גדל מ-<strong>${n(gapA)}</strong> ל-<strong>${n(gapB)}</strong> תלמידים.` : '');
+
+      if(byDenom != null && byDenom > 0.3)
+        body += `<br><strong>וגורם שני, נפרד: השכבה עצמה גדלה</strong> — מ-${n(a.students)} ל-${n(b.students)} תלמידי יב׳. ` +
+          `מספר הזכאים ${dTechN >= 0 ? 'עלה ב-' : 'ירד ב-'}${n(Math.abs(dTechN))} בלבד (${n(a.techN)}→${n(b.techN)}), ` +
+          `אבל האחוז ירד ${Math.abs(dTech).toFixed(1)} נק׳ — מתוכן <strong>${byDenom.toFixed(1)} נק׳ הן גידול המכנה בלבד</strong>. ` +
+          `גם אילו נשמר מספר הזכאים במדויק, המדד היה יורד ל-${ifSame.toFixed(1)}%.`;
+
+      dvBox.querySelector('.insight-t').innerHTML =
+        `מתמטיקה עלתה ${dMa5.toFixed(1)} נק׳ בזמן שהמדד ירד ${Math.abs(dTech).toFixed(1)} נק׳ — למה זה לא סותר`;
+      dvBox.querySelector('.insight-b').innerHTML = body;
+      dvBox.style.display = '';
+    }
+  }
 
   const anchorY = sT[sT.length-1].y, anchorV = sT[sT.length-1].v;
   const first = ours.length ? ours[0] : null;
@@ -4273,7 +4323,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v31';
+const BUILD = 'v32';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
