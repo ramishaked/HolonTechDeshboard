@@ -18,13 +18,14 @@
   --bad:     #e84235;
   --info:    #1a73e8;
   --pink:    #e94a9c;
+  --dred:    #9e3b30;
 
   --bg:      #f5f3f8;
   --card:    #ffffff;
   --border:  #e0d8eb;
   --text:    #1f1530;
   --muted:   #6a6080;
-  --sidebar: #2a1a4d;
+  --sidebar: #16213a;   /* כחול-פחם: נייטרלי, ומשאיר לסגול ולכתום לשמש כצבעי נתונים */
 }
 
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -43,7 +44,7 @@ body{
   width:260px;
   background:var(--sidebar);
   color:#fff;
-  padding:28px 0;
+  padding:16px 0;
   position:sticky;
   top:0;
   height:100vh;
@@ -51,17 +52,28 @@ body{
   flex-direction:column;
   flex-shrink:0;
 }
-.sb-brand{padding:0 24px 28px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-logo{
-  width:48px;height:48px;border-radius:12px;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:14px;
+/* הלוגו וכפתור הכיווץ יושבים באותה שורה — שורה נפרדת לכפתור בזבזה 34px */
+.sb-brand{padding:0 14px 12px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sb-bar{display:flex;align-items:center;gap:8px;}
+.sb-toggle{
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border:0;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);transition:all .15s;
 }
-.sb-title{font-size:17px;font-weight:900;line-height:1.3;}
-.sb-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:3px;}
+.sb-toggle svg{width:16px;height:16px;}
+.sb-toggle:hover{background:rgba(255,255,255,0.14);color:#fff;}
+/* בכיוון הסגור החץ מתהפך — אותו כפתור, שתי משמעויות */
+.sidebar.collapsed .sb-toggle{margin:0 auto;}
+.sidebar.collapsed .sb-toggle svg{transform:scaleX(-1);}
+/* הלוגו כהה ולכן על לוח לבן. object-fit מונע מתיחה אם היחס ישתנה */
+.sb-logo{
+  flex:1;min-width:0;max-width:150px;height:auto;object-fit:contain;
+  background:#fff;border-radius:9px;padding:5px 7px;
+}
+.sb-title{font-size:14px;font-weight:900;line-height:1.3;margin-top:9px;
+  color:rgba(255,255,255,0.9);}
 
-.sb-nav{padding:18px 0;flex:1;overflow-y:auto;}
+.sb-nav{padding:10px 0;flex:1;overflow-y:auto;}
 .sb-section{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;
   letter-spacing:0.5px;padding:8px 24px 6px;font-weight:700;}
 .sb-item{
@@ -76,15 +88,61 @@ body{
   color:#fff;background:rgba(244,123,32,0.12);
   border-right-color:var(--accent);font-weight:700;
 }
-.sb-ico{font-size:16px;width:20px;text-align:center;}
+.sb-ico{width:20px;height:20px;flex-shrink:0;stroke:currentColor;}
 
-.sb-foot{padding:18px 24px;border-top:1px solid rgba(255,255,255,0.08);
-  font-size:11px;color:rgba(255,255,255,0.5);line-height:1.6;}
+/* ─── אקורדיאון התפריט ─── */
+.sb-head{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;
+  letter-spacing:0.5px;padding:9px 24px 7px;font-weight:700;
+  user-select:none;transition:color .15s;
+}
+.sb-head:hover{color:rgba(255,255,255,0.8);}
+.sb-group + .sb-group{margin-top:7px;}
+
+/* ─── סיידבר מכווץ ─── */
+/* רוחב בלבד: ה-main הוא flex:1 ולכן מתרחב מעצמו. הפריטים נשארים בדיוק
+   אותם פריטים — רק הטקסט יורד — כדי שהאייקון יישא את כל המשמעות. */
+.sidebar{transition:width .2s ease;}
+.sidebar.collapsed{width:64px;}
+.sidebar.collapsed .sb-brand{padding:0 8px 10px;}
+.sidebar.collapsed .sb-logo,
+.sidebar.collapsed .sb-title,
+.sidebar.collapsed .sb-head,
+.sidebar.collapsed .sb-live,
+.sidebar.collapsed .sb-item > span{display:none;}
+/* קבוצה סגורה נפתחת בכפייה כשהתפריט מכווץ — אחרת אייקונים נעלמים
+   בלי שום רמז לכך שהם קיימים, ואין דרך להגיע לתצוגה.
+   ⚠ הסלקטור חייב לכלול את `.closed`: `.sb-group.closed .sb-list{max-height:0}`
+   שלמטה הוא בעל אותה ספציפיות ומופיע אחריו, ולכן היה גובר. */
+.sidebar.collapsed .sb-list,
+.sidebar.collapsed .sb-group.closed .sb-list{max-height:none;}
+.sidebar.collapsed .sb-item{justify-content:center;padding:12px 0;}
+.sidebar.collapsed .sb-group + .sb-group{
+  margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);
+}
+.sb-cv{font-size:11px;line-height:1;transition:transform .18s;}
+.sb-group.closed .sb-cv{transform:rotate(90deg);}
+/* max-height ולא display:none — כדי שהסגירה תהיה מונפשת ולא קפיצה */
+.sb-list{max-height:340px;overflow:hidden;transition:max-height .22s ease;}
+.sb-group.closed .sb-list{max-height:0;}
+/* קבוצה סגורה שמכילה את התצוגה הפעילה — נקודה כתומה על הכותרת,
+   אחרת "איפה אני" נעלם יחד עם הרשימה */
+.sb-group.closed.has-active .sb-head::after{
+  content:'';width:5px;height:5px;border-radius:50%;background:var(--accent);
+}
 
 /* ─── MAIN ─── */
-.main{flex:1;padding:32px 40px 48px;max-width:1400px;}
+/* min-width:0 — בלעדיו `.main`, כפריט flex, לא יורד מתחת לרוחב המינימלי
+   של תוכנו (טבלה רחבה, כרטיס צר), והעודף הופך לגלילה אופקית של כל הדף. */
+.main{flex:1;min-width:0;padding:32px 40px 48px;max-width:1400px;}
 
 .page-head{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;}
+/* קישור חזרה — רק בתצוגות ההמשך, שאין להן פריט בתפריט */
+.page-back{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;
+  color:var(--primary);background:var(--primary-l);border:0;border-radius:8px;
+  padding:6px 12px;margin-bottom:12px;cursor:pointer;font-family:'Heebo',sans-serif;}
+.page-back:hover{background:#e2d0f3;}
 .page-title{font-size:24px;font-weight:900;color:var(--text);line-height:1.2;}
 .page-sub{font-size:14px;color:var(--muted);margin-top:6px;}
 .page-meta{display:flex;gap:10px;}
@@ -137,6 +195,9 @@ body{
 .kpi.good::before{background:var(--good);}
 .kpi.warn::before{background:var(--warn);}
 .kpi.pink::before{background:var(--pink);}
+/* אדום כהה ומאופק — מסמן שהמדד הזה הוא איבוד, בלי לצעוק */
+.kpi.dred::before{background:var(--dred);}
+.kpi.dred .kpi-val{color:var(--dred);}
 
 .kpi-lbl{font-size:12px;color:var(--muted);margin-bottom:6px;}
 .kpi-val{font-size:32px;font-weight:900;color:var(--text);line-height:1;}
@@ -148,6 +209,8 @@ body{
 
 /* Two-column layout */
 .two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;}
+/* מתחת ל-1150 שתי העמודות צרות מדי ודוחפות את הדף לגלישה — נערמות */
+@media (max-width:1150px){.two-col{grid-template-columns:1fr;}}
 .three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 
 /* Bottleneck list */
@@ -230,7 +293,14 @@ body{
 
 /* View 7 — עתיד טק. כללים מקומיים בלבד; לא נוגעים במחלקות המשותפות. */
 #view-futuretech .kpi::before{background:var(--ft,var(--border));}
-/* מספר העמודות נקבע ב-renderFutureTech לפי מספר התקופות שנטענו */
+/* המשפך העירוני — שתי רצועות ב-HTML/CSS. אין כאן גרף ולכן אין Chart.js. */
+#view-futuretech .ft-fun{display:flex;flex-direction:column;gap:13px;padding:2px 0;}
+#view-futuretech .ft-fun-row{display:flex;align-items:center;gap:12px;}
+#view-futuretech .ft-fun-lbl{width:150px;flex-shrink:0;font-size:12px;color:var(--muted);text-align:right;}
+#view-futuretech .ft-fun-track{flex:1;min-width:0;}
+#view-futuretech .ft-fun-bar{height:32px;border-radius:9px;display:flex;align-items:center;
+  padding:0 13px;color:#fff;font-weight:900;font-size:15px;min-width:52px;white-space:nowrap;}
+#view-futuretech .ft-fun-note{font-size:12px;color:var(--muted);padding-right:162px;line-height:1.6;}
 /* בועת הטולטיפ ממורכזת, ובאריח השמאלי היא חורגת משמאל לדף ומוסיפה
    גלילה אופקית (visibility:hidden עדיין נכנס ל-scrollWidth). מעגנים אותה
    פנימה. מוגבל לתצוגה הזו — לא לגעת בתצוגות שאושרו. */
@@ -288,6 +358,9 @@ body{
 .alt-num{font-weight:500;color:var(--muted);white-space:nowrap;cursor:help;}
 .kpi-val .alt-num{font-size:15px;margin-inline-start:7px;vertical-align:2px;}
 .kpi-sub .alt-num,.card-sub .alt-num,.ref-pill .alt-num{font-size:11.5px;margin-inline-start:4px;}
+/* `nowrap` נכון למספר בסוגריים ליד מדד; במשפט שלם הוא הפך למינימום-רוחב
+   של 854px, ודרכו כפה על `.main` רוחב 1165px וגלישה אופקית בכל הדף. */
+.card-sub .alt-num,.page-sub .alt-num,.cmp-note .alt-num{white-space:normal;}
 
 /* ─── השוואה שנתית (תצוגה 8) ─── */
 /* כותרת: שני מספרים גדולים עם חץ ביניהם */
@@ -296,7 +369,7 @@ body{
 .yy-side{text-align:center;}
 .yy-per{font-size:12px;color:var(--muted);margin-bottom:5px;}
 .yy-num{font-size:44px;font-weight:900;line-height:1;}
-.yy-num.old{color:var(--muted);}
+.yy-num.old{color:#b8560c;}   /* התקופה הקודמת — כתום, כמו המוטות שמתחת */
 .yy-num.new{color:var(--primary);}
 .yy-arrow{font-size:26px;color:var(--border);font-weight:900;}
 .yy-badge{text-align:center;}
@@ -315,11 +388,56 @@ body{
 .cmp-val.old{color:var(--muted);}
 .cmp-val.new{color:var(--primary-d);}
 .cmp-d{width:96px;flex-shrink:0;text-align:center;}
+/* התקופה הקודמת בהשוואה השנתית — כתום ולא סגול בהיר. שני גוני סגול נקראו
+   כאותה סדרה בשתי עוצמות; כתום מפריד תקופה מתקופה. מוגבל ל-#view-trends
+   בכוונה: ב-#view-national אותן מחלקות מסמנות מכנה, לא תקופה. */
+#view-trends .cmp-bar.old{background:var(--accent);}
+#view-trends .cmp-val.old{color:#b8560c;}
 /* סימן הרפרנס הארצי — קו אנכי דק על אזור המוטות */
 .cmp-nat{position:absolute;top:-2px;bottom:-2px;width:0;border-right:2px dashed #9aa0a6;}
 .cmp-nat span{position:absolute;top:-15px;right:4px;font-size:10px;font-weight:700;
   color:#5f6368;white-space:nowrap;}
 .cmp-note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;}
+/* ─── אפקט המשפך (תצוגה 8) ───────────────────────────────────────
+   שני שלבים לכל תקופה, **שניהם על סקאלת השכבה הגדולה ביותר**:
+     1. שכבת יב׳ = המכנה (אפור)
+     2. לומדי מתמטיקה 5 = המונה הפוטנציאלי, חתוך ל"המשיכו" (טורקיז,
+        וזה בדיוק מונה המדד) ול"עצרו במתמטיקה" (זהוב).
+   מכאן ש**האחוז שבכותרת הוא ממש היחס בין הטורקיז לאפור** — הירידה
+   נראית כשהאפור גדל והטורקיז לא. טורקיז וזהוב הם צבעי שני הקווים בגרף
+   שמעל, כדי שהמשפך ייקרא כהמשך שלו. */
+.fnl{margin:2px 0 12px;}
+.fnl-s{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.fnl-g{margin-bottom:13px;}
+.fnl-head{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;}
+.fnl-per{font-size:12.5px;font-weight:900;color:var(--text);}
+.fnl-pct{font-size:15px;font-weight:900;color:#0e8f8f;}
+.fnl-d{font-size:11px;font-weight:700;}
+.fnl-line{display:flex;align-items:center;gap:9px;margin-bottom:4px;}
+.fnl-cap{width:88px;flex-shrink:0;font-size:11px;color:var(--muted);}
+.fnl-bars{flex:1;min-width:0;}
+.fnl-track{display:flex;height:22px;border-radius:0 5px 5px 0;overflow:hidden;transition:width .3s;}
+.fnl-track.grade{background:#ddd6e6;}
+.fnl-seg{display:flex;align-items:center;justify-content:center;min-width:2px;
+  font-size:11.5px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;}
+.fnl-seg.pass{background:#16b3b3;}
+.fnl-seg.stop{background:#c8952f;}
+.fnl-val{width:52px;flex-shrink:0;font-size:12px;font-weight:900;color:var(--text);}
+.fnl-key{display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+  margin-top:2px;margin-inline-start:97px;}
+.fnl-key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:5px;vertical-align:0;}
+.fnl-den{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:11px;
+  border-top:1px dashed var(--border);}
+.fnl-tile{flex:1;min-width:140px;background:rgba(255,255,255,0.75);border-radius:9px;padding:7px 11px;}
+.fnl-tile .l{font-size:10.5px;color:var(--muted);}
+.fnl-tile .v{font-size:15px;font-weight:900;color:var(--primary-d);margin-top:1px;}
+.fnl-tile .s{font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.4;}
+/* פילוח המקצועות בהעמקה — מוטות HTML על גבי רכיב ההשוואה, לא קנבס */
+.sj-wrap{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.sj-head{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;}
+.sj-num{color:var(--text);}
+/* הזכאות אינה מקצוע אלא התוצאה שלהם — קו מפריד לפניה */
+.sj-out{border-top:1px solid var(--border);margin-top:4px;}
 
 /* מספר הפוטנציאל — הקהל הקרוב ביותר */
 .pot-box{display:flex;align-items:center;gap:18px;background:var(--accent-l);
@@ -565,6 +683,13 @@ body{
   transform:translateX(50%) translateY(99%);border:6px solid transparent;
   border-top-color:var(--sidebar);opacity:0;visibility:hidden;z-index:60;}
 .ti:hover::after,.ti:hover::before{opacity:1;visibility:visible;}
+/* ⚠ **מקור הגלישה האופקית שהייתה בדף.** `visibility:hidden` מסתיר את
+   הטולטיפ אבל **אינו מוציא אותו מהפריסה**: קופסה של 230px, ממורכזת על
+   האייקון, בולטת 115px לכל צד וגדלה את שטח הגלילה של המסמך. תוויות
+   הקרובות לקצה השמאלי הוסיפו עד 290px של גלילה ריקה בתצוגת ההשוואה
+   השנתית. הפסאודו-אלמנט אינו ב-DOM ולכן סריקת רכיבים לא מצאה דבר.
+   `content:none` מבטל את הקופסה עד ה-hover. המחיר: ה-fade הקצר יורד. */
+.ti:not(:hover)::after,.ti:not(:hover)::before{content:none;}
 .tbl th .ti{margin-right:4px;}
 /* טולטיפ בראש הדף נחתך למעלה — נפתח כלפי מטה */
 .page-meta .ti::after{bottom:auto;top:150%;}
@@ -576,7 +701,8 @@ body{
 
 /* ─── שכבת נתונים חיים (תוספת, לא משנה כללים קיימים) ─── */
 .sb-live{padding:14px 24px;border-top:1px solid rgba(255,255,255,0.08);}
-.sb-live .sb-section{padding:0 0 7px;}
+.sb-live .sb-section{padding:0;}
+.sb-live-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:7px;}
 .sb-select{
   width:100%;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;
   color:#fff;background:rgba(255,255,255,0.08);
@@ -587,7 +713,7 @@ body{
   background-size:5px 5px,5px 5px;background-repeat:no-repeat;
 }
 .sb-select:hover{background-color:rgba(255,255,255,0.13);}
-.sb-select option{background:#2a1a4d;color:#fff;}
+.sb-select option{background:#16213a;color:#fff;}
 .sb-refresh{
   width:100%;margin-top:8px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;
   color:#fff;background:var(--accent);border:0;border-radius:9px;padding:9px 10px;
@@ -620,12 +746,13 @@ body{
 }
 .err-box code{background:#f1eef6;color:var(--primary-d);padding:2px 7px;border-radius:5px;direction:ltr;display:inline-block;}
 
+/* גלגל שיניים בלבד — הכפתור המלולי שהיה בתחתית הוסר כדי לפנות מקום */
 .sb-cog{
-  display:block;margin-top:10px;font-family:'Heebo',sans-serif;font-size:11px;font-weight:700;
-  color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.07);
-  border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:6px 10px;cursor:pointer;width:100%;
+  font-family:'Heebo',sans-serif;font-size:13px;line-height:1;
+  color:rgba(255,255,255,0.5);background:transparent;
+  border:0;border-radius:6px;padding:3px 5px;cursor:pointer;transition:color .15s,background .15s;
 }
-.sb-cog:hover{color:#fff;background:rgba(255,255,255,0.13);}
+.sb-cog:hover{color:#fff;background:rgba(255,255,255,0.12);}
 .src-modal{position:fixed;inset:0;z-index:950;background:rgba(31,21,48,.55);display:none;align-items:center;justify-content:center;padding:24px;}
 .src-card{background:var(--card);border-radius:16px;padding:26px 28px;max-width:540px;width:100%;box-shadow:0 12px 40px rgba(42,26,77,.28);}
 .src-card h3{font-size:17px;font-weight:900;color:var(--primary-d);margin-bottom:12px;}
@@ -651,72 +778,82 @@ body{
 <!-- ─── SIDEBAR ─── -->
 <aside class="sidebar">
   <div class="sb-brand">
-    <div class="sb-logo">🎓</div>
+    <div class="sb-bar">
+
+    <!-- הלוגו מוטמע כ-data URI ולא כקובץ: §"קובץ אחד" — לדף אסור להיות
+         תלוי בשום נכס נוסף. המקור המלא בדרייב של המשתמש; כאן 440px,
+         256 צבעים (~17KB) — הרוחב המוצג הוא 150px, כלומר קרוב ל-3x.
+         הלוגו כהה ולכן הוא יושב על לוח לבן; על הסיידבר הכהה הוא נעלם. -->
+    <img class="sb-logo" alt="מינהל החינוך · חולון, עיר הילדים"
+         src="data:image/png;base64,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">
+    <button class="sb-toggle" id="btnNav" title="הסתר תפריט" aria-label="הסתר תפריט">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9.5 6.5 4 12l5.5 5.5"/><path d="M16.5 6.5 11 12l5.5 5.5"/>
+      </svg>
+    </button>
+    </div>
     <div class="sb-title">מדד טק עירוני</div>
-    <div class="sb-sub">חולון 2026</div>
   </div>
 
+  <!-- ─── תפריט אקורדיאון ───────────────────────────────────────────
+       שלוש קבוצות נושא, כל אחת נפתחת ונסגרת. שתי תצוגות **אינן** כאן
+       בכוונה: "העמקה לפי בית ספר" נפתחת מתוך עמוד בתי הספר (לחיצה על
+       כרטיס), ו"טבלת הרשויות" מתוך חולון–ארצי. הן תצוגות המשך של הורה
+       ולא יעדים עצמאיים, ובתפריט הן רק האריכו רשימה שכבר הייתה ארוכה.
+       `switchView` מדליק במקומן את פריט ההורה (`PARENT_OF`). -->
   <nav class="sb-nav">
-    <div class="sb-section">תצוגות</div>
-    <div class="sb-item active" data-view="overview">
-      <span class="sb-ico">📊</span>
-      <span>סקירה עירונית</span>
-    </div>
-    <div class="sb-item" data-view="trends">
-      <span class="sb-ico">📈</span>
-      <span>השוואה שנתית</span>
-    </div>
-    <div class="sb-item" data-view="subjects">
-      <span class="sb-ico">📚</span>
-      <span>מקצועות לאורך השכבות</span>
-    </div>
-    <div class="sb-item" data-view="schools">
-      <span class="sb-ico">🏫</span>
-      <span>השוואת בתי ספר</span>
-    </div>
-    <div class="sb-item" data-view="deepdive">
-      <span class="sb-ico">🔍</span>
-      <span>העמקה לפי בית ספר</span>
-    </div>
-    <div class="sb-item" data-view="insights">
-      <span class="sb-ico">💡</span>
-      <span>תובנות פרקטיות</span>
-    </div>
-    <div class="sb-item" data-view="gender">
-      <span class="sb-ico">👥</span>
-      <span>פילוח מגדרי</span>
-    </div>
-    <div class="sb-item" data-view="futuretech">
-      <span class="sb-ico">🚦</span>
-      <span>עתיד טק</span>
-    </div>
-    <div class="sb-item" data-view="national">
-      <span class="sb-ico">🏙️</span>
-      <span>חולון מול ערים אחרות</span>
-    </div>
-    <div class="sb-item" data-view="cities">
-      <span class="sb-ico">📋</span>
-      <span>טבלת הרשויות</span>
+    <div class="sb-group" data-group="city">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>תמונה עירונית</span></div>
+      <div class="sb-list">
+        <div class="sb-item active" data-view="overview" title="סקירה עירונית">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16.5a8 8 0 0 1 16 0"/><path d="M12 16.5l4.2-4.2"/><circle cx="12" cy="16.5" r="1.1"/><path d="M3.6 20.5h16.8"/></svg><span>סקירה עירונית</span>
+        </div>
+        <div class="sb-item" data-view="national" title="חולון–ארצי">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M4.5 20.5v-8h4.6v8"/><path d="M10.6 20.5V5.5h5.2v15"/><path d="M17.3 20.5v-6H21v6"/><path d="M12.3 8.6h1.8M12.3 11.8h1.8M12.3 15h1.8"/></svg><span>חולון–ארצי</span>
+        </div>
+        <div class="sb-item" data-view="trends" title="התפתחות המדד">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 19.5V4"/><path d="M3.5 19.5H21"/><path d="M6.5 15.6l4-4.3 3.2 3 5.3-6"/><path d="M15.4 8.3H19v3.6"/></svg><span>התפתחות המדד</span>
+        </div>
+      </div>
     </div>
 
-    <div class="sb-section" style="margin-top:14px;">בקרוב</div>
-    <div class="sb-item" style="opacity:0.4;cursor:not-allowed;">
-      <span class="sb-ico">📈</span>
-      <span>תחזית רב-שנתית</span>
+    <div class="sb-group" data-group="cuts">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>פילוחים</span></div>
+      <div class="sb-list">
+        <div class="sb-item" data-view="subjects" title="מקצועות">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.4C10.4 6 8.3 5.4 5 5.5v12c3.3-.1 5.4.5 7 1.9 1.6-1.4 3.7-2 7-1.9v-12c-3.3-.1-5.4.5-7 1.9z"/><path d="M12 7.4v12"/></svg><span>מקצועות</span>
+        </div>
+        <div class="sb-item" data-view="gender" title="מגדר">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.2" r="2.9"/><path d="M3.7 19.4a5.3 5.3 0 0 1 10.6 0"/><circle cx="17.2" cy="9.6" r="2.2"/><path d="M14.9 19.4a4.1 4.1 0 0 1 5.9-3.5"/></svg><span>מגדר</span>
+        </div>
+        <div class="sb-item" data-view="schools" title="בתי ספר">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5h18"/><path d="M5.3 20.5V10.2L12 6.4l6.7 3.8v10.3"/><path d="M10 20.5v-4.6h4v4.6"/><path d="M12 6.4V3.2h3.4"/></svg><span>בתי ספר</span>
+        </div>
+        <div class="sb-item" data-view="futuretech" title="עתיד-טק">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.8 4.8h16.4l-6.3 7.4v6.4l-3.8 2v-8.4z"/></svg><span>עתיד-טק</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-group" data-group="out">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>מסקנות</span></div>
+      <div class="sb-list">
+        <div class="sb-item" data-view="insights" title="תובנות ומסקנות">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2a6.1 6.1 0 0 0-3.6 11c.6.5 1 1.2 1 2v.4h5.2v-.4c0-.8.4-1.5 1-2A6.1 6.1 0 0 0 12 3.2z"/><path d="M9.6 19.3h4.8"/><path d="M10.6 21.4h2.8"/></svg><span>תובנות ומסקנות</span>
+        </div>
+      </div>
     </div>
   </nav>
 
   <div class="sb-live">
-    <div class="sb-section">תקופת דגימה</div>
+    <div class="sb-live-head">
+      <div class="sb-section">תקופת דגימה</div>
+      <button id="btnSource" class="sb-cog" title="מקור הנתונים">⚙</button>
+    </div>
     <select class="sb-select" id="periodSelect"></select>
     <button class="sb-refresh" id="btnRefresh"><span class="ic">↻</span><span>רענן נתונים</span></button>
     <div class="sb-stamp" id="dataStamp">—</div>
-  </div>
-
-  <div class="sb-foot">
-    מקור: <span id="dataLabel">—</span><br>
-    גיליון גוגל מפורסם · נטען חי
-    <button id="btnSource" class="sb-cog">⚙ מקור הנתונים</button>
   </div>
 </aside>
 
@@ -727,13 +864,13 @@ body{
   <section class="view active" id="view-overview">
     <div class="page-head">
       <div>
-        <h1 class="page-title">סקירה עירונית — איפה צווארי הבקבוק?</h1>
+        <h1 class="page-title">תמונת מצב עירונית נכון לעכשיו (סוף תשפ״ו לקראת תשפ״ז)</h1>
         <p class="page-sub" id="ovSub">תמונת מצב בגרות-טק</p>
       </div>
       <div class="page-meta">
-        <div class="meta-pill"><strong id="metaSchools">—</strong> בתי ספר <i class="ti" data-tip="כל בתי הספר בגיליון. המדד בכל שכבה מחושב על כל בית ספר שיש לו נתונים באותה שכבה. דירוג בין בתי ספר ונשירה מחושבים רק על בעלי י׳–יב׳ מלאים.">i</i></div>
+        <div class="meta-pill"><strong id="metaSchools">—</strong> בתי ספר <i class="ti" data-tip="כל בתי הספר בגיליון. המדד בכל שכבה מחושב על כל בית ספר שיש לו נתונים באותה שכבה. דירוג בין בתי ספר ומגמה מחושבים רק על בעלי י׳–יב׳ מלאים.">i</i></div>
         <div class="meta-pill"><strong id="metaTotal">—</strong> תלמידי טק <i class="ti" data-tip="סך זכאי בגרוטק בשכבות י׳–יב׳ בכל בתי הספר, כולל בעלי נתונים חלקיים.">i</i></div>
-        <div class="meta-pill">ארצי <strong>11.6%</strong> <i class="ti" data-tip="שיעור הזכאות הארצי למסלול ההייטק (5 יח״ל מתמ׳+אנג׳+פיזיקה/מדמ״ח), משה״ח, מחזור 2025.">i</i></div>
+        <div class="meta-pill">ארצי <strong id="metaNat">—</strong> <i class="ti" data-tip="שיעור הזכאות הארצי למסלול ההייטק (5 יח״ל מתמ׳+אנג׳+פיזיקה/מדמ״ח), משה״ח, מחזור 2025.">i</i></div>
         <div class="meta-pill" style="background:#fce4ec;color:#ad1457;border-color:#f8bbd0;cursor:pointer;" onclick="switchView('gender')">♀ ייצוג תלמידות <strong id="metaGirls">—</strong> <i class="ti" data-tip="% תלמידות בקרב לומדי הבגרוטק בעיר (י׳–יב׳). לחץ למעבר לפילוח המלא.">i</i></div>
       </div>
     </div>
@@ -755,10 +892,27 @@ body{
         <div class="kpi-val" id="k12Pct">—</div>
         <div class="kpi-sub" id="k12Sub">—</div>
       </div>
-      <div class="kpi warn">
-        <div class="kpi-lbl">נשירה עירונית י׳→יב׳ <i class="ti" data-tip="כמה מאבד מסלול הטק בין י׳ ליב׳: (אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
+      <div class="kpi dred">
+        <div class="kpi-lbl">מגמה עירונית י׳→יב׳ <i class="ti" data-tip="כמה מאבד מסלול הטק בין י׳ ליב׳: (אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
         <div class="kpi-val" id="kDrop">—</div>
         <div class="kpi-sub">ירידה יחסית בלומדי הטק</div>
+      </div>
+    </div>
+
+    <!-- City trend by grade -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">מסע התלמיד — י׳ עד יב׳</div>
+          <div class="card-sub">מספר לומדי הטק בעיר לאורך השכבות</div>
+        </div>
+      </div>
+      <div class="chart-box">
+        <canvas id="cityJourney"></canvas>
+      </div>
+      <div class="insight" id="insightJourney">
+        <div class="insight-t">תובנה ראשונית</div>
+        <div class="insight-b">המגמה תוצג לאחר טעינת הנתונים</div>
       </div>
     </div>
 
@@ -787,22 +941,6 @@ body{
       </div>
     </div>
 
-    <!-- City trend by grade -->
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title">מסע התלמיד — י׳ עד יב׳</div>
-          <div class="card-sub">מספר לומדי הטק בעיר לאורך השכבות</div>
-        </div>
-      </div>
-      <div class="chart-box">
-        <canvas id="cityJourney"></canvas>
-      </div>
-      <div class="insight" id="insightJourney">
-        <div class="insight-t">תובנה ראשונית</div>
-        <div class="insight-b">המגמה תוצג לאחר טעינת הנתונים</div>
-      </div>
-    </div>
   </section>
 
   <!-- VIEW 2: SUBJECTS -->
@@ -845,7 +983,7 @@ body{
         <canvas id="subjectsChart"></canvas>
       </div>
       <div class="insight warn" id="insightSubjects">
-        <div class="insight-t">איפה הנשירה הכי חדה?</div>
+        <div class="insight-t">איפה המגמה הכי חדה?</div>
         <div class="insight-b">המגמה תוצג לאחר טעינת הנתונים</div>
       </div>
     </div>
@@ -854,8 +992,8 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">משפך הנשירה לפי מקצוע</div>
-          <div class="card-sub">מספר הלומדים בכל שכבה — ככל שהבר מצטמצם, יותר תלמידים נשרו</div>
+          <div class="card-title">משפך המגמה לפי מקצוע</div>
+          <div class="card-sub">מספר הלומדים בכל שכבה — ככל שהבר מצטמצם, כך פחות תלמידים ממשיכים במקצוע</div>
         </div>
       </div>
       <div id="funnelBox"></div>
@@ -894,6 +1032,7 @@ body{
           <div class="card-sub">לחץ על כותרת עמודה למיון</div>
         </div>
       </div>
+      <div style="overflow-x:auto;">
       <table class="tbl" id="schoolTable">
         <thead><tr>
           <th class="rnk">#</th>
@@ -902,11 +1041,12 @@ body{
           <th onclick="sortSchools(2)"><span class="sa">▾</span>לומדי טק <i class="ti" data-tip="סך זכאי בגרוטק (עמ׳ 22) בשכבות י׳–יב׳.">i</i></th>
           <th onclick="sortSchools(3)"><span class="sa">▼</span>% טק <i class="ti" data-tip="לומדי טק חלקי סך התלמידים, י׳–יב׳ משוקלל.">i</i></th>
           <th onclick="sortSchools(4)"><span class="sa">▾</span>שכבה יב׳ <i class="ti" data-tip="אחוז לומדי הטק בשכבה יב׳ בלבד.">i</i></th>
-          <th onclick="sortSchools(5)"><span class="sa">▾</span>נשירה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></th>
+          <th onclick="sortSchools(5)"><span class="sa">▾</span>מגמה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></th>
           <th onclick="sortSchools(6)"><span class="sa">▾</span>% תלמידות בטק <i class="ti" data-tip="אחוז התלמידות מתוך כלל זכאי הבגרוטק בבית הספר (י׳–יב׳).">i</i></th>
         </tr></thead>
         <tbody id="schoolTbody"></tbody>
       </table>
+      </div>
     </div>
   </section>
 
@@ -914,6 +1054,7 @@ body{
   <section class="view" id="view-deepdive">
     <div class="page-head">
       <div>
+        <button class="page-back" onclick="switchView('schools')">→ חזרה לבתי ספר</button>
         <h1 class="page-title">העמקה לפי בית ספר</h1>
         <p class="page-sub">בחר בית ספר לצפייה בפילוח מלא</p>
       </div>
@@ -941,7 +1082,7 @@ body{
         <div class="kpi-sub" id="ddGradPct">—</div>
       </div>
       <div class="kpi warn">
-        <div class="kpi-lbl">נשירה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
+        <div class="kpi-lbl">מגמה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
         <div class="kpi-val" id="ddDrop">—</div>
         <div class="kpi-sub">ירידה יחסית</div>
       </div>
@@ -964,8 +1105,8 @@ body{
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">פילוח מקצועות — שכבה יב׳</div>
-            <div class="card-sub">חלוקת הבוגרים לפי מקצוע</div>
+            <div class="card-title">מקצועות 5 יח״ל בשכבה הבוגרת</div>
+            <div class="card-sub">כמה מהשכבה מגיעים לכל מקצוע. תלמיד נספר בכל מקצוע שהוא לומד, ולכן הסכום גדול ממספר התלמידים.</div>
           </div>
         </div>
         <div class="chart-box" id="ddSubjectsBox">
@@ -1133,25 +1274,36 @@ body{
   <section class="view" id="view-futuretech">
     <div class="page-head">
       <div>
-        <h1 class="page-title">עתיד טק — היקף ההשתתפות</h1>
-        <p class="page-sub">כמות ואחוז המשתתפים בתוכנית, בכל בית ספר ובכל תקופות הדגימה</p>
+        <h1 class="page-title">עתיד טק — מי נכנס, ומי בחר</h1>
+        <p class="page-sub">מהכניסה לתוכנית התגבור בתחילת ט׳ ועד בחירת מקצועות הטק לקראת י׳</p>
       </div>
       <div class="page-meta">
-        <div class="meta-pill"><strong>כל התקופות</strong> <i class="ti" data-tip="בניגוד לשאר התצוגות, הטבלה כאן מציגה את כל תקופות הדגימה זו לצד זו ואינה מושפעת מבורר התקופה שבסיידבר.">i</i></div>
+        <div class="meta-pill"><strong id="ftYearPill">—</strong> <i class="ti" data-tip="המשפך נמדד על שנה אחת: טאב תחילת השנה (מי נכנס לתוכנית) מול טאב סוף השנה (מי בחר במקצועות הטק). שנה שאין לה את שני הטאבים אינה נכללת. התצוגה אינה מושפעת מבורר התקופה שבסיידבר.">i</i></div>
         <div class="meta-pill"><strong id="ftGradePill">—</strong> שכבת התוכנית <i class="ti" data-tip="השכבה שבה מוזנת שורת &quot;עתיד טק&quot; בגיליון. נגזרת מהנתונים ואינה מקובעת בקוד.">i</i></div>
       </div>
     </div>
 
     <div class="kpi-grid" id="ftKpis"></div>
+    <div id="ftEmpty"></div>
 
-    <div class="card">
+    <div class="card" id="ftFunnelCard">
       <div class="card-head">
         <div>
-          <div class="card-title">רמזור עתיד טק — בית ספר על פני תקופות</div>
-          <div class="card-sub">בכל תא: כמות המשתתפים, ומתחתיה שיעורם מהשכבה</div>
+          <div class="card-title">המשפך העירוני</div>
+          <div class="card-sub">מכלל הנכנסים לתוכנית — כמה הגיעו עד בחירת מקצועות הטק</div>
         </div>
       </div>
-      <div id="ftMatrix"></div>
+      <div id="ftFunnel"></div>
+    </div>
+
+    <div class="card" id="ftTableCard">
+      <div class="card-head">
+        <div>
+          <div class="card-title">בית ספר — כניסה מול בחירה</div>
+          <div class="card-sub">ממוין לפי מדד הטק, מהנמוך לגבוה. הציפייה: מדד נמוך → כניסה רחבה יותר, ושמירה על הנכנסים עד הבחירה</div>
+        </div>
+      </div>
+      <div id="ftTable"></div>
     </div>
   </section>
 
@@ -1193,6 +1345,10 @@ body{
         </div>
         <div class="chart-box tall"><canvas id="yyDecade"></canvas></div>
         <div id="yyDecadePills"></div>
+        <div class="insight" id="yyDiverge" style="display:none;">
+          <div class="insight-t">—</div>
+          <div class="insight-b">—</div>
+        </div>
         <div class="cmp-note" id="yyDecadeNote"></div>
       </div>
 
@@ -1272,11 +1428,7 @@ body{
         <p class="page-sub" id="ntSub">—</p>
       </div>
       <div class="page-meta">
-        <div class="meta-pill" style="max-width:250px;line-height:1.7;text-align:right;">
-          מקור: דו"ח המצוינות של ישראל 2024<br>
-          אשכול חברתי: הלמ"ס 2021 · אוכלוסייה: הלמ"ס<br>
-          רשויות שאינן יהודיות הוצאו
-        </div>
+        <div class="meta-pill">מקור: דו"ח המצוינות של ישראל 2024</div>
         <div class="meta-pill" style="cursor:pointer;" onclick="switchView('cities')">📋 טבלה מלאה ←</div>
       </div>
     </div>
@@ -1334,6 +1486,7 @@ body{
   <section class="view" id="view-cities">
     <div class="page-head">
       <div>
+        <button class="page-back" onclick="switchView('national')">→ חזרה לחולון–ארצי</button>
         <h1 class="page-title">טבלת הרשויות</h1>
         <p class="page-sub" id="cvSub">—</p>
       </div>
@@ -1467,6 +1620,11 @@ const NAT = {
   years:[2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
   tech: [ 9.9, 10.1, 10.3, 11.0, 11.2, 10.9, 10.8, 11.6],   // בגרות הייטק
   ma5:  [15.5, 15.4, 15.6, 16.6, 17.3, 16.2, 16.0, 17.1],   // מתמטיקה 5 יח"ל
+  // ⚠ **אל תחליף בין שתי השורות האלה.** ב-v48 הן הוחלפו בעקבות ציטוט
+  // מהודעת משה"ח ומגרף ynet, וב-v49 הוחזרו: דו"ח המצוינות (עמ' 10) מדפיס
+  // **פיזיקה 11.2% · 14,018 זכאים** מול **מדמ"ח 8.6% · 10,834**, ושיעורי
+  // התלמידות שנגזרים ממנו מתלבשים על שורות ynet **הפוכות** — כלומר התיוג
+  // בפרסום העיתונאי הוא זה שהתחלף, לא כאן. הראיה המלאה: §12.6 במפרט.
   ph:   [10.4, 10.8, 11.1, 11.6, 11.6, 11.5, 11.1, 11.9],   // פיזיקה 5 יח"ל
   cs:   [ 7.7,  7.6,  7.9,  8.3,  8.8,  8.3,  8.6,  8.9],   // מדעי המחשב 5 יח"ל
   en5:  [37.7, 39.1, 41.5, 42.9, 44.6, 46.2, 46.8, 48.5],   // אנגלית 5 יח"ל (שקף 4)
@@ -1476,7 +1634,9 @@ const NAT = {
 // מאפשר להעמיד את העשור של חולון מול העשור הארצי על אותו טווח שנים.
 const NAT_2014 = { year:2014, tech:6.4, ma5:9.5 };
 // שיעור התלמידות הארצי 2024, לפי דו"ח המצוינות (עמ' 10). מחליף את 36.3
-// שהיה צרוב ללא מקור מתועד.
+// שהיה צרוב ללא מקור מתועד. ✅ אומת מול הדו"ח 16.08.2026, כולל המספרים
+// המוחלטים: מתמטיקה 9,656/20,284 · פיזיקה 5,304/14,018 · הייטק 5,254/13,626 ·
+// מדמ"ח 3,512/10,834 — כל אחוז יוצא מהחלוקה שלו.
 const NAT_GIRLS_2024 = { tech:38.6, ma5:47.6, ph:37.8, cs:32.4 };
 const _last = a => a[a.length-1];
 const NAT_LAST = { tech:_last(NAT.tech), ma5:_last(NAT.ma5), ph:_last(NAT.ph), cs:_last(NAT.cs) };
@@ -1737,9 +1897,17 @@ function ftStep(pct){
   if(pct >= 30) return FT_STEPS.warn;
   return FT_STEPS.bad;
 }
-// כל התקופות שנטענו, כרונולוגית. לא נשענים על סדר המפתחות של ALLDATA.
-function ftPeriods(){
-  return Object.values(ALLDATA).slice().sort((a,b)=> (a.year-b.year)||(a.half-b.half));
+// זיווג התקופות. שנה נכנסת לתצוגה רק אם יש לה גם טאב תחילת-שנה (half=1)
+// וגם סוף-שנה (half=2) — אלה שני קצות המשפך של אותו מחזור.
+// תשפ"ה נופל מעצמו: יש לו סוף שנה בלבד, ואין ממה לתלמידות משפך. זה הכלל
+// שמחליף "להתעלם מתשפ״ה", וכשתגיע שנה חדשה עם שני הטאבים היא תיכנס לבד.
+function ftYears(){
+  const by = {};
+  Object.values(ALLDATA).forEach(p=>{ (by[p.year] || (by[p.year]={}))[p.half] = p; });
+  return Object.keys(by).map(Number).sort((a,b)=> b-a)
+    .filter(y=> by[y][1] && by[y][2])
+    .map(y=>({ year:y, start:by[y][1], end:by[y][2],
+               label: String(by[y][2].label).replace(/\s*\(.*\)\s*$/,'') }));
 }
 function ftSumAtGrade(schools, g){
   return schools.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[FT]:0); }, 0);
@@ -1748,16 +1916,41 @@ function ftSumAtGrade(schools, g){
 function ftGrade(periods){
   return ALL_GRADES.find(g=> periods.some(p=> ftSumAtGrade(p.schools, g) > 0)) || null;
 }
-// null = לא הוזן. מובחן מ-0% כדי שתקופה ריקה לא תיראה כתוכנית שקרסה.
-function ftCell(school, g){
+// null = לא הוזן. הגיליון משאיר תא ריק ולא אפס, והפרסר ממפה את שניהם ל-0,
+// ולכן 0 נקרא כאן כ"אין נתון" — עדיף מלטעון אפס שאולי לא נמדד.
+function ftAt(school, g){
   const r = school && school.grades[g];
-  if(!r || !r[FT] || !r[0]) return null;
-  return { n:r[FT], pct:r[FT]/r[0]*100 };
+  return (r && r[FT] > 0) ? r[FT] : null;
 }
-function ftCity(schools, g){
-  const n = ftSumAtGrade(schools, g);
-  const t = studentsAtGrade(schools, g);        // אותו חוק מכנה כמו כל מדד עירוני
-  return (n && t)? { n, pct:n/t*100 } : null;
+// שורת משפך לכל בית ספר. איחוד השמות משתי התקופות — הרשימה עשויה להשתנות
+// בין טאבים, ובית ספר שנעדר מאחת מהן מקבל '—' ולא נעלם.
+function ftFunnelRows(start, end, g){
+  const names = [];
+  [start, end].forEach(p=> p.schools.forEach(s=>{ if(names.indexOf(s.name)<0) names.push(s.name); }));
+  return names.map(n=>{
+    const a = start.schools.find(x=> x.name===n);
+    const b = end.schools.find(x=> x.name===n);
+    const sch = b || a;
+    const entered = ftAt(a, g);
+    const chose   = ftAt(b, g);
+    const cohort  = (a && a.grades[g]) ? a.grades[g][0] : 0;
+    // מדד הטק הוא י׳–יב׳ (§3.3). לבית ספר ז׳–ט׳ אין כזה — null, לא 0.
+    const hasHigh = schoolStudentTotal(sch) > 0;
+    return { name:n, school:sch,
+      idx: hasHigh ? schoolTechPct(sch) : null,
+      entered, chose, cohort,
+      entryPct: (entered!=null && cohort) ? entered/cohort*100 : null,
+      convPct:  (entered && chose!=null) ? chose/entered*100 : null,
+      lost:     (entered!=null && chose!=null) ? entered-chose : null };
+  });
+}
+function ftCityFunnel(start, end, g){
+  const entered = ftSumAtGrade(start.schools, g);
+  const chose   = ftSumAtGrade(end.schools, g);
+  const cohort  = studentsAtGrade(start.schools, g);   // אותו חוק מכנה עירוני
+  return { entered, chose, cohort, lost: entered - chose,
+    entryPct: cohort? entered/cohort*100 : null,
+    convPct:  entered? chose/entered*100 : null };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1791,6 +1984,8 @@ function renderOverview(){
   document.getElementById('metaTotal').textContent =
     SCHOOLS.reduce((s,sch)=> s+schoolTechTotal(sch),0).toLocaleString('he-IL');
   document.getElementById('metaGirls').textContent = cityGirlsPctOfTech().toFixed(1)+'%';
+  // נגזר מ-`NAT` ולא צרוב בטקסט — כך עדכון שנתי של הסדרה מגיע גם לכאן
+  document.getElementById('metaNat').textContent = NATIONAL.toFixed(1)+'%';
 
   // KPIs לפי שכבה
   const p10=cityPct(0), p11=cityPct(1), p12=cityPct(2);
@@ -1863,13 +2058,17 @@ function renderOverview(){
           datalabels:{display:false} }
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:36,right:20,left:20}},
+      // ⚠ **`layout.padding.top` דוחף גם את הלגנדה**, לא רק את אזור השרטוט —
+      // ולכן ערך גדול פותח רצועה לבנה בין כותרת הכרטיס ללגנדה. הכלל בכל
+      // גרפי הדשבורד: ריפוד עליון קטן (10–14), והפנאי לתוויות שמעל הנקודות
+      // מגיע מציר ה-Y (`grace` / `suggestedMax` / min-max מפורש).
+      layout:{padding:{top:12,right:20,left:20}},
       plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14}},
         tooltip:{callbacks:{label:ctx=> ctx.datasetIndex===0
           ? counts[ctx.dataIndex]+' תלמידים ('+pcts[ctx.dataIndex].toFixed(1)+'%)'
           : 'ארצי '+NATIONAL+'%' }} },
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
-               y:{beginAtZero:true,suggestedMax:Math.ceil(p10*1.25),
+               y:{beginAtZero:true,suggestedMax:Math.ceil(Math.max(p10,p11,p12)*1.25),
                   ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
   const dropN=(p10-p12)/p10*100, drop=Math.abs(dropN).toFixed(1);
@@ -1879,7 +2078,7 @@ function renderOverview(){
     <div class="insight-t">תקופת הבחירה האמיתית — י׳ עד יב׳</div>
     <div class="insight-b">
       בשכבה י׳ ${t10} תלמידים במסלול הטק (<strong>${p10.toFixed(1)}%</strong> מהשכבה).
-      עד יב׳ זה ${grew?'עולה':'יורד'} ל-${t12} (<strong>${p12.toFixed(1)}%</strong>) — ${grew?'גידול':'נשירה'} יחסי${grew?'':'ת'} של <strong>${drop}%</strong>.
+      עד יב׳ זה ${grew?'עולה':'יורד'} ל-${t12} (<strong>${p12.toFixed(1)}%</strong>) — ${grew?'גידול':'מגמה'} יחסי${grew?'':'ת'} של <strong>${drop}%</strong>.
       שכבת יב׳ של חולון (${p12.toFixed(1)}%) <strong>${overNat?'מעל':'מתחת ל'}</strong>ממוצע הארצי (${NATIONAL}%)${grew?'.':', אבל הדלף בדרך הוא צוואר הבקבוק המרכזי.'}
     </div>`;
 }
@@ -1893,9 +2092,9 @@ function renderSubjects(){
   document.getElementById('phTotal').textContent = ph.reduce((a,b)=>a+b,0);
   document.getElementById('maTotal').textContent = ma.reduce((a,b)=>a+b,0);
   const d = (a)=> a[0]? ((a[0]-a[2])/a[0]*100).toFixed(1) : '—';   // נשירה י׳→יב׳
-  document.getElementById('csTrend').textContent = `נשירה י׳→יב׳: ${d(cs)}%`;
-  document.getElementById('phTrend').textContent = `נשירה י׳→יב׳: ${d(ph)}%`;
-  document.getElementById('maTrend').textContent = `נשירה י׳→יב׳: ${d(ma)}%`;
+  document.getElementById('csTrend').textContent = `מגמה י׳→יב׳: ${d(cs)}%`;
+  document.getElementById('phTrend').textContent = `מגמה י׳→יב׳: ${d(ph)}%`;
+  document.getElementById('maTrend').textContent = `מגמה י׳→יב׳: ${d(ma)}%`;
 
   destroyChart('subjectsChart');
   const htByGrade = GRADES.map((_,gi)=> cityTotal(gi));   // זכאי בגרוטק — מדד הטק
@@ -1922,14 +2121,14 @@ function renderSubjects(){
           borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:v=>v}}
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:30}},
+      layout:{padding:{top:12}},
       plugins:{legend:{position:'top',labels:{font:HF,color:'#5f6368'}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=> ctx.datasetIndex===0
             ? 'מדד טק: '+ctx.parsed.y+' ('+cityPct(ctx.dataIndex).toFixed(1)+'%)'
             : ctx.dataset.label+': '+ctx.parsed.y }}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:true,grace:'12%',ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   const drops=[
@@ -1940,7 +2139,7 @@ function renderSubjects(){
   if(drops.length){
     const w=drops[0];
     document.getElementById('insightSubjects').innerHTML = `
-      <div class="insight-t">${w.name} — הנשירה החדה ביותר</div>
+      <div class="insight-t">${w.name} — המגמה החדה ביותר</div>
       <div class="insight-b">מבין שלושת המקצועות, ${w.name} מציג את הירידה הגבוהה ביותר מ-י׳ ל-יב׳
         (<strong>${w.drop.toFixed(1)}%</strong>). שימו לב לפער המגדרי: בבתי ספר לבנות הפיזיקה כמעט נעלמת לטובת מדעי המחשב.</div>`;
   }
@@ -2117,13 +2316,13 @@ function renderDeepDive(){
         backgroundColor: COL.primary, borderRadius:6,
         datalabels:{anchor:'end',align:'end',color:COL.primaryD,font:hf2(),
           formatter:(v,ctx)=>{ const i=ctx.dataIndex; return hasGrade(school,i)? v+' ('+schoolGradePct(school,i).toFixed(0)+'%)' : '—'; }} }]},
-    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:24}},
+    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:10}},
       plugins:{legend:{display:false}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
-               y:{ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{grace:'14%',ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
-  // Subjects pie — השכבה הגבוהה ביותר שזמינה בפועל (גם ז'-ט' לחט"ב)
+  // מקצועות השכבה הבוגרת — השכבה הגבוהה ביותר שזמינה בפועל (גם ז'-ט' לחט"ב)
   destroyChart('ddSubjects');
   let lastG = null;
   for(let i = ALL_GRADES.length-1; i >= 0; i--){
@@ -2136,7 +2335,7 @@ function renderDeepDive(){
   if(!lr){
     pieBox.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;">אין נתונים</div>';
   } else if(isAmatLast){
-    // שכבת עמ"ט — המקצועות אינם מופרדים במקור, אין טעם בעוגה
+    // שכבת עמ"ט — המקצועות אינם מופרדים במקור, אין מה לפלח
     pieBox.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px;">
       <div style="font-size:30px;font-weight:900;color:var(--primary-d);">${lr[4]}</div>
       <div style="font-size:13px;color:var(--muted);margin-top:4px;">בקבוצת עמ"ט, שכבה ${lastG}</div>
@@ -2144,15 +2343,36 @@ function renderDeepDive(){
         בשכבה זו בית הספר לא מפריד בין המקצועות במקור — אין פילוח זמין.</div>
     </div>`;
   } else {
-    charts.ddSubjects = new Chart(document.getElementById('ddSubjects'), {
-      type:'doughnut',
-      data:{ labels:['מדעי המחשב','פיזיקה','מתמטיקה 5 יח"ל'],
-        datasets:[{ data:[lr[1],lr[2],lr[3]], backgroundColor:[COL.cs,COL.ph,COL.ma], borderWidth:2, borderColor:'#fff',
-          datalabels:{color:'#fff',font:{family:'Heebo',size:14,weight:'700'},formatter:v=>v||''} }]},
-      options:{ responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:HF,color:'#5f6368',padding:12}},
-          title:{display:true,text:'שכבה '+lastG,font:{family:'Heebo',size:12},color:'#5f6368'}}}
-    });
+    // ⚠ **לא עוגה, וגם לא Chart.js.** שני לקחים:
+    // 1. המקצועות אינם חלוקה של שלם — אותו תלמיד נספר גם במתמטיקה וגם
+    //    במדמ"ח, והסכום גדול ממספר הלומדים בשכבה. עוגה הציגה כל מקצוע
+    //    כנתח מתוך 100% ושיקרה גם על הגודל היחסי וגם על המכנה.
+    // 2. מוטות אופקיים ב-Chart.js דרשו ציר הפוך כדי לגדול ימינה→שמאלה,
+    //    וזה דחף את התוויות לתוך המוטות. ציר שנמתח עד גודל השכבה גם
+    //    כיווץ את כולם. מוטות HTML — אותו רכיב `.cmp-*` שכבר עובד ב-RTL
+    //    בכל שאר הדשבורד — פותרים את שניהם בלי קנבס.
+    // אורך המוט יחסי **למקצוע הגדול**, וה-% מהשכבה במלל מתחת לשם.
+    const rows = [
+      {n:'מתמטיקה 5 יח"ל', v:lr[3], c:COL.ma},
+      {n:'פיזיקה',          v:lr[2], c:COL.ph},
+      {n:'מדעי המחשב',      v:lr[1], c:COL.cs},
+      {n:'זכאות למדד טק',   v:lr[4], c:COL.primary, out:true}
+    ];
+    const gradeN = lr[0] || 0;
+    const mx = Math.max(...rows.map(r=> r.v || 0), 1);
+    const w  = v => Math.max(1.5, Math.min(100, v / (mx * 1.04) * 100));
+    pieBox.innerHTML = `
+      <div class="sj-wrap">
+        <div class="sj-head">שכבה ${lastG}${gradeN? ' · ' + num(gradeN) + ' תלמידים' : ''}</div>
+        ${rows.map(r=> `
+          <div class="cmp-row${r.out? ' sj-out' : ''}">
+            <div class="cmp-lbl">${r.n}<small>${gradeN? (r.v/gradeN*100).toFixed(0)+'% מהשכבה' : '—'}</small></div>
+            <div class="cmp-bars"><div class="cmp-track">
+              <div class="cmp-bar" style="width:${w(r.v).toFixed(1)}%;background:${r.c};"></div>
+              <div class="cmp-val sj-num">${num(r.v)}</div>
+            </div></div>
+          </div>`).join('')}
+      </div>`;
   }
 
   // ─── מסע המקצועות לאורך השכבות (ז'-יב' אם זמין) ───
@@ -2230,14 +2450,14 @@ function renderDeepDive(){
     type:'line',
     data:{ labels: ALL_GRADES.map(g=>'שכבה '+g), datasets: ds },
     options:{ responsive:true, maintainAspectRatio:false,
-      layout:{padding:{top:24,right:12,left:12}},
+      layout:{padding:{top:12,right:12,left:12}},
       plugins:{
         legend:{position:'top', align:'end', labels:{font:HF, color:'#5f6368', boxWidth:14, padding:10}},
         tooltip:{ mode:'index', intersect:false,
           callbacks:{ label: ctx => ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%') } }
       },
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // Compare to city + national
@@ -2255,10 +2475,10 @@ function renderDeepDive(){
         refLine('ממוצע עירוני', cityAvg, COL.bad),
         refLine('ארצי '+NATIONAL+'%', NATIONAL, COL.info)
       ]},
-    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:28}},
+    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:12}},
       plugins:{legend:{display:true,labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% טק'}}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
-               y:{ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{grace:'14%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // תובנות איכותניות מבוססות נתונים
@@ -2337,8 +2557,8 @@ function generateSchoolInsights(school){
     insights.push({
       kind: Math.abs(dlt) < 5 ? 'neutral' : (better ? 'good' : 'warn'),
       icon: better ? '✓' : '⚠',
-      title: better ? 'שימור טוב מהממוצע: נשירה י׳→יב׳' : 'נשירה גבוהה מהממוצע: י׳→יב׳',
-      body: `מתחילים את י׳ עם <strong>${p(0).toFixed(1)}%</strong> במסלול הטק ומסיימים יב׳ עם <strong>${p(2).toFixed(1)}%</strong> — נשירה יחסית של <strong>${dp.toFixed(0)}%</strong>. הממוצע העירוני: <strong>${cityDrop.toFixed(0)}%</strong>. ${better?'נקודת חוזק שכדאי לשמר ולהבין מה מאחוריה.':'נקודת התערבות מרכזית — איפה נושרים? בין יא׳ ליב׳ או כבר במעבר י׳→יא׳?'}`
+      title: better ? 'שימור טוב מהממוצע: מגמה י׳→יב׳' : 'מגמה גבוהה מהממוצע: י׳→יב׳',
+      body: `מתחילים את י׳ עם <strong>${p(0).toFixed(1)}%</strong> במסלול הטק ומסיימים יב׳ עם <strong>${p(2).toFixed(1)}%</strong> — מגמה יחסית של <strong>${dp.toFixed(0)}%</strong>. הממוצע העירוני: <strong>${cityDrop.toFixed(0)}%</strong>. ${better?'נקודת חוזק שכדאי לשמר ולהבין מה מאחוריה.':'נקודת התערבות מרכזית — היכן זה קורה? בין יא׳ ליב׳ או כבר במעבר י׳→יא׳?'}`
     });
   }
 
@@ -2358,7 +2578,7 @@ function generateSchoolInsights(school){
         kind: better?'good':(worse?'warn':'neutral'),
         icon: better?'✓':(worse?'⚠':'•'),
         title: '5 יח"ל מתמטיקה ט׳→יב׳ — השער למסלול הארצי',
-        body: `בשכבת ט׳ <strong>${t9}</strong> תלמידים ב-5 יח"ל מתמ׳, ב-יב׳ נשארו <strong>${t12}</strong> — נשירה <strong>${mathDrop.toFixed(0)}%</strong>. ממוצע עירוני באותו פילטר: <strong>${cMathDrop.toFixed(0)}%</strong>. ${better?'<strong>נקודת חוזק קריטית</strong> — מתמטיקה היא השער של בגרוטק לפי הקריטריון הארצי, ושימרתם אותה היטב.':worse?'<strong>פילטר עיקרי שצריך לפתוח</strong> — תלמיד שיורד ל-4 יח"ל מתמ׳ יוצא מהמסלול הארצי גם אם הוא חזק במדמ"ח. ראוי לבחון תוכנית תגבור ייעודית.':'התנהגות דומה לעיר.'}`
+        body: `בשכבת ט׳ <strong>${t9}</strong> תלמידים ב-5 יח"ל מתמ׳, ב-יב׳ נשארו <strong>${t12}</strong> — מגמה <strong>${mathDrop.toFixed(0)}%</strong>. ממוצע עירוני באותו פילטר: <strong>${cMathDrop.toFixed(0)}%</strong>. ${better?'<strong>נקודת חוזק קריטית</strong> — מתמטיקה היא השער של בגרוטק לפי הקריטריון הארצי, ושימרתם אותה היטב.':worse?'<strong>פילטר עיקרי שצריך לפתוח</strong> — תלמיד שיורד ל-4 יח"ל מתמ׳ יוצא מהמסלול הארצי גם אם הוא חזק במדמ"ח. ראוי לבחון תוכנית תגבור ייעודית.':'התנהגות דומה לעיר.'}`
       });
     }
   }
@@ -2582,8 +2802,8 @@ const CITY_DETECTORS = [
     cost: ev=> ev.lost,
     title: ()=> 'השער החסום: 5 יח"ל מתמטיקה בין י׳ ל-יב׳',
     body: ev=> `בגרוטק מותנית ב-<strong>5 יח"ל מתמטיקה + פיזיקה או מדמ"ח</strong>. תלמיד שיורד ל-4 יח"ל יוצא מהמסלול גם אם הוא חזק במדעי המחשב. `+
-      `בחולון <strong>${ev.ma5[0]}</strong> תלמידים נכנסים ל-י׳ ב-5 יח"ל מתמ׳, רק <strong>${ev.ma5[2]}</strong> מסיימים — נשירה של <strong>${ev.maDrop.toFixed(0)}%</strong>. `+
-      `זה <strong>${ev.gap.toFixed(0)} נקודות מהר יותר</strong> מקצב הנשירה של הטק עצמו (${ev.techDrop.toFixed(0)}%), כלומר המתמטיקה היא הפילטר הכובל — לא בחירת המקצוע.`,
+      `בחולון <strong>${ev.ma5[0]}</strong> תלמידים נכנסים ל-י׳ ב-5 יח"ל מתמ׳, רק <strong>${ev.ma5[2]}</strong> מסיימים — מגמה של <strong>${ev.maDrop.toFixed(0)}%</strong>. `+
+      `זה <strong>${ev.gap.toFixed(0)} נקודות מהר יותר</strong> מקצב המגמה של הטק עצמו (${ev.techDrop.toFixed(0)}%), כלומר המתמטיקה היא הפילטר הכובל — לא בחירת המקצוע.`,
     cols: ()=> CTX.math9to12.length? insCols(
       {h:'⚠ דלף קיצוני (5 יח"ל מתמ׳, ט→יב)', b:insList(CTX.math9to12.slice(0,4),'bad')},
       {h:'✓ מודלים לחיקוי',                   b:insList(CTX.math9to12.slice(-2),'good')}) : '',
@@ -2621,7 +2841,7 @@ const CITY_DETECTORS = [
       <div class="ins-col bad">
         <div class="ins-col-h">${['🥇','🥈','🥉','🏅'][i]} ${s.name} — פער של ${num(x.gap)} תלמידי טק</div>
         <div class="ins-list" style="font-size:13px;">
-          ${num(schoolStudentTotal(s))} תלמידים ב-י׳–יב׳, <span class="num">${schoolTechPct(s).toFixed(1)}%</span> טק${dr!=null?`. נשירה <span class="num">${dr.toFixed(0)}%</span>`:''}.
+          ${num(schoolStudentTotal(s))} תלמידים ב-י׳–יב׳, <span class="num">${schoolTechPct(s).toFixed(1)}%</span> טק${dr!=null?`. מגמה <span class="num">${dr.toFixed(0)}%</span>`:''}.
           מסיימים <span class="num">${g12.toFixed(1)}%</span> ב-יב׳ — <span class="nm ${g12<NATIONAL?'bad':'good'}">${g12<NATIONAL?'מתחת לארצי':'מעל הארצי'}</span>.
         </div>
       </div>`;}).join('')}
@@ -2703,7 +2923,7 @@ const CITY_DETECTORS = [
     cost: ev=> ev.techP,
     title: ev=> `${nSchools(ev.partials.length)} חלקיים מחזיקים ${ev.share.toFixed(0)}% מלומדי הטק — ומחוץ לדירוג`,
     body: ev=> `${ev.partials.map(s=> `<strong>${s.name}</strong> (${s.note||'חלקי'})`).join(', ')} — יחד <strong>${ev.techP}</strong> לומדי טק. `+
-      `הם נכללים במדד העירוני בכל שכבה שיש להם, אבל לא בדירוג בין בתי הספר ולא בחישוב הנשירה, כי אי אפשר להשוות מדד מצטבר י׳–יב׳ בלי שלוש השכבות. `+
+      `הם נכללים במדד העירוני בכל שכבה שיש להם, אבל לא בדירוג בין בתי הספר ולא בחישוב המגמה, כי אי אפשר להשוות מדד מצטבר י׳–יב׳ בלי שלוש השכבות. `+
       `כלומר: חלק מהתמונה העירונית אינו מנוהל דרך ההשוואה הרגילה.`,
     action: ()=> 'להשלים את הנתונים החסרים בגיליון עבור בתי הספר האלה, או להגדיר להם מסלול מעקב נפרד. היום הם בשטח האפור.' },
 
@@ -2718,8 +2938,8 @@ const CITY_DETECTORS = [
         b:`<span class="num">${schoolTechTotal(topAbs)}</span> לומדי טק ב-י׳–יב׳ — הכי הרבה בעיר, ב-<span class="num">${schoolTechPct(topAbs).toFixed(1)}%</span> מהשכבות. <span class="nm good">מודל לבית ספר גדול</span>.` });
       if(bestSeam) models.push({ h:`${bestSeam.name} — שולט בצומת ט׳→י׳`,
         b:`שימור של <span class="num">${Math.min(100,100-bestSeam.drop).toFixed(0)}%</span> בצומת (${bestSeam.t9}→${bestSeam.t10}) — הגבוה בעיר. המעבר המנהלי שלהם הוא בנצ׳מרק.` });
-      if(lowDrop) models.push({ h:`${lowDrop.s.name} — הנשירה הנמוכה ביותר`,
-        b:`<span class="num">${lowDrop.d.toFixed(0)}%</span> נשירה י׳→יב׳ — הנמוכה בעיר. ${totalStudents(lowDrop.s,2)} תלמידים ב-יב׳. מנגנון שימור הכיתה לאורך שלוש שנים שווה ללמידה.` });
+      if(lowDrop) models.push({ h:`${lowDrop.s.name} — המגמה הנמוכה ביותר`,
+        b:`<span class="num">${lowDrop.d.toFixed(0)}%</span> מגמה י׳→יב׳ — הנמוכה בעיר. ${totalStudents(lowDrop.s,2)} תלמידים ב-יב׳. מנגנון שימור הכיתה לאורך שלוש שנים שווה ללמידה.` });
       return models.length? {models} : null;
     },
     cost: ()=> 0.5,                                 // רצפה — נכנס רק אם יש מקום
@@ -2919,7 +3139,7 @@ function renderGender(){
     type:'line',
     data:{ labels: GRADES.map(g=>'שכבה '+g), datasets: ds },
     // י׳ ו-יב׳ יושבות עכשיו על קצות הציר, ולא באמצעו — בלי ריפוד אופקי התוויות שלהן נחתכות
-    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,right:30,left:30}},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:12,right:30,left:30}},
       plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%')}} },
@@ -2962,7 +3182,8 @@ function renderGender(){
         { label:'ארצי '+NATIONAL_GIRLS+'%', data: ordered.map(()=>NATIONAL_GIRLS),
           type:'line',borderColor:COL.info,borderDash:[6,4],borderWidth:2,pointRadius:0,fill:false,datalabels:{display:false} },
       ]},
-    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:28}},
+    // כאן הציר נעול ל-0–100 ואי אפשר להוסיף `grace`, ולכן הריפוד מעט גדול יותר
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:14}},
       plugins:{legend:{labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% תלמידות בקרב לומדי הטק'}}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
                y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
@@ -3124,97 +3345,141 @@ function generateGenderInsights(ctx){
 // השורה לא הוזנה נראית זהה לתוכנית שנעלמה.
 // ════════════════════════════════════════════════════════════════
 function renderFutureTech(){
-  const periods = ftPeriods();
-  const g       = ftGrade(periods);
+  const years   = ftYears();
   const kpis    = document.getElementById('ftKpis');
-  const box     = document.getElementById('ftMatrix');
-  document.getElementById('ftGradePill').textContent = g? ('שכבה '+g+'׳') : '—';
+  const empty   = document.getElementById('ftEmpty');
+  const funCard = document.getElementById('ftFunnelCard');
+  const tblCard = document.getElementById('ftTableCard');
 
-  if(!g){
-    kpis.innerHTML = '';
-    box.innerHTML = `<div class="insight warn">
-      <div class="insight-t">לא נמצאו נתוני עתיד טק</div>
-      <div class="insight-b">שורת <strong>עתיד טק</strong> ריקה בכל ${periods.length} תקופות הדגימה שנטענו מהגיליון.
-        ברגע שיוזנו נתונים באחת התקופות, הטבלה תיבנה כאן מעצמה.</div>
+  const y = years[0] || null;                       // השנה השלמה האחרונה
+  const g = y ? ftGrade([y.start, y.end]) : null;
+  document.getElementById('ftYearPill').textContent  = y ? y.label : '—';
+  document.getElementById('ftGradePill').textContent = g ? ('שכבה '+g+'׳') : '—';
+
+  if(!y || !g){
+    kpis.innerHTML=''; kpis.style.display='none';
+    funCard.style.display='none'; tblCard.style.display='none';
+    empty.innerHTML = `<div class="insight warn">
+      <div class="insight-t">אין עדיין שנה שלמה למדידה</div>
+      <div class="insight-b">המשפך דורש <strong>שני טאבים של אותה שנה</strong> —
+        תחילת שנה (מי נכנס לתוכנית) וסוף שנה (מי בחר במקצועות הטק).
+        ${y ? 'בשנת '+y.label+' שורת <strong>עתיד טק</strong> ריקה בשני הטאבים.'
+            : 'בגיליון אין כרגע שנה שיש לה את שני הטאבים.'}</div>
     </div>`;
     return;
   }
+  empty.innerHTML=''; kpis.style.display=''; funCard.style.display=''; tblCard.style.display='';
 
-  // ── אריח לכל תקופה — השיעור העירוני, ברצועה בצבע הרמזור ──
-  // .kpi-grid קבוע על 4 עמודות; כאן מספר התקופות משתנה (המפרט מזכיר
-  // שני טאבים עתידיים), אז נקבע לפי מה שנטען בפועל.
-  kpis.style.gridTemplateColumns = `repeat(${periods.length},minmax(0,1fr))`;
-  kpis.innerHTML = periods.map(p=>{
-    const c = ftCity(p.schools, g);
-    if(!c) return `<div class="kpi" style="--ft:var(--border);">
-        <div class="kpi-lbl">${p.label}</div>
-        <div class="kpi-val" style="color:var(--muted);">—</div>
-        <div class="kpi-sub">לא הוזן בגיליון</div>
-      </div>`;
-    const st = ftStep(c.pct);
-    return `<div class="kpi" style="--ft:${st.color};">
-        <div class="kpi-lbl">${p.label}</div>
-        <div class="kpi-val" style="color:${st.color};">${c.pct.toFixed(1)}%</div>
-        <div class="kpi-sub">${c.n.toLocaleString('he-IL')} משתתפים · ${st.word}</div>
-      </div>`;
-  }).join('');
+  const c   = ftCityFunnel(y.start, y.end, g);
+  const cst = ftStep(c.convPct);
+  // מדד הטק העירוני של אותה תקופה — עוגן לעמודה שהטבלה ממוינת לפיה.
+  // מחושב כאן מבתי הספר (§3.1) ולא דרך cityOverallPct, שעובדת על הגלובל.
+  const cityTech = (()=>{
+    let t=0, s=0;
+    y.end.schools.forEach(sch=>{ t+=schoolTechTotal(sch); s+=schoolStudentTotal(sch); });
+    return s? t/s*100 : null;
+  })();
+  const N   = v => v==null ? '—' : v.toLocaleString('he-IL');
+  const P   = v => v==null ? '—' : v.toFixed(1)+'%';
+  const dash= '<span style="color:var(--muted);">—</span>';
 
-  // ── בתי הספר: איחוד מכל התקופות. הרשימה עשויה להשתנות בין טאבים,
-  //    ובית ספר שנעדר מתקופה מקבל תא ריק במקום להיעלם מהטבלה. ──
-  const names = [], meta = {}, cells = {};
-  periods.forEach(p=> p.schools.forEach(s=>{ if(names.indexOf(s.name)<0) names.push(s.name); }));
-  names.forEach(n=>{
-    cells[n] = periods.map(p=>{
-      const s = p.schools.find(x=> x.name===n);
-      if(s) meta[n] = s;
-      return ftCell(s, g);
-    });
+  // ── ארבעה אריחים: שני קצות המשפך, שיעור ההמרה, והאובדן ──
+  // .kpi.pri/.acc צובעים את הרצועה דרך המחלקה, אבל הכלל המקומי
+  // #view-futuretech .kpi::before גובר עליהם — ולכן --ft מפורש.
+  kpis.style.gridTemplateColumns='';
+  kpis.innerHTML = `
+    <div class="kpi" style="--ft:var(--primary);">
+      <div class="kpi-lbl">נכנסו לתוכנית</div>
+      <div class="kpi-val">${N(c.entered)}</div>
+      <div class="kpi-sub">${P(c.entryPct)} משכבה ${g}׳ (${N(c.cohort)} תלמידים)</div>
+    </div>
+    <div class="kpi" style="--ft:var(--accent);">
+      <div class="kpi-lbl">בחרו במקצועות הטק</div>
+      <div class="kpi-val">${N(c.chose)}</div>
+      <div class="kpi-sub">מתוך ${N(c.entered)} שנכנסו לתוכנית</div>
+    </div>
+    <div class="kpi" style="--ft:${cst.color};">
+      <div class="kpi-lbl">שיעור ההמרה</div>
+      <div class="kpi-val" style="color:${cst.color};">${P(c.convPct)}</div>
+      <div class="kpi-sub">${cst.word}</div>
+    </div>
+    <div class="kpi" style="--ft:var(--bad);">
+      <div class="kpi-lbl">אבדו בדרך</div>
+      <div class="kpi-val">${N(c.lost)}</div>
+      <div class="kpi-sub">נכנסו לתוכנית ולא בחרו בטק</div>
+    </div>`;
+
+  // ── המשפך העירוני ──
+  const w = Math.max(6, Math.min(100, c.convPct));
+  document.getElementById('ftFunnel').innerHTML = `
+    <div class="ft-fun">
+      <div class="ft-fun-row">
+        <div class="ft-fun-lbl">נכנסו לתוכנית</div>
+        <div class="ft-fun-track">
+          <div class="ft-fun-bar" style="width:100%;background:var(--primary);">${N(c.entered)}</div>
+        </div>
+      </div>
+      <div class="ft-fun-row">
+        <div class="ft-fun-lbl">בחרו במקצועות הטק</div>
+        <div class="ft-fun-track">
+          <div class="ft-fun-bar" style="width:${w}%;background:${cst.color};">${N(c.chose)} · ${P(c.convPct)}</div>
+        </div>
+      </div>
+      <div class="ft-fun-note">↳ אבדו בדרך: <strong>${N(c.lost)}</strong> תלמידים נכנסו לתוכנית ולא בחרו במקצועות הטק</div>
+    </div>`;
+
+  // ── הטבלה, ממוינת לפי מדד הטק מהנמוך לגבוה ──
+  // בלי רמזור על הכניסה: הציפייה הפוכה (מדד גבוה → סביר שיכניס מעט),
+  // ורמזור שטוח היה מסמן באדום בתי ספר שאין להם סיבה להכניס הרבה.
+  // המיון עושה את העבודה — מי ש"אמור להשקיע הכי הרבה" יושב למעלה.
+  const rows = ftFunnelRows(y.start, y.end, g);
+  rows.sort((a,b)=>{
+    const an = a.idx==null, bn = b.idx==null;
+    if(an !== bn) return an ? 1 : -1;             // חסרי מדד (ז׳–ט׳) בתחתית
+    if(!an) return a.idx - b.idx;
+    return a.name.localeCompare(b.name,'he');
   });
 
-  // מיון על עמודת ייחוס אחת — התקופה האחרונה שיש בה נתונים עירוניים.
-  // מיון לפי "התקופה האחרונה של כל בית ספר" היה מדרג בתי ספר זה מול זה
-  // על תקופות שונות.
-  let refIdx = -1;
-  periods.forEach((p,i)=>{ if(ftCity(p.schools, g)) refIdx = i; });
-  const hasAny = n=> cells[n].some(Boolean);
-  names.sort((a,b)=>{
-    const ca = cells[a][refIdx], cb = cells[b][refIdx];
-    if(ca && cb) return cb.pct - ca.pct;
-    if(ca) return -1;
-    if(cb) return 1;
-    if(hasAny(a) !== hasAny(b)) return hasAny(a)? -1 : 1;
-    return a.localeCompare(b,'he');
-  });
-
-  const cell = c=>{
-    if(!c) return `<td class="ft-none">—</td>`;
-    const st = ftStep(c.pct);
+  const convTd = p =>{
+    if(p==null) return `<td class="ft-none">—</td>`;
+    const st = ftStep(p);
     return `<td class="ft-cell" style="background:${st.tint};">
-      <div class="ft-n">${c.n.toLocaleString('he-IL')}</div>
-      <div class="ft-p" style="color:${st.color};">${c.pct.toFixed(1)}%</div>
-    </td>`;
+      <div class="ft-n" style="color:${st.color};">${P(p)}</div></td>`;
   };
-  const key = st=> `<span class="ft-key"><span class="ft-dot" style="background:${st.color};"></span>${st.word}</span>`;
+  const key = st => `<span class="ft-key"><span class="ft-dot" style="background:${st.color};"></span>${st.word}</span>`;
 
-  box.innerHTML = `
+  document.getElementById('ftTable').innerHTML = `
     <table class="tbl">
       <thead><tr>
         <th>בית ספר</th>
-        ${periods.map(p=> `<th class="per">${p.label}</th>`).join('')}
+        <th class="per">מדד הטק <i class="ti" data-tip="המדד המשוקלל של בית הספר בשכבות י׳–יב׳ (§3.3), מטאב סוף השנה. לבית ספר ז׳–ט׳ אין חטיבה עליונה ולכן אין לו מדד.">i</i></th>
+        <th class="per">נכנסו לתוכנית</th>
+        <th class="per">בחרו בטק</th>
+        <th class="per">שיעור המרה <i class="ti" data-tip="מי שבחר במקצועות הטק בסוף השנה, חלקי מי שנכנס לתוכנית בתחילתה.">i</i></th>
       </tr></thead>
       <tbody>
-        ${names.map(n=> `<tr${hasAny(n)? '' : ' style="opacity:.6;"'}>
-            <td class="nm">${n}${badge(meta[n]||{})}</td>
-            ${cells[n].map(cell).join('')}
-          </tr>`).join('')}
+        ${rows.map(r => `<tr>
+          <td class="nm">${r.name}${badge(r.school||{})}</td>
+          <td class="ft-cell">${r.idx==null ? dash : `<div class="ft-n">${P(r.idx)}</div>`}</td>
+          <td class="ft-cell">${r.entered==null ? dash :
+            `<div class="ft-n">${N(r.entered)}</div>
+             <div class="ft-p" style="color:var(--muted);">${P(r.entryPct)} משכבה</div>`}</td>
+          <td class="ft-cell">${r.chose==null ? dash : `<div class="ft-n">${N(r.chose)}</div>`}</td>
+          ${convTd(r.convPct)}
+        </tr>`).join('')}
         <tr class="ft-city">
           <td class="nm">סה"כ עיר</td>
-          ${periods.map(p=> cell(ftCity(p.schools, g))).join('')}
+          <td class="ft-cell">${cityTech==null ? dash : `<div class="ft-n">${P(cityTech)}</div>`}</td>
+          <td class="ft-cell"><div class="ft-n">${N(c.entered)}</div>
+            <div class="ft-p" style="color:var(--muted);">${P(c.entryPct)} משכבה</div></td>
+          <td class="ft-cell"><div class="ft-n">${N(c.chose)}</div></td>
+          ${convTd(c.convPct)}
         </tr>
-        <tr><td colspan="${periods.length+1}" style="background:var(--bg);font-size:11px;color:var(--muted);line-height:1.9;">
-          <div>מעל 50% ${key(FT_STEPS.good)} · 30–50% ${key(FT_STEPS.warn)} · מתחת ל-30% ${key(FT_STEPS.bad)}</div>
-          <div>המדד: <strong>עתיד טק</strong> חלקי <strong>כמות תלמידים</strong> באותה שכבה. תא ריק (—) = לא הוזן בגיליון לאותה תקופה, ואינו אפס.</div>
-          <div>המדד מציג <strong>היקף השתתפות בלבד</strong>. הגיליון אינו מכיל נתוני פרט, ולכן אי אפשר להסיק ממנו על השפעת התוכנית על הישגי המשתתפים.</div>
+        <tr><td colspan="5" style="background:var(--bg);font-size:11px;color:var(--muted);line-height:1.9;">
+          <div>שיעור ההמרה — מעל 50% ${key(FT_STEPS.good)} · 30–50% ${key(FT_STEPS.warn)} · מתחת ל-30% ${key(FT_STEPS.bad)}</div>
+          <div><strong>נכנסו</strong> = שורת <strong>עתיד טק</strong> בטאב תחילת השנה. <strong>בחרו</strong> = אותה שורה בטאב סוף השנה, כלומר מי מבין הנכנסים בחר במקצועות הטק לקראת י׳.</div>
+          <div><strong>הציפייה:</strong> בית ספר עם מדד טק נמוך אמור להכניס יותר תלמידים לתוכנית — <strong>ולוודא שהם מגיעים עד הבחירה</strong>. לכן הטבלה ממוינת לפי המדד, ושיעור הכניסה אינו צבוע.</div>
+          <div>הגיליון מחזיק ספירות מצרפיות ולא רשומות תלמיד, ולכן ההתאמה בין שני המספרים היא <strong>הגדרה של המדד</strong> ולא מעקב אחרי תלמיד יחיד. תא ריק (—) = לא הוזן בגיליון.</div>
         </td></tr>
       </tbody>
     </table>`;
@@ -3339,11 +3604,11 @@ function yyGrade12(key){
     const techN = cityTotal(G12);
     const students = cityDenomByName('יב'), matz = cityDenomAlt('יב');
     if(!students) return null;
-    let ma5=0, gTech=0, gMa5=0;
+    let ma5=0, ph=0, cs=0, gTech=0, gMa5=0;
     SCHOOLS.forEach(s=>{ const r = s.grades['יב']; if(!r) return;
-      ma5 += r[3]; gTech += r[7]; gMa5 += r[9]; });
+      ma5 += r[3]; ph += r[2]; cs += r[1]; gTech += r[7]; gMa5 += r[9]; });
     return {
-      techN, ma5N: ma5, students, matz,
+      techN, ma5N: ma5, phN: ph, csN: cs, students, matz,
       tech:    cityPctAlt(G12),                      // המכנה של הדו"ח — null בלי מצבת
       techAlt: cityPct(G12),                         // סכום בתי הספר, לרפרנס
       ma5:     matz ? ma5/matz*100 : null,
@@ -3378,7 +3643,7 @@ function renderYYDecade(A, B){
   const techData = sT.map(p=> p.v).concat(ours.map(o=> tOf(o.g)));
   const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> mOf(o.g)));
   const exact    = sT.map(p=> p.exact).concat(ours.map(()=> true));
-  const TEAL = '#16b3b3', GOLD = '#c8952f';
+  const TEAL = '#16b3b3', GOLD = '#c8952f', NATC = '#8a8398';   // אפור = ייחוס ארצי
 
   // תווית של סדרה שהוסתרה בלגנדה חייבת להיעלם איתה
   const shown = ctx=> !ctx.chart.getDatasetMeta(ctx.datasetIndex).hidden;
@@ -3402,10 +3667,10 @@ function renderYYDecade(A, B){
   };
 
   // הקו התחתון מתייג כלפי מטה והעליון כלפי מעלה — אחרת התוויות נפגשות באמצע.
-  // `all` — האם לתייג את כל הנקודות או רק את שלוש הקובעות. בתפר שני הקווים
-  // מתקרבים עד כדי 2 נק׳, ולכן רק הקו הראשי מתויג במלואו.
-  const line = (label, data, col, align, all, other) => ({
-    label, data, borderColor: col, backgroundColor: col,
+  // **שני הקווים מתויגים בכל הנקודות.** ההפרדה בתפר, שם הם מתקרבים ל-2 נק׳,
+  // היא תפקידו של `sideOf` ולא של צמצום התיוג.
+  const line = (label, data, col, align, other) => ({
+    label, data, order: 1, borderColor: col, backgroundColor: col,
     borderWidth: 3.5, tension: 0.25,
     pointRadius: ctx=> ctx.dataIndex >= nR ? 7 : 5,
     pointStyle: ctx=> ctx.dataIndex >= nR ? 'rectRot' : 'circle',
@@ -3413,10 +3678,9 @@ function renderYYDecade(A, B){
     pointBorderColor: col, pointBorderWidth: 2.5, fill: false, spanGaps: false,
     segment: { borderDash: ctx=> ctx.p0DataIndex >= nR-1 ? [7,5] : undefined },
     datalabels: {
-      // כל הנקודות מתויגות. מה שמונע בלגן: הקו התחתון מתייג מטה והעליון מעלה
-      // (הקווים רחוקים כ-7 נק׳ זה מזה), פונט קטן, והנקודות הקובעות בולטות יותר.
-      display: ctx=> shown(ctx) && ctx.dataset.data[ctx.dataIndex] != null &&
-                     (all || key3(ctx.dataIndex)),
+      // כל הנקודות מתויגות. מה שמונע בלגן: `sideOf` בוחר צד, פונט קטן לשנות
+      // הביניים, ושלוש הנקודות הקובעות בולטות יותר.
+      display: ctx=> shown(ctx) && ctx.dataset.data[ctx.dataIndex] != null,
       anchor:'end', color: col,
       align: ctx=> sideOf(ctx.dataset.data, other, ctx.dataIndex, align),
       // ה-offset חייב לעלות על רדיוס הסמן (5 לפני התפר, 7 אחריו), אחרת
@@ -3433,14 +3697,39 @@ function renderYYDecade(A, B){
     }
   });
 
-  // נקודות הייחוס הארציות — בלי תווית קבועה. ארבע תוויות על אותו x התנגשו,
-  // והדו"ח מציג אותן בעמודה נפרדת שאין לנו. הערכים בתת-הכותרת וב-tooltip.
-  const natDot = (label, val, col) => ({
-    label, data: Array(nR-1).fill(null).concat([val], Array(labels.length-nR).fill(null)),
-    borderColor: col, backgroundColor: col, showLine: false,
-    pointRadius: 7, pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 2,
-    datalabels:{ display:false }
+  // ── הסדרה הארצית כקו מלא, לא כנקודה בודדת ──────────────────────
+  // השנה הלועזית של כל עמודה: טרום-התפר מהסדרה ההיסטורית, ומהתפר ואילך
+  // מ-`p.year` (תשפ"ה=2025). כך `NAT` 2018–2025 נשתל על אותו ציר, וה-2025
+  // הארצי נופל בדיוק על תשפ"ה שלנו.
+  const yearAt = i=> i < nR ? sT[i].y : (ours[i-nR] && ours[i-nR].p.year) || null;
+  const natSeries = metric=> labels.map((_, i)=>{
+    const k = NAT.years.indexOf(yearAt(i));
+    return k < 0 ? null : NAT[metric][k];
   });
+  const natLastIdx = arr=>{ for(let i=arr.length-1; i>=0; i--) if(arr[i] != null) return i; return -1; };
+
+  // אפור ניטרלי ודק, `order` גבוה יותר → מצויר **מאחורי** הקווים של חולון,
+  // כדי שייקרא כרקע ייחוס ולא כסדרה מתחרה. מחוץ ל-tooltip.
+  // ⚠ התווית מוזזת אופקית (`align:'left'`) — תיוג אנכי מחזיר את התנגשות
+  // ארבע התוויות שתוקנה ב-v25. הקנבס כפוי ל-ltr (v27), ולכן 'left' = אחורה.
+  const natLine = (label, metric) => {
+    const data = natSeries(metric), last = natLastIdx(data);
+    return {
+      label, data, order: 2,
+      borderColor: NATC, backgroundColor: NATC, borderWidth: 2, tension: 0.25,
+      fill: false, spanGaps: false,
+      pointRadius: ctx=> ctx.dataIndex === last ? 5 : 2.5,
+      pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 1.5,
+      datalabels:{
+        display: ctx=> shown(ctx) && ctx.dataIndex === last,
+        anchor:'end', align:'left', offset: 10, color: NATC,
+        backgroundColor:'#fff', borderRadius: 3,
+        padding:{top:1, bottom:1, left:4, right:4},
+        font:{family:'Heebo', size:10, weight:'700'},
+        formatter: v=> v==null? '' : 'ארצי '+v.toFixed(1)+'%'
+      }
+    };
+  };
 
   const CITY_Y = NAT.years.indexOf(2024) >= 0 ? 2024 : NAT.years[NAT.years.length-1];
   const natTech = NAT.tech[NAT.years.indexOf(CITY_Y)], natMa5 = NAT.ma5[NAT.years.indexOf(CITY_Y)];
@@ -3466,14 +3755,15 @@ function renderYYDecade(A, B){
   charts.yyDecade = new Chart(document.getElementById('yyDecade'), {
     type:'line',
     data:{ labels, datasets:[
-      line('בגרות הייטק', techData, TEAL, 'bottom', true,  ma5Data),  // הראשי — כל הנקודות
-      line('מתמטיקה 5 יח״ל', ma5Data, GOLD, 'top',    false, techData), // רק הקובעות
-      natDot('ארצי — הייטק', natTech, TEAL),
-      natDot('ארצי — מתמטיקה', natMa5, GOLD)
+      line('בגרות הייטק',    techData, TEAL, 'bottom', ma5Data),
+      line('מתמטיקה 5 יח״ל', ma5Data,  GOLD, 'top',    techData),
+      natLine('ארצי — הייטק', 'tech')
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
-      layout:{ padding:{ top:34, right:26, left:26 } },
+      // הפנאי לתוויות מגיע מ-`grace` שעל ציר ה-Y (למטה), ולכן הריפוד
+      // העליון קטן — ריפוד גדול כאן דוחף את הלגנדה ופותח רצועה לבנה.
+      layout:{ padding:{ top:14, right:26, left:26 } },
       interaction:{ mode:'index', intersect:false },
       plugins:{
         legend:{ position:'top', align:'end',
@@ -3483,29 +3773,28 @@ function renderYYDecade(A, B){
           // על הגרף נקודה בודדת בלי הקו שהיא משווה אליו
           onClick(e, item, legend){
             const ch = legend.chart, i = item.datasetIndex;
-            const linked = { 0:2, 1:3 }[i];       // קו → נקודת הייחוס הארצית שלו
+            const linked = { 0:2 }[i];            // הייטק גורר את הקו הארצי שלו
             const vis = !ch.isDatasetVisible(i);
             ch.setDatasetVisibility(i, vis);
             if(linked != null) ch.setDatasetVisibility(linked, vis);
             ch.update();
           } },
-        tooltip:{ mode:'index', intersect:false, callbacks:{
-          title: items=> labels[items[0].dataIndex] +
-            (items[0].dataIndex >= nR ? ' — נתוני הגיליון' : ' — דו״ח המצוינות'),
-          label: ctx=>{
-            if(ctx.parsed.y == null) return null;
-            let s = ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
-            if(ctx.dataset.label.startsWith('ארצי')) return s;
-            if(!exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.4)';
-            const o = ours[ctx.dataIndex - nR];
-            if(o){                                 // הערך במכנה השני, לצד הנבחר
-              const other = ctx.datasetIndex===0
-                ? (onMatz ? o.g.techAlt : o.g.tech) : (onMatz ? o.g.ma5Alt : o.g.ma5);
-              s += !o.g.matz ? '  (אין מצבת — סה״כ עירוני)'
-                 : other==null ? '' : `  ·  ב${onMatz?'סה״כ עירוני':'מצבת'} ${other.toFixed(1)}%`;
-            }
-            return s;
-          } } }
+        tooltip:{ mode:'index', intersect:false,
+          // נקודות הייחוס הארציות אינן ב-tooltip — המספר שלהן על הגרף
+          filter: item=> item.datasetIndex < 2,
+          callbacks:{
+            // המקור אינו אחיד לאורך הציר: 2014 מהדו"ח, 2015 מדידה, ומ-2016
+            // ואילך אתר משה"ח (§12.5)
+            title: items=>{
+              const i = items[0].dataIndex;
+              return labels[i] + ' — ' + (i >= nR ? 'נתוני הגיליון'
+                : !exact[i] ? 'מדידה מהגרף' : i === 0 ? 'דו״ח המצוינות' : 'משרד החינוך');
+            },
+            // ערך אחד בלבד — המכנה שהמתג בחר. הצגת שני החישובים סתרה את המתג.
+            label: ctx=> ctx.parsed.y == null ? null
+              : ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' +
+                (exact[ctx.dataIndex] ? '' : '  (משוער)')
+          } }
       },
       scales:{
         x:{ ticks:{ font:hf2(), color:'#5f6368' }, grid:{ display:false } },
@@ -3522,7 +3811,8 @@ function renderYYDecade(A, B){
     `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
     `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
     `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
-    `<span class="alt-num">ממוצע ארצי ${CITY_Y} (הנקודות המלאות): הייטק ${natTech.toFixed(1)}% · מתמטיקה ${natMa5.toFixed(1)}%</span>`;
+    `<span class="alt-num">הקו האפור הוא <strong>בגרות הייטק הארצית</strong> (משרד החינוך, ${NAT.years[0]}–${NAT.years[NAT.years.length-1]}). ` +
+    `במתמטיקה 5 יח״ל הארצי עומד על ${_last(NAT.ma5).toFixed(1)}% — קו ארצי שני היה חוצה כאן את קו ההייטק של חולון ולכן אינו מוצג.</span>`;
 
   const pill = (lbl, val, ref, col) =>
     `<div class="meta-pill"><span style="color:var(--muted);">${lbl}</span>
@@ -3536,6 +3826,101 @@ function renderYYDecade(A, B){
       ${pill('לומדי מתמטיקה 5 יב׳', last.g.ma5N.toLocaleString('he-IL'), HOLON_HIST.ma5N, GOLD)}
       ${pill('♀ תלמידות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
     </div>` : '';
+
+  // ── למה המתמטיקה עולה בזמן שהמדד יורד ───────────────────────────
+  // שני גורמים **נפרדים**, ושניהם נגזרים מהמספרים ולא כתובים מראש:
+  //   מונה — מי שעבר את מחסום המתמטיקה ולא המשיך לפיזיקה/מדמ״ח.
+  //   מכנה — שכבה שגדלה מורידה את האחוז גם כשמספר הזכאים לא זז.
+  // בלי ההפרדה הזו הקורא מייחס את כל הירידה לביצועים, וזה פשוט לא נכון.
+  const dvBox = document.getElementById('yyDiverge');
+  dvBox.style.display = 'none';
+  if(ours.length > 1){
+    const a = ours[0].g, b = ours[1].g;
+    const den = g=> onMatz ? (g.matz || g.students) : g.students;
+    const dTech = tOf(b) - tOf(a), dMa5 = mOf(b) - mOf(a);
+
+    // רק המקרה שהמשתמש שאל עליו: מתמטיקה עולה והמדד יורד. בכיוון ההפוך
+    // ההסבר אחר לגמרי, ואין להמציא אותו.
+    if(dMa5 > 0.3 && dTech < -0.3){
+      const n = v=> v.toLocaleString('he-IL');
+      const sg = v=> (v >= 0 ? '+' : '−') + n(Math.abs(v));
+      const addMa5 = b.ma5N - a.ma5N, addPh = b.phN - a.phN, addCs = b.csN - a.csN;
+      const gapA = a.ma5N - a.techN, gapB = b.ma5N - b.techN;
+      const dTechN = b.techN - a.techN;
+      const denB = den(b);
+      const ifSame = denB ? a.techN / denB * 100 : null;      // אילו מספר הזכאים לא היה זז
+      const byDenom = ifSame == null ? null : tOf(a) - ifSame;
+
+      // המלל מצטמצם למשפט אחד: המספרים כבר על המסך, והמשתמש ביקש פחות טקסט.
+      // מה שנשאר הוא **הכלל** שאי אפשר להסיק מהמוטות — שמתמטיקה היא תנאי
+      // הכרחי ולא מספיק — ולא חזרה על הספרות.
+      const body =
+        `<strong>מתמטיקה 5 יח״ל היא תנאי הכרחי למדד, לא מספיק</strong> — צריך גם ` +
+        `5 יח״ל פיזיקה או מדעי המחשב. התוספת עצרה במתמטיקה, ובמקביל השכבה גדלה: ` +
+        `שני גורמים נפרדים שמושכים את האחוז למטה.`;
+
+      // ── ההמחשה: שני שלבים לכל תקופה, על סקאלה משותפת ─────────────
+      // האפור הוא המכנה (שכבת יב׳) והטורקיז הוא המונה — ולכן היחס ביניהם
+      // **הוא** האחוז שבכותרת. כשהאפור גדל והטורקיז לא, הירידה נראית לעין
+      // בלי להסביר אותה במילים. הזהוב מראה לאן הלכה תוספת המתמטיקה.
+      const mx = Math.max(den(a), den(b), 1);
+      const w  = v=> Math.max(1.2, v / mx * 100);
+      const grp = (label, g, pct, delta)=>{
+        const stop = Math.max(0, g.ma5N - g.techN);
+        const dTxt = delta == null ? '' :
+          `<span class="fnl-d" style="color:${delta<0?'#c5221f':'#137333'};">
+             ${delta<0?'▼':'▲'} ${Math.abs(delta).toFixed(1)} נק׳</span>`;
+        return `<div class="fnl-g">
+          <div class="fnl-head"><span class="fnl-per">${label}</span>
+            <span class="fnl-pct">${pct==null?'—':pct.toFixed(1)+'%'}</span>${dTxt}</div>
+          <div class="fnl-line">
+            <div class="fnl-cap">שכבת יב׳</div>
+            <div class="fnl-bars"><div class="fnl-track grade" style="width:${w(den(g)).toFixed(1)}%"></div></div>
+            <div class="fnl-val">${n(den(g))}</div>
+          </div>
+          <div class="fnl-line">
+            <div class="fnl-cap">מתמטיקה 5</div>
+            <div class="fnl-bars"><div class="fnl-track" style="width:${w(g.ma5N).toFixed(1)}%">
+              <div class="fnl-seg pass" style="width:${g.ma5N? (g.techN/g.ma5N*100).toFixed(1):0}%">${n(g.techN)}</div>
+              <div class="fnl-seg stop" style="width:${g.ma5N? (stop/g.ma5N*100).toFixed(1):0}%">${stop>0? n(stop):''}</div>
+            </div></div>
+            <div class="fnl-val">${n(g.ma5N)}</div>
+          </div>
+        </div>`;
+      };
+      const fnl = `<div class="fnl">
+        <div class="fnl-s">המדד = <b style="color:#0e8f8f;">טורקיז</b> חלקי <b style="color:#7a6d92;">אפור</b>.
+          האפור גדל, הטורקיז לא — וזה כל הסיפור.</div>
+        ${grp(A.label.replace(/\s*\(.*\)/,''), a, tOf(a), null)}
+        ${grp(B.label.replace(/\s*\(.*\)/,''), b, tOf(b), dTech)}
+        <div class="fnl-key">
+          <span><i style="background:#16b3b3;"></i>המשיכו לפיזיקה/מדמ״ח = זכאי המדד</span>
+          <span><i style="background:#c8952f;"></i>עצרו במתמטיקה</span>
+          <span><i style="background:#ddd6e6;"></i>שאר השכבה</span>
+        </div>
+        <div class="fnl-den">
+          <div class="fnl-tile"><div class="l">תוספת המתמטיקה</div>
+            <div class="v">${sg(addMa5)}</div>
+            <div class="s">ומתוכה לפיזיקה ${sg(addPh)} · למדמ״ח ${sg(addCs)}</div></div>
+          <div class="fnl-tile"><div class="l">עצרו במתמטיקה</div>
+            <div class="v">${n(gapA)} → ${n(gapB)}</div>
+            <div class="s">עברו את המחסום הקשה ולא המשיכו</div></div>
+          <div class="fnl-tile"><div class="l">המכנה — שכבת יב׳</div>
+            <div class="v">${sg(den(b)-den(a))}</div>
+            <div class="s">${n(den(a))} → ${n(den(b))} תלמידים</div></div>
+          ${(byDenom != null && byDenom > 0.3) ? `<div class="fnl-tile">
+            <div class="l">פירוק ${Math.abs(dTech).toFixed(1)} נק׳ הירידה</div>
+            <div class="v">${byDenom.toFixed(1)} מכנה · ${Math.max(0, Math.abs(dTech)-byDenom).toFixed(1)} מונה</div>
+            <div class="s">בלי שינוי במספר הזכאים המדד היה ${ifSame.toFixed(1)}%</div></div>` : ''}
+        </div>
+      </div>`;
+
+      dvBox.querySelector('.insight-t').innerHTML =
+        `מתמטיקה עלתה ${dMa5.toFixed(1)} נק׳ בזמן שהמדד ירד ${Math.abs(dTech).toFixed(1)} נק׳ — למה זה לא סותר`;
+      dvBox.querySelector('.insight-b').innerHTML = fnl + body;
+      dvBox.style.display = '';
+    }
+  }
 
   const anchorY = sT[sT.length-1].y, anchorV = sT[sT.length-1].v;
   const first = ours.length ? ours[0] : null;
@@ -4272,12 +4657,24 @@ function renderCities(){
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
+// תצוגות המשך: אין להן פריט תפריט משלהן, ולכן הן מדליקות את ההורה.
+const PARENT_OF = { deepdive:'schools', cities:'national' };
+
 function switchView(viewId){
   CURRENT_VIEW=viewId;
   document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=> i.classList.remove('active'));
   document.getElementById('view-'+viewId).classList.add('active');
-  document.querySelector(`.sb-item[data-view="${viewId}"]`).classList.add('active');
+  const item = document.querySelector(`.sb-item[data-view="${PARENT_OF[viewId] || viewId}"]`);
+  if(item){
+    item.classList.add('active');
+    // קבוצה סגורה שהתצוגה הפעילה בתוכה מסומנת בנקודה, ולא נפתחת בכוח —
+    // פתיחה אוטומטית מבטלת את הכיווץ שהמשתמש בחר
+    document.querySelectorAll('.sb-group').forEach(g=> g.classList.remove('has-active'));
+    const grp = item.closest('.sb-group');
+    if(grp) grp.classList.add('has-active');
+  }
+  window.scrollTo(0, 0);
   if(viewId==='overview') renderOverview();
   if(viewId==='subjects') renderSubjects();
   if(viewId==='schools')  renderSchools();
@@ -4293,12 +4690,56 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
 });
 
+// ── אקורדיאון התפריט ────────────────────────────────────────────
+// מצב הקבוצות נשמר מקומית: מי שסגר קבוצה לא רוצה למצוא אותה פתוחה
+// בטעינה הבאה. כישלון ב-localStorage אינו שובר כלום — נופלים לברירת המחדל.
+const NAV_KEY = 'holon_nav_closed';
+function navClosed(){
+  try{ return JSON.parse(localStorage.getItem(NAV_KEY)) || []; }catch(_){ return []; }
+}
+function navSave(){
+  const closed = [...document.querySelectorAll('.sb-group.closed')].map(g=> g.dataset.group);
+  try{ localStorage.setItem(NAV_KEY, JSON.stringify(closed)); }catch(_){}
+}
+// ── כיווץ הסיידבר ─────────────────────────────────────────────────
+// נשמר מקומית כמו מצב הקבוצות. הכפתור נשאר גלוי תמיד — הוא הדרך היחידה
+// לפתוח בחזרה, ולכן אסור לו להיעלם עם שאר התוכן.
+const NAV_HIDE = 'holon_nav_collapsed';
+(function initCollapse(){
+  const sb = document.querySelector('.sidebar'), btn = document.getElementById('btnNav');
+  const paint = ()=>{
+    const off = sb.classList.contains('collapsed');
+    btn.title = off ? 'הצג תפריט' : 'הסתר תפריט';
+    btn.setAttribute('aria-label', btn.title);
+  };
+  try{ if(localStorage.getItem(NAV_HIDE) === '1') sb.classList.add('collapsed'); }catch(_){}
+  paint();
+  btn.addEventListener('click', ()=>{
+    sb.classList.toggle('collapsed');
+    paint();
+    try{ localStorage.setItem(NAV_HIDE, sb.classList.contains('collapsed') ? '1' : '0'); }catch(_){}
+    // הגרפים לא מתאימים את עצמם לשינוי רוחב שנגמר אחרי 200ms
+    setTimeout(()=> Object.values(charts).forEach(c=> c && c.resize()), 240);
+  });
+})();
+
+(function initNav(){
+  const closed = navClosed();
+  document.querySelectorAll('.sb-group').forEach(g=>{
+    if(closed.includes(g.dataset.group)) g.classList.add('closed');
+    g.querySelector('.sb-head').addEventListener('click', ()=>{
+      g.classList.toggle('closed');
+      navSave();
+    });
+  });
+})();
+
 // ════════════════════════════════════════════════════════════════
 // שכבת נתונים חיה — גיליון גוגל מפורסם
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v30';
+const BUILD = 'v52';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -4574,7 +5015,6 @@ function applyPeriod(key){
   MATZEVET   = d.matzevet;
   DATA_LABEL = d.label;
   stamp();
-  document.getElementById('dataLabel').textContent=d.label;
   document.getElementById('periodSelect').value=key;
 
   const sel=document.getElementById('schoolSelect'), prev=sel? sel.value:null;

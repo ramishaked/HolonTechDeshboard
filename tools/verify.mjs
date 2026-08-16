@@ -31,6 +31,7 @@ import { PERIODS, DEFAULT_GID, csvFor, expectedFor } from './fixture.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const PAGE = path.join(ROOT, 'index.html');
+const DATA = path.join(ROOT, 'data', 'national.json');
 
 const problems = [];
 const fail = m => { problems.push(m); console.error('  ✗ ' + m); };
@@ -250,16 +251,38 @@ async function browserRun() {
   console.log('\n── תצוגות ──');
   const views = await page.$$eval('.sb-item[data-view]', els =>
     els.map(e => ({ id: e.dataset.view, label: e.innerText.replace(/\s+/g, ' ').trim() })));
-  // מספר התצוגות נגזר מהדף ולא צרוב כאן — אחרת הבדיקה מתיישנת בכל תצוגה
-  // חדשה. מה שכן נבדק: לכל section.view יש פריט סיידבר שמוביל אליו.
-  const sections = await page.$$eval('section.view', els => els.length);
-  if (views.length !== sections)
-    fail(`${sections} section.view בדף אבל ${views.length} פריטי סיידבר — תצוגה בלי כניסה מהתפריט?`);
-  else pass(`${views.length} תצוגות בסיידבר, ${sections} section.view`);
+  // תצוגות המשך (העמקה, טבלת הרשויות) אינן בתפריט בכוונה — נכנסים אליהן
+  // מתוך עמוד ההורה. המפה נקראת מהדף עצמו כדי שלא תתיישן כאן.
+  const parents = await page.evaluate(() =>
+    (typeof PARENT_OF !== 'undefined') ? PARENT_OF : {});
+  const kids = Object.keys(parents).map(id => ({ id, parent: parents[id], child: true }));
 
-  for (const v of views) {
+  // מספר התצוגות נגזר מהדף ולא צרוב כאן — אחרת הבדיקה מתיישנת בכל תצוגה
+  // חדשה. מה שכן נבדק: לכל section.view יש דרך להגיע — מהתפריט או מההורה.
+  const sections = await page.$$eval('section.view', els => els.length);
+  if (views.length + kids.length !== sections)
+    fail(`${sections} section.view בדף אבל ${views.length} פריטי סיידבר ו-${kids.length} תצוגות המשך — תצוגה בלי כניסה?`);
+  else pass(`${views.length} בסיידבר + ${kids.length} תצוגות המשך = ${sections} section.view`);
+
+  for (const v of [...views, ...kids]) {
     const before = noise.length;
-    await page.click(`.sb-item[data-view="${v.id}"]`);
+    if (v.child) {
+      // הכניסה נבדקת דרך הרכיב האמיתי שבעמוד ההורה, לא ב-switchView ישיר —
+      // כך "אין פריט בתפריט" לא הופך בשקט ל"אין דרך להגיע".
+      await page.click(`.sb-item[data-view="${v.parent}"]`);
+      await page.waitForTimeout(150);
+      const hit = await page.evaluate(({ id, parent }) => {
+        const re = new RegExp(`switchView\\(['"]${id}['"]\\)|goTo${id}`, 'i');
+        const el = [...document.querySelectorAll(`#view-${parent} [onclick]`)]
+          .find(e => re.test(e.getAttribute('onclick')));
+        if (!el) return false;
+        el.click();
+        return true;
+      }, { id: v.id, parent: v.parent });
+      if (!hit) { fail(`${v.id}: אין כניסה מתוך #view-${v.parent}`); continue; }
+    } else {
+      await page.click(`.sb-item[data-view="${v.id}"]`);
+    }
     await page.waitForTimeout(150);
     const info = await page.evaluate(id => {
       const el = document.getElementById('view-' + id);
@@ -281,6 +304,51 @@ async function browserRun() {
 
   const charts = await page.evaluate(() => (window.__CHARTS_BUILT__ || []).length);
   if (charts > 0) pass(`${charts} גרפים נבנו`); else fail('אף גרף לא נבנה');
+
+  // ── 4ב. הנתון הגולמי מול data/national.json ────────────────────
+  // הקבועים הארציים חייבים להיות צרובים ב-index.html (כלל "קובץ אחד"),
+  // ולכן data/national.json הוא עותק. עותק שאיש אינו בודק מתיישן — כאן
+  // הוא נבדק. הערכים נקראים מהדף החי ולא ב-regex.
+  console.log('\n── נתון גולמי (data/national.json) ──');
+  if (!fs.existsSync(DATA)) fail('data/national.json חסר');
+  else {
+    const ref = JSON.parse(fs.readFileSync(DATA, 'utf8'));
+    const live = await page.evaluate(() => ({
+      NAT, NAT_2014, NAT_GIRLS_2024, HOLON_MOE, HOLON_HIST, HOLON_MID,
+      CITY_DATA, CITY_ASTERISK, CITY_NEAR, POP_BAND,
+    }));
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const nat = ref['ארצי_סדרות'], g = ref['ארצי_שיעור_תלמידות_2024'], c = ref['רשויות'];
+    const checks = [
+      ['שנים',            live.NAT.years, nat['שנים']],
+      ['בגרות הייטק',     live.NAT.tech,  nat['בגרות_הייטק']],
+      ['מתמטיקה 5',       live.NAT.ma5,   nat['מתמטיקה_5']],
+      ['פיזיקה 5',        live.NAT.ph,    nat['פיזיקה_5']],
+      ['מדעי המחשב 5',    live.NAT.cs,    nat['מדעי_המחשב_5']],
+      ['אנגלית 5',        live.NAT.en5,   nat['אנגלית_5']],
+      ['עוגן 2014',       [live.NAT_2014.tech, live.NAT_2014.ma5],
+                          [ref['ארצי_עוגן_2014'].tech, ref['ארצי_עוגן_2014'].ma5]],
+      ['שיעור תלמידות 2024',
+        [live.NAT_GIRLS_2024.tech, live.NAT_GIRLS_2024.ma5, live.NAT_GIRLS_2024.ph, live.NAT_GIRLS_2024.cs],
+        [g['בגרות_הייטק']['אחוז'], g['מתמטיקה_5']['אחוז'], g['פיזיקה_5']['אחוז'], g['מדעי_המחשב_5']['אחוז']]],
+      ['חולון — משה"ח',   [live.HOLON_MOE.years, live.HOLON_MOE.tech, live.HOLON_MOE.ma5],
+        [ref['חולון_סדרות']['רשמי_משהח']['שנים'], ref['חולון_סדרות']['רשמי_משהח']['בגרות_הייטק'],
+         ref['חולון_סדרות']['רשמי_משהח']['מתמטיקה_5']]],
+      ['33 רשויות',       live.CITY_DATA, c['שורות']],
+      ['כוכבית',          live.CITY_ASTERISK, c['כוכבית']],
+      ['רצועת גודל',      live.POP_BAND, c['רצועת_גודל']],
+    ];
+    let bad = 0;
+    for (const [name, a, b] of checks) if (!eq(a, b)) { fail(`${name}: index.html ≠ data/national.json`); bad++; }
+    if (!bad) pass(`${checks.length} קבוצות ערכים זהות בין index.html ל-data/national.json`);
+
+    // שיעור התלמידות חייב לצאת מהמספרים המוחלטים שבאותו מקור
+    for (const k of ['בגרות_הייטק', 'מתמטיקה_5', 'פיזיקה_5', 'מדעי_המחשב_5']) {
+      const r = g[k], calc = +(r['תלמידות'] / r['זכאים'] * 100).toFixed(1);
+      if (Math.abs(calc - r['אחוז']) > 0.1) fail(`${k}: ${r['תלמידות']}/${r['זכאים']} = ${calc}% ולא ${r['אחוז']}%`);
+    }
+    pass('שיעורי התלמידות 2024 נגזרים מהמספרים המוחלטים שבדו"ח');
+  }
 
   // ── 5. מספרים ──────────────────────────────────────────────────
   await page.click('.sb-item[data-view="overview"]');
