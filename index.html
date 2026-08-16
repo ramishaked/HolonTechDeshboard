@@ -316,6 +316,7 @@ body{
 .ct-row.me .ct-rank{color:#a04a10;}
 .ct-name{width:126px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--text);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ct-name small{display:block;font-size:10.5px;font-weight:500;color:var(--muted);margin-top:1px;}
 .ct-track{flex:1;min-width:0;display:flex;align-items:center;gap:7px;position:relative;}
 .ct-bar{height:16px;border-radius:0 4px 4px 0;background:var(--primary-l);min-width:2px;transition:width .3s;}
 .ct-row.me .ct-bar{background:var(--accent);}
@@ -562,6 +563,10 @@ body{
       <span class="sb-ico">📊</span>
       <span>סקירה עירונית</span>
     </div>
+    <div class="sb-item" data-view="trends">
+      <span class="sb-ico">📈</span>
+      <span>השוואה שנתית</span>
+    </div>
     <div class="sb-item" data-view="subjects">
       <span class="sb-ico">📚</span>
       <span>מקצועות לאורך השכבות</span>
@@ -585,10 +590,6 @@ body{
     <div class="sb-item" data-view="futuretech">
       <span class="sb-ico">🚦</span>
       <span>עתיד טק</span>
-    </div>
-    <div class="sb-item" data-view="trends">
-      <span class="sb-ico">📈</span>
-      <span>השוואה שנתית</span>
     </div>
     <div class="sb-item" data-view="national">
       <span class="sb-ico">🏙️</span>
@@ -1197,6 +1198,37 @@ body{
       </div>
     </div>
 
+    <!-- 2ב — לפי אשכול חברתי-כלכלי -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">לפי אשכול חברתי-כלכלי</div>
+          <div class="card-sub" id="ntSocioSub">—</div>
+        </div>
+      </div>
+      <div id="ntSocioGroup"></div>
+      <div class="chart-box" style="height:250px;"><canvas id="ntSocioChart"></canvas></div>
+      <div class="insight" id="ntSocioIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+    </div>
+
+    <!-- 2ג — לפי היקף אוכלוסייה -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">לפי היקף אוכלוסייה</div>
+          <div class="card-sub" id="ntSizeSub">—</div>
+        </div>
+      </div>
+      <div id="ntSize"></div>
+      <div class="insight" id="ntSizeIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+    </div>
+
     <!-- 3 — החתך המגדרי -->
     <div class="card">
       <div class="card-head">
@@ -1321,13 +1353,20 @@ const NAT = {
   ma5:  [15.5, 15.4, 15.6, 16.6, 17.3, 16.2, 16.0, 17.1],   // מתמטיקה 5 יח"ל
   ph:   [10.4, 10.8, 11.1, 11.6, 11.6, 11.5, 11.1, 11.9],   // פיזיקה 5 יח"ל
   cs:   [ 7.7,  7.6,  7.9,  8.3,  8.8,  8.3,  8.6,  8.9],   // מדעי המחשב 5 יח"ל
+  en5:  [37.7, 39.1, 41.5, 42.9, 44.6, 46.2, 46.8, 48.5],   // אנגלית 5 יח"ל (שקף 4)
   src:  'משרד החינוך, מאי 2026'
 };
+// עוגן 2014 — מדו"ח המצוינות (עמ' 10–11, מצוטט בגוף הטקסט ולא נקרא מגרף).
+// מאפשר להעמיד את העשור של חולון מול העשור הארצי על אותו טווח שנים.
+const NAT_2014 = { year:2014, tech:6.4, ma5:9.5 };
+// שיעור התלמידות הארצי 2024, לפי דו"ח המצוינות (עמ' 10). מחליף את 36.3
+// שהיה צרוב ללא מקור מתועד.
+const NAT_GIRLS_2024 = { tech:38.6, ma5:47.6, ph:37.8, cs:32.4 };
 const _last = a => a[a.length-1];
 const NAT_LAST = { tech:_last(NAT.tech), ma5:_last(NAT.ma5), ph:_last(NAT.ph), cs:_last(NAT.cs) };
 
 let NATIONAL = NAT_LAST.tech;          // 11.6 — נגזר, לא מספר נפרד
-let NATIONAL_GIRLS = 36.3;
+let NATIONAL_GIRLS = NAT_GIRLS_2024.tech;   // 38.6 — נגזר, לא מספר נפרד
 let DATA_LABEL = '';
 
 // ════════════════════════════════════════════════════════════════
@@ -1394,10 +1433,31 @@ const HOLON_HIST = {
   techN:322, ma5N:485, socio:7
 };
 
-// חתכים שדורשים נתון שטרם התקבל. ברגע שיתמלאו — החתכים נפתחים מעצמם
-// (renderNational בודקת כיסוי ולא מציגה חתך חלקי).
-const CITY_SOCIO = { 'חולון':7 };      // אשכול חברתי-כלכלי (למ"ס), פר רשות
-const CITY_POP   = {};                 // גודל אוכלוסייה, פר רשות
+// ── אשכול חברתי-כלכלי (למ"ס) ────────────────────────────────────
+// המקור: דף הרשות בדו"ח המצוינות עצמו — הספרה הגדולה בתחתית כל כרטיס.
+// נבחר על פני קובץ הלמ"ס שסופק משום שהוא אותו מקור שממנו הגיע הדירוג,
+// ולכן אין סיכון לערבב שנות עדכון. שני המקורות זהים בכל 19 הרשויות
+// למעט חולון: הדו"ח 7, הקובץ 6. ראה §12.4 במפרט.
+const CITY_SOCIO = {
+  'הרצליה':8, 'רמת גן':8, 'מודיעין-מכבים-רעות':9, 'ראשון לציון':7, 'כפר סבא':8,
+  'חיפה':7, 'רחובות':7, 'חולון':7, 'תל אביב-יפו':8, 'פתח תקווה':7,
+  'אשדוד':5, 'אשקלון':5, 'באר שבע':5, 'נתניה':6, 'לוד':4,
+  'חדרה':6, 'בת ים':5, 'ירושלים':2, 'בית שמש':2, 'בני ברק':2,
+  // מובילות ארציות
+  'גבעת שמואל':8, 'רמת השרון':9, 'קריית אונו':9
+};
+// ── גודל אוכלוסייה (אומדן למ"ס) ─────────────────────────────────
+// מקובץ israel_localities_socio_economic.xlsx שסופק. אומדנים מעוגלים —
+// משמשים לקיבוץ לקבוצת גודל בלבד, ולא מוצגים כמספר מדויק.
+const CITY_POP = {
+  'ירושלים':1046000, 'תל אביב-יפו':480000, 'חיפה':295000, 'ראשון לציון':265000,
+  'פתח תקווה':260000, 'נתניה':240000, 'בני ברק':230000, 'אשדוד':230000,
+  'באר שבע':218000, 'חולון':198000, 'רמת גן':175000, 'בית שמש':175000,
+  'אשקלון':160000, 'רחובות':155000, 'בת ים':130000, 'הרצליה':110000,
+  'כפר סבא':105000, 'חדרה':105000, 'מודיעין-מכבים-רעות':102000, 'לוד':87000,
+  'גבעת שמואל':29000, 'רמת השרון':50000, 'קריית אונו':45000
+};
+const POP_BAND = 0.25;                 // ±25% מאוכלוסיית חולון = "היקף דומה"
 
 const GRADES = ['י','יא','יב'];                       // בסיס המדד העירוני
 const ALL_GRADES = ['ז','ח','ט','י','יא','יב'];       // למסע התלמיד בהעמקה
@@ -3335,7 +3395,7 @@ function ntGirlsOrder(asteriskOut){
 
 // ─── שורת רשות ──────────────────────────────────────────────────
 // rank='' מסתיר את המספר (בכרטיס המובילות אין דירוג רציף).
-function ntCityRow(c, rank, scale, nat, natLabel){
+function ntCityRow(c, rank, scale, nat, natLabel, sub){
   const isMe = c.name === CITY_ME;
   const ast  = CITY_ASTERISK[c.name];
   const w = v => Math.max(1.5, Math.min(100, (v / scale) * 100));
@@ -3345,7 +3405,7 @@ function ntCityRow(c, rank, scale, nat, natLabel){
   return `
     <div class="ct-row${isMe?' me':''}${ast?' dim':''}"${ast? ` title="${ast}"`:''}>
       <div class="ct-rank">${rank === '' ? '' : rank}</div>
-      <div class="ct-name">${c.name}${ast? ' *':''}</div>
+      <div class="ct-name">${c.name}${ast? ' *':''}${sub? `<small>${sub}</small>` : ''}</div>
       <div class="ct-track">${natMark}
         <div class="ct-bar" style="width:${w(c.tech).toFixed(1)}%"></div>
         <div class="ct-val">${c.tech.toFixed(1)}%</div>
@@ -3373,6 +3433,8 @@ function renderNational(){
   ntKpis(me, nat, rank, N, vsNat);
   ntRanking(me, nat, rank, N, vsNat);
   ntNear(me);
+  ntSocio(me, nat);
+  ntSize(me, nat);
   ntGender(me, nat);
   ntDecade(me, nat);
   ntDenom();
@@ -3459,6 +3521,116 @@ function ntNear(me){
     `זה הפער שאפשר לסגור — אותו קהל, אותו שוק תעסוקה, אותם מוסדות המשך.`);
 }
 
+// ─── 2ב. אשכול חברתי-כלכלי ──────────────────────────────────────
+// החתך שמנטרל את הרקע: אם רשות באותו אשכול משיגה יותר, ההפרש אינו
+// מוסבר בתנאי הפתיחה. רשויות CITY_ASTERISK מוחרגות מכל ממוצע כאן.
+function ntSocio(me, nat){
+  const cl = CITY_SOCIO[CITY_ME];
+  const withSocio = CITIES.filter(c=> CITY_SOCIO[c.name] != null);
+  const group = withSocio.filter(c=> CITY_SOCIO[c.name] === cl);        // כבר ממוין לפי tech
+  const pos   = group.findIndex(c=> c.name === CITY_ME) + 1;
+
+  document.getElementById('ntSocioSub').innerHTML =
+    `אשכול חברתי-כלכלי הוא מדד הלמ"ס לרמת הרקע של תושבי הרשות (1 הנמוך, 10 הגבוה). ` +
+    `<strong>חולון באשכול ${cl}</strong>. הרשויות שלמטה נמצאות באותו אשכול בדיוק — ` +
+    `אותם תנאי פתיחה, ולכן כל פער ביניהן הוא פער של מדיניות ולא של רקע.`;
+
+  const scale = Math.max(...group.map(c=> c.tech)) * 1.14;
+  document.getElementById('ntSocioGroup').innerHTML =
+    group.map((c,i)=> ntCityRow(c, i+1, scale, nat, i === 0)).join('');
+
+  // ממוצע לכל אשכול — מראה את המגמה הכללית ואת מיקום חולון מולה
+  const byCl = {};
+  withSocio.filter(c=> !CITY_ASTERISK[c.name]).forEach(c=>{
+    const k = CITY_SOCIO[c.name]; (byCl[k] = byCl[k] || []).push(c.tech);
+  });
+  const cls = Object.keys(byCl).map(Number).sort((a,b)=> a-b);
+  destroyChart('ntSocioChart');
+  charts.ntSocioChart = new Chart(document.getElementById('ntSocioChart'), {
+    type:'bar',
+    data:{ labels: cls.map(k=> 'אשכול '+k),
+      datasets:[
+        { label:'ממוצע הרשויות באשכול',
+          data: cls.map(k=> byCl[k].reduce((s,v)=> s+v,0)/byCl[k].length),
+          backgroundColor: cls.map(k=> k === cl ? COL.primary : '#d5cce6'), borderRadius:6,
+          datalabels:{anchor:'end',align:'end',color:'#4a2972',font:hf2(),formatter:v=> v.toFixed(1)+'%'} },
+        { label:'חולון '+ntPc(me.tech), data: cls.map(()=> me.tech), type:'line',
+          borderColor:COL.accent, borderDash:[6,4], borderWidth:2, pointRadius:0, fill:false,
+          datalabels:{display:false} }
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24}},
+      plugins:{ legend:{labels:{font:HF,color:'#5f6368'}} },
+      scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
+               y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+  });
+
+  // הטענות נגזרות: מי באשכול שלנו מעלינו, ומי מאשכול נמוך יותר עוקף אותנו
+  const aboveSame = group.filter(c=> c.tech > me.tech);
+  const lowerCl   = withSocio.filter(c=> !CITY_ASTERISK[c.name] && CITY_SOCIO[c.name] < cl);
+  const lowerBeat = lowerCl.filter(c=> c.tech > me.tech);
+  const higherCl  = withSocio.filter(c=> !CITY_ASTERISK[c.name] && CITY_SOCIO[c.name] > cl);
+  const beatHigher= higherCl.filter(c=> c.tech < me.tech);
+
+  setIns('ntSocioIns',
+    `באשכול ${cl} — מקום ${pos} מתוך ${group.length}`,
+    (aboveSame.length
+      ? `${aboveSame.length} רשויות באותו אשכול בדיוק משיגות יותר מחולון — המובילה שבהן ` +
+        `<strong>${aboveSame[0].name} (${ntPc(aboveSame[0].tech)})</strong>, פער של ` +
+        `<strong>${(aboveSame[0].tech-me.tech).toFixed(1)} נקודות</strong>. ` +
+        `<strong>הפער הזה אינו מוסבר ברקע החברתי-כלכלי</strong> — הוא אותו אשכול, אותו מדד, תוצאה אחרת. ` +
+        `זו התשובה למי שיאמר "אנחנו לא הרצליה".`
+      : `חולון היא הגבוהה ביותר מבין הרשויות באשכול ${cl}.`) +
+    `<br>` +
+    (lowerBeat.length
+      ? `מנגד, <strong>${lowerBeat.length}</strong> רשויות מאשכול נמוך יותר עוקפות את חולון ` +
+        `(${lowerBeat.map(c=> c.name+' '+ntPc(c.tech)+', אשכול '+CITY_SOCIO[c.name]).join(' · ')}). `
+      : `אף רשות מאשכול נמוך יותר אינה עוקפת את חולון. `) +
+    (beatHigher.length
+      ? `בכיוון השני חולון מעל <strong>${beatHigher.length===1?'רשות אחת':beatHigher.length+' רשויות'}</strong> מאשכול גבוה יותר משלה` +
+        ` (${beatHigher.map(c=> c.name+' '+ntPc(c.tech)+', אשכול '+CITY_SOCIO[c.name]).join(' · ')}) — ` +
+        `כלומר היא כבר משיגה מעבר למה שהרקע שלה מכתיב.`
+      : ''));
+}
+
+// ─── 2ג. היקף אוכלוסייה ─────────────────────────────────────────
+// קבוצת גודל = רצועה של ±POP_BAND סביב אוכלוסיית חולון. נגזרת בזמן ריצה
+// ולא רשימה קבועה, כך שעדכון אומדן אוכלוסייה מעדכן גם את הקבוצה.
+function ntSize(me, nat){
+  const mine = CITY_POP[CITY_ME];
+  const lo = mine * (1 - POP_BAND), hi = mine * (1 + POP_BAND);
+  const grp = CITIES.filter(c=>{ const p = CITY_POP[c.name]; return p != null && p >= lo && p <= hi; });
+  const pos = grp.findIndex(c=> c.name === CITY_ME) + 1;
+  const kk  = v => Math.round(v/1000).toLocaleString('he-IL') + ' אלף';
+
+  document.getElementById('ntSizeSub').innerHTML =
+    `הרשויות שאוכלוסייתן בטווח ±${Math.round(POP_BAND*100)}% מזו של חולון ` +
+    `(${kk(lo)}–${kk(hi)} תושבים; חולון <strong>${kk(mine)}</strong>). ` +
+    `החתך הזה בודק את הטענה "אנחנו עיר גדולה, קשה לנו יותר" — ` +
+    `כאן כל הרשויות באותו סדר גודל בדיוק.`;
+
+  const scale = Math.max(...grp.map(c=> c.tech)) * 1.14;
+  document.getElementById('ntSize').innerHTML =
+    grp.map((c,i)=> ntCityRow(c, i+1, scale, nat, i === 0,
+      kk(CITY_POP[c.name]) + ' · אשכול ' + (CITY_SOCIO[c.name] ?? '—'))).join('');
+
+  const cmp = grp.filter(c=> !CITY_ASTERISK[c.name]);
+  const avg = cmp.reduce((s,c)=> s+c.tech, 0) / cmp.length;
+  const top = cmp[0];
+  // האם הגודל מסביר משהו? משווים את ממוצע קבוצת הגודל לממוצע כלל ה-20
+  const all = CITIES.filter(c=> !CITY_ASTERISK[c.name]);
+  const allAvg = all.reduce((s,c)=> s+c.tech, 0) / all.length;
+
+  setIns('ntSizeIns',
+    `בקבוצת הגודל — מקום ${pos} מתוך ${grp.length}`,
+    `ממוצע קבוצת הגודל <strong>${ntPc(avg)}</strong> מול <strong>${ntPc(allAvg)}</strong> בכלל ` +
+    `${all.length} הרשויות הנמדדות — כלומר גודל האוכלוסייה ` +
+    `<strong>${Math.abs(avg-allAvg) < 1 ? 'כמעט אינו מסביר את ' : 'מסביר לכל היותר חלק קטן מ'}</strong>` +
+    `הפער בין רשויות. חולון על <strong>${ntPc(me.tech)}</strong>, ` +
+    `${me.tech>=avg?'מעל ':'מתחת ל'}ממוצע הקבוצה ב-<strong>${Math.abs(me.tech-avg).toFixed(1)} נק׳</strong>. ` +
+    `המובילה בקבוצה היא <strong>${top.name}</strong> (${ntPc(top.tech)}, אשכול ${CITY_SOCIO[top.name]}) — ` +
+    `פער של <strong>${(top.tech-me.tech).toFixed(1)} נקודות</strong> בין שתי ערים באותו סדר גודל.`);
+}
+
 // ─── 3. החתך המגדרי ─────────────────────────────────────────────
 function ntGender(me, nat){
   destroyChart('ntScatter');
@@ -3537,15 +3709,22 @@ function ntGender(me, nat){
 // ─── 4. לאורך העשור ─────────────────────────────────────────────
 function ntDecade(me, nat){
   destroyChart('ntDecade');
-  const y0 = Math.min(HOLON_HIST.tech[0].y, NAT.years[0]);
+  const y0 = Math.min(HOLON_HIST.tech[0].y, NAT_2014.year, NAT.years[0]);
   const y1 = Math.max(HOLON_HIST.tech[HOLON_HIST.tech.length-1].y, NAT.years[NAT.years.length-1]);
   const yrs = []; for(let y=y0; y<=y1; y++) yrs.push(y);
   const pick = (series, y)=>{ const p = series.find(p=> p.y === y); return p ? p.v : null; };
+  // הארצי: סדרת משה"ח 2018–2025 + עוגן 2014 מדו"ח המצוינות, כדי שהעשור
+  // של חולון והעשור הארצי ייפרשו על אותו טווח שנים.
+  const natAt = y =>{
+    if(y === NAT_2014.year) return NAT_2014.tech;
+    const i = NAT.years.indexOf(y);
+    return i < 0 ? null : NAT.tech[i];
+  };
 
   charts.ntDecade = new Chart(document.getElementById('ntDecade'), {
     type:'line',
     data:{ labels: yrs.map(String), datasets:[
-      { label:'ממוצע ארצי', data: yrs.map(y=>{ const i=NAT.years.indexOf(y); return i<0?null:NAT.tech[i]; }),
+      { label:'ממוצע ארצי', data: yrs.map(natAt),
         borderColor:COL.primary, backgroundColor:'rgba(106,62,156,0.08)', borderWidth:3,
         pointRadius:4, tension:0.3, fill:true, spanGaps:true,
         datalabels:{display:false} },
@@ -3578,16 +3757,22 @@ function ntDecade(me, nat){
       ${strip('מתמטיקה 5 יח״ל', HOLON_HIST.ma5, 'שיעור זכאי 5 יח&quot;ל מתמטיקה בחולון. המקצוע שהוא תנאי הסף למסלול.')}
     </div>`;
 
-  const natMin = Math.min(...NAT.tech), natMinY = NAT.years[NAT.tech.indexOf(natMin)];
   const h0 = HOLON_HIST.tech[0], h1 = HOLON_HIST.tech[HOLON_HIST.tech.length-1];
   const m0 = HOLON_HIST.ma5[0],  m1 = HOLON_HIST.ma5[HOLON_HIST.ma5.length-1];
+  // ההשוואה המרכזית: קצב הצמיחה של חולון מול קצב הצמיחה הארצי, על אותו טווח
+  const hMul = h0.v ? h1.v/h0.v : null;
+  const nMul = NAT_2014.tech ? nat/NAT_2014.tech : null;
+  const faster = (hMul != null && nMul != null) && hMul > nMul;
   setIns('ntDecadeIns',
-    `מ-${ntPc(h0.v)} ל-${ntPc(h1.v)} בעשור — וחצייה של הקו הארצי`,
-    `ב-${h0.y} חולון עמדה על <strong>${ntPc(h0.v)}</strong>, מתחת לערך הארצי הנמוך ביותר שיש בסדרה ` +
-    `(${ntPc(natMin)} ב-${natMinY}). ב-${h1.y} היא על <strong>${ntPc(h1.v)}</strong> — <strong>${(h1.v-nat).toFixed(1)} נקודות מעל הארצי</strong>. ` +
-    `במקביל מתמטיקה 5 יח״ל עלתה מ-${ntPc(m0.v)} ל-<strong>${ntPc(m1.v)}</strong> (${m1.v>=2*m0.v?'יותר מהכפלה':'כמעט הכפלה'}), ` +
-    `וזה ההסבר המבני: <strong>מתמטיקה 5 היא תנאי הסף</strong>, וכשהיא גדלה המדד עולה אחריה. ` +
-    `הארצי באותה תקופה זז הרבה פחות — כלומר העלייה של חולון אינה גל ארצי שסחף אותה, אלא תוצאה מקומית.`);
+    `מ-${ntPc(h0.v)} ל-${ntPc(h1.v)} — חולון צמחה ${faster?'מהר יותר':'לאט יותר'} מהארצי`,
+    `ב-${NAT_2014.year} חולון עמדה על <strong>${ntPc(h0.v)}</strong> והארצי על <strong>${ntPc(NAT_2014.tech)}</strong> — ` +
+    `פער של ${(h0.v-NAT_2014.tech).toFixed(1)} נקודות. ב-${h1.y} חולון על <strong>${ntPc(h1.v)}</strong> והארצי על ` +
+    `<strong>${ntPc(nat)}</strong> — הפער <strong>${(h1.v-nat).toFixed(1)} נקודות</strong>. ` +
+    `במונחי קצב: חולון <strong>×${hMul.toFixed(2)}</strong> מול <strong>×${nMul.toFixed(2)}</strong> ארצית. ` +
+    `<strong>הפער לא רק נשמר — הוא התרחב.</strong> זו התשובה לטענה שהעלייה היא גל ארצי שסחף את חולון. ` +
+    `<br>ההסבר המבני: מתמטיקה 5 יח״ל בחולון עלתה מ-${ntPc(m0.v)} ל-<strong>${ntPc(m1.v)}</strong> ` +
+    `(${m1.v>=2*m0.v?'יותר מהכפלה':'כמעט הכפלה'}), מול ${ntPc(NAT_2014.ma5)}→${ntPc(NAT.ma5[NAT.years.indexOf(CITY_YEAR)])} ארצית. ` +
+    `<strong>מתמטיקה 5 היא תנאי הסף</strong>, וכשהיא גדלה המדד עולה אחריה.`);
 }
 
 // ─── 5. המכנה ───────────────────────────────────────────────────
@@ -3679,15 +3864,18 @@ function ntLeaders(me){
     list.map((c,i)=> ntCityRow(c, '', scale, ntNat(), i === 0)).join('');
 
   const top = list[0];
-  const socioKnown = Object.keys(CITY_SOCIO).length, popKnown = Object.keys(CITY_POP).length;
+  const sameCl = CITY_LEADERS.filter(c=> CITY_SOCIO[c.name] === CITY_SOCIO[CITY_ME]);
   document.getElementById('ntGapsNote').innerHTML =
-    `הפער בין חולון למובילה הארצית (${top.name}, ${ntPc(top.tech)}) הוא <strong>${(top.tech-me.tech).toFixed(1)} נקודות</strong>. ` +
-    `חולון באשכול חברתי-כלכלי <strong>${HOLON_HIST.socio}</strong>, כלומר חלק מהפער מוסבר ברקע — אבל לא כולו: ` +
-    `הדו"ח מצא רשויות באותו אשכול משני צדי הדירוג. רשויות ערביות אינן נכללות בתצוגה זו.` +
-    `<br><br><strong>שני חתכים ממתינים לנתון:</strong> לפי <strong>אשכול חברתי-כלכלי</strong> ` +
-    `(ידוע כרגע ל-${socioKnown} מתוך ${CITIES.length} הרשויות) ולפי <strong>גודל אוכלוסייה</strong> ` +
-    `(${popKnown} מתוך ${CITIES.length}). ברגע שיתקבלו הטבלאות המלאות מהדו"ח, ` +
-    `החתכים ייפתחו כאן בלי שינוי נוסף במבנה התצוגה.`;
+    `הפער בין חולון למובילה הארצית (${top.name}, ${ntPc(top.tech)}, אשכול ${CITY_SOCIO[top.name] ?? '—'}) הוא ` +
+    `<strong>${(top.tech-me.tech).toFixed(1)} נקודות</strong>. חולון באשכול <strong>${CITY_SOCIO[CITY_ME]}</strong>, ` +
+    `והמובילות באשכולות ${[...new Set(CITY_LEADERS.map(c=> CITY_SOCIO[c.name]).filter(Boolean))].sort().join('–')} — ` +
+    `כלומר חלק מהפער מוסבר ברקע. <strong>אבל לא כולו</strong>, וזה מה שכרטיס האשכול שלמעלה מראה: ` +
+    `הפערים הגדולים ביותר הם דווקא <em>בתוך</em> אותו אשכול.` +
+    (sameCl.length ? ` בקבוצה הזו ${sameCl.map(c=> c.name+' '+ntPc(c.tech)).join(', ')} נמצאות באשכול של חולון בדיוק.` : '') +
+    `<br><br>רשויות ערביות אינן נכללות בתצוגה זו לפי הנחיית המשתמש. ` +
+    `<strong>מה עדיין חסר:</strong> הסדרות השנתיות המלאות — דו"ח המצוינות מציג לכל רשות גרף 2014–2024, ` +
+    `אך מתייג רק את שתי נקודות הקצה. הערכים של השנים שביניהן קיימים בגרף בלבד, ולכן אינם ניתנים ` +
+    `לציטוט מדויק. עם קובץ הנתונים של מפת המצוינות אפשר יהיה להציג מסלול מלא לכל רשות ולא רק שתי נקודות.`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3719,7 +3907,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v18';
+const BUILD = 'v20';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
