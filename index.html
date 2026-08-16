@@ -956,7 +956,7 @@ body{
         <div class="kpi-sub" id="k12Sub">—</div>
       </div>
       <div class="kpi dred">
-        <div class="kpi-lbl">מגמה עירונית י׳→יב׳ <i class="ti" data-tip="כמה מאבד מסלול הטק בין י׳ ליב׳: (אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
+        <div class="kpi-lbl">מגמה עירונית י׳←יב׳ <i class="ti" data-tip="כמה מאבד מסלול הטק בין י׳ ליב׳: (אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
         <div class="kpi-val" id="kDrop">—</div>
         <div class="kpi-sub">ירידה יחסית בלומדי הטק</div>
       </div>
@@ -1104,7 +1104,7 @@ body{
           <th onclick="sortSchools(2)"><span class="sa">▾</span>לומדי טק <i class="ti" data-tip="סך זכאי בגרוטק (עמ׳ 22) בשכבות י׳–יב׳.">i</i></th>
           <th onclick="sortSchools(3)"><span class="sa">▼</span>% טק <i class="ti" data-tip="לומדי טק חלקי סך התלמידים, י׳–יב׳ משוקלל.">i</i></th>
           <th onclick="sortSchools(4)"><span class="sa">▾</span>שכבה יב׳ <i class="ti" data-tip="אחוז לומדי הטק בשכבה יב׳ בלבד.">i</i></th>
-          <th onclick="sortSchools(5)"><span class="sa">▾</span>מגמה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></th>
+          <th onclick="sortSchools(5)"><span class="sa">▾</span>מגמה י׳←יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></th>
           <th onclick="sortSchools(6)"><span class="sa">▾</span>% תלמידות בטק <i class="ti" data-tip="אחוז התלמידות מתוך כלל זכאי הבגרוטק בבית הספר (י׳–יב׳).">i</i></th>
         </tr></thead>
         <tbody id="schoolTbody"></tbody>
@@ -1145,7 +1145,7 @@ body{
         <div class="kpi-sub" id="ddGradPct">—</div>
       </div>
       <div class="kpi warn">
-        <div class="kpi-lbl">מגמה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
+        <div class="kpi-lbl">מגמה י׳←יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
         <div class="kpi-val" id="ddDrop">—</div>
         <div class="kpi-sub">ירידה יחסית</div>
       </div>
@@ -1363,7 +1363,7 @@ body{
       <div class="card-head">
         <div>
           <div class="card-title">בית ספר — כניסה מול בחירה</div>
-          <div class="card-sub">ממוין לפי מדד הטק, מהנמוך לגבוה. הציפייה: מדד נמוך → כניסה רחבה יותר, ושמירה על הנכנסים עד הבחירה</div>
+          <div class="card-sub">ממוין לפי מדד הטק, מהנמוך לגבוה. הציפייה: מדד נמוך ← כניסה רחבה יותר, ושמירה על הנכנסים עד הבחירה</div>
         </div>
       </div>
       <div id="ftTable"></div>
@@ -2162,9 +2162,9 @@ function renderSubjects(){
     const a = citySubjPctAtGrade(3, idx), c = citySubjPctAtGrade(5, idx);
     return (a && c) ? ((a - c) / a * 100).toFixed(1) : '—';
   };
-  document.getElementById('csTrend').textContent = `בין שכבות י׳→יב׳: ${d(1)}%`;
-  document.getElementById('phTrend').textContent = `בין שכבות י׳→יב׳: ${d(2)}%`;
-  document.getElementById('maTrend').textContent = `בין שכבות י׳→יב׳: ${d(3)}%`;
+  document.getElementById('csTrend').textContent = `בין שכבות י׳←יב׳: ${d(1)}%`;
+  document.getElementById('phTrend').textContent = `בין שכבות י׳←יב׳: ${d(2)}%`;
+  document.getElementById('maTrend').textContent = `בין שכבות י׳←יב׳: ${d(3)}%`;
 
   destroyChart('subjectsChart');
   const htByGrade = GRADES.map((_,gi)=> cityTotal(gi));   // זכאי בגרוטק — מדד הטק
@@ -2627,8 +2627,8 @@ function generateSchoolInsights(school){
     insights.push({
       kind: Math.abs(dlt) < 5 ? 'neutral' : (better ? 'good' : 'warn'),
       icon: better ? '✓' : '⚠',
-      title: better ? 'שימור טוב מהממוצע: מגמה י׳→יב׳' : 'מגמה גבוהה מהממוצע: י׳→יב׳',
-      body: `מתחילים את י׳ עם <strong>${p(0).toFixed(1)}%</strong> במסלול הטק ומסיימים יב׳ עם <strong>${p(2).toFixed(1)}%</strong> — מגמה יחסית של <strong>${dp.toFixed(0)}%</strong>. הממוצע העירוני: <strong>${cityDrop.toFixed(0)}%</strong>. ${better?'נקודת חוזק שכדאי לשמר ולהבין מה מאחוריה.':'נקודת התערבות מרכזית — היכן זה קורה? בין יא׳ ליב׳ או כבר במעבר י׳→יא׳?'}`
+      title: better ? 'שימור טוב מהממוצע: מגמה י׳←יב׳' : 'מגמה גבוהה מהממוצע: י׳←יב׳',
+      body: `מתחילים את י׳ עם <strong>${p(0).toFixed(1)}%</strong> במסלול הטק ומסיימים יב׳ עם <strong>${p(2).toFixed(1)}%</strong> — מגמה יחסית של <strong>${dp.toFixed(0)}%</strong>. הממוצע העירוני: <strong>${cityDrop.toFixed(0)}%</strong>. ${better?'נקודת חוזק שכדאי לשמר ולהבין מה מאחוריה.':'נקודת התערבות מרכזית — היכן זה קורה? בין יא׳ ליב׳ או כבר במעבר י׳←יא׳?'}`
     });
   }
 
@@ -2647,7 +2647,7 @@ function generateSchoolInsights(school){
       insights.push({
         kind: better?'good':(worse?'warn':'neutral'),
         icon: better?'✓':(worse?'⚠':'•'),
-        title: '5 יח"ל מתמטיקה ט׳→יב׳ — השער למסלול הארצי',
+        title: '5 יח"ל מתמטיקה ט׳←יב׳ — השער למסלול הארצי',
         body: `בשכבת ט׳ <strong>${t9}</strong> תלמידים ב-5 יח"ל מתמ׳, ב-יב׳ נשארו <strong>${t12}</strong> — מגמה <strong>${mathDrop.toFixed(0)}%</strong>. ממוצע עירוני באותו פילטר: <strong>${cMathDrop.toFixed(0)}%</strong>. ${better?'<strong>נקודת חוזק קריטית</strong> — מתמטיקה היא השער של בגרוטק לפי הקריטריון הארצי, ושימרתם אותה היטב.':worse?'<strong>פילטר עיקרי שצריך לפתוח</strong> — תלמיד שיורד ל-4 יח"ל מתמ׳ יוצא מהמסלול הארצי גם אם הוא חזק במדמ"ח. ראוי לבחון תוכנית תגבור ייעודית.':'התנהגות דומה לעיר.'}`
       });
     }
@@ -2667,7 +2667,7 @@ function generateSchoolInsights(school){
       insights.push({
         kind: better?'good':(worse?'warn':'neutral'),
         icon: better?'✓':(worse?'⚠':'•'),
-        title: 'צומת ט׳→י׳ — המעבר מחט"ב לחט"ע',
+        title: 'צומת ט׳←י׳ — המעבר מחט"ב לחט"ע',
         body: `בסוף ט׳ <strong>${ht9}</strong> תלמידים במסלול הטק, בתחילת י׳ <strong>${ht10}</strong>. דלף של <strong>${seamDrop.toFixed(0)}%</strong> במעבר אחד. הממוצע העירוני בצומת: <strong>${cSeam.toFixed(0)}%</strong>. ${better?'שימור יוצא דופן בצומת — מנגנון שהעיר יכולה ללמוד ממנו.':worse?'הצומת הוא נקודת דלף חריגה אצלכם — שווה לבחון ראיון אישי לכל תלמיד עמ"ט בסוף ט׳.':'דומה לעיר.'}`
       });
     }
@@ -2824,7 +2824,7 @@ const num = v => Math.round(v).toLocaleString('he-IL');
 // "בית ספר אחד" / "3 בתי ספר" — כדי שלא ייצא "1 בתי ספר"
 const nSchools = n => n===1? 'בית ספר אחד' : n+' בתי ספר';
 const insList = (arr, cls)=> arr.map(x=>
-  `<div><span class="nm ${cls}">${x.name}</span> · ט=<span class="num">${x.t9}</span> → ${x.t12!==undefined?'יב':'י'}=<span class="num">${x.t12!==undefined?x.t12:x.t10}</span> · <span class="num">▼ ${x.drop.toFixed(0)}%</span></div>`).join('');
+  `<div><span class="nm ${cls}">${x.name}</span> · ט=<span class="num">${x.t9}</span> ← ${x.t12!==undefined?'יב':'י'}=<span class="num">${x.t12!==undefined?x.t12:x.t10}</span> · <span class="num">▼ ${x.drop.toFixed(0)}%</span></div>`).join('');
 const insCols = (a,b)=> `
     <div class="ins-grid">
       <div class="ins-col bad"><div class="ins-col-h">${a.h}</div><div class="ins-list">${a.b}</div></div>
@@ -2847,14 +2847,14 @@ const CITY_DETECTORS = [
       return { worst, all:withLoss, isSeam: worst.from==='ט׳' };
     },
     cost: ev=> ev.worst.lost,
-    title: ev=> `המעבר שדולף הכי הרבה: ${ev.worst.from} → ${ev.worst.to}`,
+    title: ev=> `המעבר שדולף הכי הרבה: ${ev.worst.from} ← ${ev.worst.to}`,
     body: ev=> `מכל המעברים בעיר, כאן נאבדים הכי הרבה תלמידי טק במספרים מוחלטים: `+
       `<strong>${ev.worst.a}</strong> ב-${ev.worst.from} יורדים ל-<strong>${ev.worst.b}</strong> ב-${ev.worst.to} — `+
       `<strong>${num(ev.worst.lost)} תלמידים</strong> (${ev.worst.pct.toFixed(0)}%) במעבר אחד. `+
-      (ev.all.length>1 ? `לשם השוואה, שאר המעברים: ${ev.all.filter(l=>l!==ev.worst).map(l=> `${l.from}→${l.to} ${num(l.lost)}`).join(' · ')}.` : '')+
+      (ev.all.length>1 ? `לשם השוואה, שאר המעברים: ${ev.all.filter(l=>l!==ev.worst).map(l=> `${l.from}←${l.to} ${num(l.lost)}`).join(' · ')}.` : '')+
       (ev.isSeam? ' זהו גם מעבר מוסדי — חלק מהתלמידים מחליפים בית ספר בנקודה הזו.' : ''),
     cols: ev=> ev.isSeam && ev.all.length ? insCols(
-      {h:'⚠ דלף קיצוני בצומת ט→י', b:insList(CTX.seam.slice(0,4),'bad')},
+      {h:'⚠ דלף קיצוני בצומת ט←י', b:insList(CTX.seam.slice(0,4),'bad')},
       {h:'✓ שימור מצוין בצומת',    b:insList(CTX.seam.slice(-2),'good')}) : '',
     action: ev=> ev.isSeam
       ? 'ראיון אישי לכל תלמיד עמ"ט בסוף ט׳ — לא טופס, ראיון. ליווי מובנה בחודשי ההתאמה הראשונים בי׳.'
@@ -2875,7 +2875,7 @@ const CITY_DETECTORS = [
       `בחולון <strong>${ev.ma5[0]}</strong> תלמידים נכנסים ל-י׳ ב-5 יח"ל מתמ׳, רק <strong>${ev.ma5[2]}</strong> מסיימים — מגמה של <strong>${ev.maDrop.toFixed(0)}%</strong>. `+
       `זה <strong>${ev.gap.toFixed(0)} נקודות מהר יותר</strong> מקצב המגמה של הטק עצמו (${ev.techDrop.toFixed(0)}%), כלומר המתמטיקה היא הפילטר הכובל — לא בחירת המקצוע.`,
     cols: ()=> CTX.math9to12.length? insCols(
-      {h:'⚠ דלף קיצוני (5 יח"ל מתמ׳, ט→יב)', b:insList(CTX.math9to12.slice(0,4),'bad')},
+      {h:'⚠ דלף קיצוני (5 יח"ל מתמ׳, ט←יב)', b:insList(CTX.math9to12.slice(0,4),'bad')},
       {h:'✓ מודלים לחיקוי',                   b:insList(CTX.math9to12.slice(-2),'good')}) : '',
     action: ()=> 'מערך תגבור מתמטיקה עירוני בין-בית-ספרי, חצי-שנתי, בחינם. מיפוי תלמידים בסיכון בסוף יא׳ — לפני שהם "מתפטרים" ל-4 יח"ל.' },
 
@@ -3006,10 +3006,10 @@ const CITY_DETECTORS = [
       const lowDrop = c.drops[0];
       if(topAbs) models.push({ h:`${topAbs.name} — הנפח הגדול בעיר`,
         b:`<span class="num">${schoolTechTotal(topAbs)}</span> לומדי טק ב-י׳–יב׳ — הכי הרבה בעיר, ב-<span class="num">${schoolTechPct(topAbs).toFixed(1)}%</span> מהשכבות. <span class="nm good">מודל לבית ספר גדול</span>.` });
-      if(bestSeam) models.push({ h:`${bestSeam.name} — שולט בצומת ט׳→י׳`,
-        b:`שימור של <span class="num">${Math.min(100,100-bestSeam.drop).toFixed(0)}%</span> בצומת (${bestSeam.t9}→${bestSeam.t10}) — הגבוה בעיר. המעבר המנהלי שלהם הוא בנצ׳מרק.` });
+      if(bestSeam) models.push({ h:`${bestSeam.name} — שולט בצומת ט׳←י׳`,
+        b:`שימור של <span class="num">${Math.min(100,100-bestSeam.drop).toFixed(0)}%</span> בצומת (${bestSeam.t9}←${bestSeam.t10}) — הגבוה בעיר. המעבר המנהלי שלהם הוא בנצ׳מרק.` });
       if(lowDrop) models.push({ h:`${lowDrop.s.name} — המגמה הנמוכה ביותר`,
-        b:`<span class="num">${lowDrop.d.toFixed(0)}%</span> מגמה י׳→יב׳ — הנמוכה בעיר. ${totalStudents(lowDrop.s,2)} תלמידים ב-יב׳. מנגנון שימור הכיתה לאורך שלוש שנים שווה ללמידה.` });
+        b:`<span class="num">${lowDrop.d.toFixed(0)}%</span> מגמה י׳←יב׳ — הנמוכה בעיר. ${totalStudents(lowDrop.s,2)} תלמידים ב-יב׳. מנגנון שימור הכיתה לאורך שלוש שנים שווה ללמידה.` });
       return models.length? {models} : null;
     },
     cost: ()=> 0.5,                                 // רצפה — נכנס רק אם יש מקום
@@ -3588,6 +3588,7 @@ function trPct(key, gi){
   });
 }
 function trOverall(key, filter){ return withPeriod(key, ()=> cityOverallPct(), filter); }
+function trGirls(key){ return withPeriod(key, ()=> cityGirlsPctOfTech()); }
 
 // מקצוע כאחוז מכלל תלמידי י׳–יב׳ (idx: 1=מדמ"ח, 2=פיזיקה, 3=מתמטיקה 5)
 function trSubjPct(key, idx){
@@ -3987,11 +3988,11 @@ function renderYYDecade(A, B){
             <div class="v">${sg(addMa5)}</div>
             <div class="s">ומתוכה לפיזיקה ${sg(addPh)} · למדמ״ח ${sg(addCs)}</div></div>
           <div class="fnl-tile"><div class="l">עצרו במתמטיקה</div>
-            <div class="v">${n(gapA)} → ${n(gapB)}</div>
+            <div class="v">${n(gapA)} ← ${n(gapB)}</div>
             <div class="s">עברו את המחסום הקשה ולא המשיכו</div></div>
           <div class="fnl-tile"><div class="l">המכנה — שכבת יב׳</div>
             <div class="v">${sg(den(b)-den(a))}</div>
-            <div class="s">${n(den(a))} → ${n(den(b))} תלמידים</div></div>
+            <div class="s">${n(den(a))} ← ${n(den(b))} תלמידים</div></div>
           ${(byDenom != null && byDenom > 0.3) ? `<div class="fnl-tile">
             <div class="l">פירוק ${Math.abs(dTech).toFixed(1)} נק׳ הירידה</div>
             <div class="v">${byDenom.toFixed(1)} מכנה · ${Math.max(0, Math.abs(dTech)-byDenom).toFixed(1)} מונה</div>
@@ -4230,8 +4231,8 @@ function renderYYInsights(A, B){
     ins.push({
       kind: diverge ? 'warn' : 'neutral', icon: diverge ? '⚠' : '🎯',
       title: diverge ? 'הכניסה והסיום נעים לכיוונים הפוכים' : 'הכניסה והסיום נעים יחד',
-      body: `שכבה י׳: <strong>${a10.toFixed(1)}% → ${b10.toFixed(1)}%</strong> (${d10>=0?'+':'−'}${Math.abs(d10).toFixed(1)} נק׳). ` +
-            `שכבה יב׳: <strong>${a12.toFixed(1)}% → ${b12.toFixed(1)}%</strong> (${d12>=0?'+':'−'}${Math.abs(d12).toFixed(1)} נק׳). ` +
+      body: `שכבה י׳: <strong>${a10.toFixed(1)}% ← ${b10.toFixed(1)}%</strong> (${d10>=0?'+':'−'}${Math.abs(d10).toFixed(1)} נק׳). ` +
+            `שכבה יב׳: <strong>${a12.toFixed(1)}% ← ${b12.toFixed(1)}%</strong> (${d12>=0?'+':'−'}${Math.abs(d12).toFixed(1)} נק׳). ` +
             (diverge
               ? `<strong>המשוקלל לבדו מטעה כאן</strong> — הוא מסכם שכבות שנעות בכיוונים הפוכים. שווה להציג בוועדה את שתי השכבות בנפרד.`
               : `שתי השכבות זזות באותו כיוון, כך שהמדד המשוקלל מייצג את התמונה נאמנה.`)
@@ -4247,8 +4248,8 @@ function renderYYInsights(A, B){
     ins.push({
       kind: mismatch ? 'warn' : 'neutral', icon: '🔢',
       title: mismatch ? 'האחוז והמספר המוחלט לא מספרים אותו סיפור' : 'המספרים המוחלטים מאחורי האחוז',
-      body: `לומדי טק בי׳–יב׳: <strong>${ta.toLocaleString('he-IL')} → ${tb.toLocaleString('he-IL')}</strong>. ` +
-            `סך התלמידים: <strong>${sa.toLocaleString('he-IL')} → ${sb.toLocaleString('he-IL')}</strong>. ` +
+      body: `לומדי טק בי׳–יב׳: <strong>${ta.toLocaleString('he-IL')} ← ${tb.toLocaleString('he-IL')}</strong>. ` +
+            `סך התלמידים: <strong>${sa.toLocaleString('he-IL')} ← ${sb.toLocaleString('he-IL')}</strong>. ` +
             (mismatch
               ? `<strong>שים לב:</strong> המדד ${od>0?'עלה':'ירד'} אבל מספר לומדי הטק ${techUp?'עלה':'ירד'} — חלק מהשינוי באחוז נובע משינוי בגודל המחזור ולא מהמסלול עצמו.`
               : `שני הכיוונים עקביים — השינוי באחוז משקף שינוי אמיתי במספר הלומדים.`)
@@ -4823,48 +4824,51 @@ function renderExec(){
   }
 
   document.getElementById('exSub').textContent =
-    'השורה התחתונה, החסמים, והיעד' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
+    'השורה התחתונה, מה עובד, מה חוסם, והיעד' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
   document.getElementById('exMeta').innerHTML =
     `<div class="meta-pill">מקום <strong>#${c.rank}</strong> מתוך ${CITIES.length}</div>` +
     (c.tgtPct != null ? `<div class="meta-pill">יעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '');
 
-  box.innerHTML = execBottomLine(c) + execBlockers(c) + execGoal(c) +
-                  execSubjects(c) + execSchools(c);
+  box.innerHTML = execBottomLine(c) + execPositives(c) + execBlockers(c) +
+                  execGoal(c) + execSubjects(c) + execSchools(c);
 }
 
 // ── 1 · השורה התחתונה ───────────────────────────────────────────
+// הסדר: **המספר הפורמלי שפורסם קודם, והמעובד אחריו.** מול ראש עיר
+// נקודת המוצא היא מה שמשרד החינוך פרסם, ולא מה שאנחנו גזרנו מהגיליון.
 function execBottomLine(c){
   const dn  = c.live12 - NATIONAL;
-  const tr  = execTrend(c.onAlt);
   // דירוג התלמידות מחושב בלי `CITY_ASTERISK` — 67.9% בבית שמש אינו
   // הישג אלא תוצר מגזרי, וממוצע או דירוג שכולל אותו משקר.
   const gRows = CITIES.filter(x=> !CITY_ASTERISK[x.name])
                       .slice().sort((a,b)=> b.girls - a.girls);
   const gRank = gRows.findIndex(x=> x.name === CITY_ME) + 1;
   const gLive = cityGirlsPctOfTech();
+  // קבוצות הייחוס — אשכול חברתי-כלכלי והיקף אוכלוסייה. נגזרות בזמן
+  // ריצה ב-`ntGroups()`, בדיוק כמו בתצוגת חולון–ארצי.
+  const gr    = ntGroups();
+  const socio = gr.find(g=> g.key === 'socio');
+  const size  = gr.find(g=> g.key === 'size');
 
   const tiles = [
-    { cls:'c1', lbl:`מדד הטק בשכבת יב׳ · ${c.onAlt? 'מצבת משה״ח' : 'סכום שורות בתי הספר'}`,
-      num: ntPc(c.live12),
-      sub: `<strong>${num(c.cur12)}</strong> זכאים מתוך ${num(c.den)} בוגרים. ` +
-           `<strong style="color:${dn>=0?'#137333':'#c5221f'}">${dn>=0?'+':'−'}${Math.abs(dn).toFixed(1)} נק׳</strong> מול הארצי ${NATIONAL}%.` +
-           (c.onAlt? '' : ' <strong>אין שורת מצבת בתקופה זו</strong> — המספר מחושב על סכום שורות בתי הספר.') +
-           ` <span class="alt-num">הרשמי ${CITY_YEAR}: ${ntPc(c.me.tech)}</span>` },
+    { cls:'c1', lbl:`המדד הרשמי — משרד החינוך ${CITY_YEAR}`,
+      num: ntPc(c.me.tech),
+      sub: `זהו המספר שפורסם ושבו חולון נמדדת מול שאר הרשויות. ` +
+           `<strong>${(c.me.tech - NATIONAL).toFixed(1)} נק׳ מעל הארצי</strong> (${NATIONAL}%).<br>` +
+           `<span class="alt-num">מהגיליון, שכבת יב׳ ${DATA_LABEL||''}: <strong>${ntPc(c.live12)}</strong> — ` +
+           `${num(c.cur12)} זכאים מתוך ${num(c.den)}` +
+           (c.onAlt? ', באותו מכנה מצבת' : '. אין שורת מצבת בתקופה זו — סכום שורות בתי הספר') + `</span>` },
+    { cls:'c2', lbl:'המיקום בקבוצות הייחוס',
+      num:`#${socio.pos}`, den:` / ${socio.rows.length}`,
+      sub: `<strong>${socio.lbl}</strong> — ממוצע הקבוצה ${ntPc(socio.avg)}.<br>` +
+           `<strong>${size.lbl}</strong>: מקום <strong>#${size.pos}</strong> מתוך ${size.rows.length}, ` +
+           `ממוצע ${ntPc(size.avg)}. חולון גבוה בשתיהן — <strong>"התנאים שלנו שונים" אינו מסביר את הפער</strong>.` },
     { cls:'c3', lbl:`מיקום מבין ${CITIES.length} הרשויות הגדולות`,
       num:`#${c.rank}`, den:` / ${CITIES.length}`,
       sub: c.done
         ? `<strong>חולון כבר בחמישייה.</strong> נתוני ${CITY_YEAR}.`
         : `כדי להיכנס לחמישייה צריך לעבור את <strong>${c.defend.name}</strong> — ${ntPc(c.tgtPct)}. ` +
           `הפער: <strong>${(c.tgtPct - c.me.tech).toFixed(1)} נק׳</strong> מהמספר הרשמי.` },
-    // הצבע נגזר מהסימן. כרטיס ירוק סביב מספר שלילי אומר "טוב" בזמן
-    // שהמספר אומר ירידה — הקורא מאמין לצבע.
-    { cls: (!tr || tr.d >= 0) ? 'c2' : 'c3', lbl:'הכיוון בין שתי דגימות סוף השנה',
-      num: tr? `<span style="color:${tr.d>=0?'#137333':'#c5221f'}">${(tr.d>=0?'+':'−') + Math.abs(tr.d).toFixed(1)}</span>` : '—',
-      den: tr? ' נק׳' : '',
-      sub: tr
-        ? `${tr.labA} ← ${tr.labB}: ${ntPc(tr.from)} → <strong>${ntPc(tr.to)}</strong>. ` +
-          (tr.exact? '' : '<strong>אין שתי דגימות סוף-שנה</strong> — ההשוואה על שתי האחרונות מכל סוג. ')
-        : 'אין שתי תקופות עם מכנה זהה להשוואה.' },
     { cls:'c1', lbl:'ייצוג תלמידות בקרב לומדי הטק',
       num: ntPc(gLive),
       sub: gRank
@@ -4881,47 +4885,162 @@ function execBottomLine(c){
     </div>`).join('') + `</div>`;
 }
 
-// ── 2 · החסמים ──────────────────────────────────────────────────
+// ── 2 · מה עובד ─────────────────────────────────────────────────
+// המסך פותח במה שמחזיק, ולא בבעיות. כל פריט נגזר מפונקציה קיימת,
+// ומוצג **רק אם הוא מתקיים בנתונים** — אין כאן חדשות טובות מרופדות.
+function execPositives(c){
+  const items = [];
+  const yp = yyPeriods();
+  const A = (yp.pair && yp.pair.length === 2) ? yp.pair[0] : null;
+  const B = A ? yp.pair[1] : null;
+
+  // א. המדד המשוקלל י׳–יב׳. אותה קריאה בדיוק של `renderYYIndex`, ולכן
+  // המספרים זהים בהגדרה לכרטיס שבהשוואה השנתית.
+  if(A){
+    const oa = trOverall(A.key), ob = trOverall(B.key);
+    if(oa != null && ob != null && ob - oa > 0.05){
+      // ⚠ המשוקלל לבדו מטעה כשהשכבה הבוגרת הולכת לכיוון ההפוך — זו
+      // בדיוק ההטיה ש-§11 מזהיר מפניה. שני המספרים מוצגים יחד, כל אחד
+      // עם המכנה והסקופ שלו.
+      const tr = execTrend(c.onAlt);
+      const opposed = tr && tr.d < -0.05;
+      items.push({ k:'good', i:'▲', t:`המדד העירוני המשוקלל עלה — ${ntPc(oa)} ← ${ntPc(ob)}`,
+        b: `בין ${A.label} ל-${B.label} עלה מדד הטק של <strong>כל שלוש השכבות יחד</strong> ` +
+           `ב-<strong>${(ob-oa).toFixed(1)} נק׳</strong> (מכנה: סכום שורות בתי הספר).` +
+           (opposed
+             ? ` <strong>באותה תקופה שכבת יב׳ לבדה ירדה ב-${Math.abs(tr.d).toFixed(1)} נק׳</strong> ` +
+               `(${ntPc(tr.from)} ← ${ntPc(tr.to)}, מכנה המצבת). שני המספרים נכונים ומודדים סקופ שונה: ` +
+               `המשוקלל כולל את י׳ ו-יא׳ שגדלו, ו-יב׳ הוא המחזור שכבר סיים. ` +
+               `<strong>הכניסה למסלול מתרחבת לפני שהיציאה ממנו מספיקה להדביק.</strong>`
+             : '') });
+    }
+  }
+
+  // ב. ייצוג תלמידות — הערך הנוכחי, ואם יש שתי תקופות גם הדלתא.
+  const gNow = cityGirlsPctOfTech();
+  if(gNow > 0){
+    const ga = A ? trGirls(A.key) : null, gb = A ? trGirls(B.key) : null;
+    const gd = (ga != null && gb != null) ? gb - ga : null;
+    const nat = (typeof NATIONAL_GIRLS !== 'undefined') ? NATIONAL_GIRLS : null;
+    // הרמה היא ההישג; המגמה השנתית עשויה להיות בכיוון ההפוך, ואז
+    // הכרטיס אומר זאת במפורש. "מה עובד" אינו רישיון להסתיר דלתא.
+    items.push({ k:'good', i:'♀', t:`ייצוג התלמידות — ${ntPc(gNow)} מלומדי הטק`,
+      b: (nat != null
+            ? `מול <strong>${nat}%</strong> ארצית — <strong>${(gNow-nat).toFixed(1)} נק׳ מעל</strong>. ` +
+              `בנתוני ${CITY_YEAR} חולון בין המובילות מבין ${CITIES.length} הגדולות. `
+            : '') +
+         (gd != null
+            ? `<span class="alt-num">המגמה השנה: ${ntPc(ga)} ← ${ntPc(gb)} ` +
+              `(${gd>=0?'+':'−'}${Math.abs(gd).toFixed(1)} נק׳)` +
+              (gd < -0.05? ' — הרמה גבוהה, אך השנה ירדה.' : '.') + `</span>`
+            : '') });
+  }
+
+  // ג. עתיד טק. חוצה-תקופות ואינו זז עם בורר התקופה — כמו תצוגה 7.
+  const fy = ftYears()[0];
+  const fg = fy ? ftGrade([fy.start, fy.end]) : null;
+  if(fy && fg){
+    const f = ftCityFunnel(fy.start, fy.end, fg);
+    if(f.entered && f.convPct != null){
+      // האם התוכנית פועלת כפעולה מתקנת — כלומר מתרכזת בבתי ספר שמדד
+      // הטק שלהם נמוך. `ftFunnelRows` היא המקום היחיד שבו מדד בית
+      // הספר ושיעור הכניסה יושבים על אותה רשומה.
+      const rs = ftFunnelRows(fy.start, fy.end, fg)
+                   .filter(r=> r.idx != null && r.entryPct != null);
+      let corrective = '';
+      if(rs.length >= 4){
+        const med = [...rs].sort((a,b)=> a.idx - b.idx)[Math.floor(rs.length/2)].idx;
+        const avg = arr=> arr.length ? arr.reduce((s,r)=> s + r.entryPct, 0)/arr.length : null;
+        const lo = avg(rs.filter(r=> r.idx <  med));    // מדד נמוך
+        const hi = avg(rs.filter(r=> r.idx >= med));    // מדד גבוה
+        // נאמר רק אם זה באמת מה שקורה. המדגם קטן — כיוון, לא מקדם.
+        if(lo != null && hi != null && lo > hi + 1)
+          corrective = ` <strong>התוכנית אכן מתרכזת היכן שצריך:</strong> בבתי הספר שמדד הטק שלהם ` +
+            `מתחת לחציון שיעור הכניסה <strong>${lo.toFixed(1)}%</strong>, מול ${hi.toFixed(1)}% ` +
+            `במחצית העליונה. זהו כיוון על ${rs.length} בתי ספר, לא מקדם מדויק.`;
+      }
+      items.push({ k:'good', i:'◆', t:`"עתיד טק" — ${f.convPct.toFixed(1)}% מהנכנסים בחרו במקצועות הטק`,
+        b: `בשנת ${fy.label}, <strong>${num(f.entered)}</strong> תלמידי ${fg}׳ נכנסו לתוכנית ` +
+           (f.entryPct != null? `(${f.entryPct.toFixed(1)}% מהשכבה) ` : '') +
+           `ו-<strong>${num(f.chose)}</strong> מהם בחרו במקצועות הטק לקראת י׳.` + corrective +
+           ` <span class="alt-num">הנתון חוצה-תקופות ואינו מושפע מבורר התקופה שבסיידבר.</span>` });
+    }
+  }
+
+  // ד. מתמטיקה 5 — השער למדד. החישוב קיים היום רק בתוך `#yyDiverge`
+  // שמגודר למקרה מתמטיקה-עולה/מדד-יורד; כאן הוא מחוץ לגדר.
+  if(A){
+    const a = yyGrade12(A.key), b = yyGrade12(B.key);
+    if(a && b && b.ma5N - a.ma5N > 0){
+      const add = b.ma5N - a.ma5N;
+      const gapA = a.ma5N - a.techN, gapB = b.ma5N - b.techN;
+      items.push({ k:'good', i:'∑', t:`מתמטיקה 5 יח״ל בשכבת יב׳ — ${num(a.ma5N)} ← ${num(b.ma5N)}`,
+        b: `<strong>+${num(add)} תלמידים</strong> בין ${A.label} ל-${B.label}. ` +
+           `מתמטיקה 5 היא תנאי הסף למדד הטק, ולכן זהו הבסיס שממנו יכול לגדול המונה.<br>` +
+           `<span class="alt-num">לצד זה: מספר לומדי מתמטיקה 5 שאינם זכאי מדד טק גדל מ-${num(gapA)} ל-${num(gapB)} — ` +
+           `הגידול טרם תורגם למקצוע מדעי.</span>` });
+    }
+  }
+
+  if(!items.length) return '';
+  return `<div class="ex-h">מה עובד</div>` + items.map(x=>`
+    <div class="qi qi-${x.k}">
+      <div class="qi-ico">${x.i}</div>
+      <div class="qi-body">
+        <div class="qi-title">${x.t}</div>
+        <div class="qi-text">${x.b}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── 3 · החסמים ──────────────────────────────────────────────────
 // שלושה מתוך מנוע הגלאים, ממוינים לפי `cost` — כמה תלמידים הבעיה
-// עולה לעיר. **אין כאן גלאי חדש.** ולצדם, מופרד ומסומן, החסם
-// האדמיניסטרטיבי: היחידה שלו אינה "תלמידים שאבדו" אלא "נקודות
-// שלא נספרות", ומיון מולם היה משווה תפוחים לתפוזים.
+// עולה לעיר. **אין כאן גלאי חדש.** ולצדם, מופרד ומסומן, פער המצבת:
+// היחידה שלו אינה "תלמידים שאבדו" אלא "נקודות שלא נספרות", ומיון
+// מולם היה משווה תפוחים לתפוזים.
+//
+// ⚠ **התקציר מציג מידע בלבד, בלי המלצות** (החלטת המשתמש). לכן מוצג
+// `d.body(ev)` ולא `d.action(ev)`. הפונקציה `action` נשארת במנוע
+// ומוצגת כרגיל בתצוגת התובנות, שהיא כלי העבודה המקצועי.
+const EXEC_SKIP = ['feederDisconnect'];   // רלוונטי לצוות, לא לתקציר
+
 function execBlockers(c){
   CTX = insightCtx();
   const found = CITY_DETECTORS
+    // גלאי `model` אינו חסם — הוא "ללמוד מהמובילים"/"תמונת מצב",
+    // וה-`cost` שלו הוא רצפה קבועה (0.4/0.5) ולא מספר תלמידים אמיתי.
+    // ברשימת החסמים הוא גם סותר את הכותרת וגם מדפיס "1 תלמידים".
+    .filter(d=> d.kind !== 'model' && EXEC_SKIP.indexOf(d.id) < 0)
     .map(d=>{ const ev = d.test(CTX); return ev? {d, ev, cost:d.cost(ev)} : null; })
     .filter(Boolean)
     .sort((a,b)=> b.cost - a.cost)
     .slice(0,3);
 
+  // `cols` הוא הפירוט שהגוף מפנה אליו ("שווה יחד 181 תלמידי טק:") —
+  // בלעדיו המשפט נגמר בנקודתיים ריקות. הוא מידע, ולכן נשאר.
   const cards = found.map((f,i)=>`
     <div class="ins-card ${f.d.kind}" onclick="switchView('insights')" style="cursor:pointer;">
       <div class="ins-head"><span class="ins-num">${i+1}</span>
         <div class="ins-title">${f.d.title(f.ev)}</div>
         <span class="ex-cost">${num(f.cost)} תלמידים</span>
         <span class="ins-tag">${f.d.tag}</span></div>
-      <div class="ins-act">
-        <div class="ins-act-h">פעולה עירונית</div>
-        <div class="ins-act-b">${f.d.action(f.ev)}</div>
-      </div>
+      <div class="ins-body">${f.d.body(f.ev)}</div>
+      ${f.d.cols? f.d.cols(f.ev) : ''}
     </div>`).join('');
 
   const admin = (c.cost12 != null && c.cost12 > 0.05) ? `
     <div class="ins-card admin">
       <div class="ins-head"><span class="ins-num">◆</span>
-        <div class="ins-title">מחיר המכנה — ${c.cost12.toFixed(1)} נק׳ שאינן פדגוגיה</div>
+        <div class="ins-title">המצבת הקובעת — פער של ${c.cost12.toFixed(1)} נק׳ מהנתון שאנחנו מכירים</div>
         <span class="ex-cost">${num(Math.abs(c.heads12))} תלמידים</span>
         <span class="ins-tag">אדמיניסטרטיבי</span></div>
       <div class="ins-body">
-        המצבת של משרד החינוך סופרת <strong>${num(Math.abs(c.heads12))}</strong> בוגרי יב׳ יותר משורות
-        בתי הספר שבגיליון. לכן אותה עיר נמדדת ${ntPc(cityPct(2))} פנימה ו-${ntPc(c.live12)} החוצה —
-        <strong>${c.cost12.toFixed(1)} נקודות</strong> שנעלמות בלי שאף תלמיד השתנה.
-        ${c.gap != null? `זהו חלק מהפער ל-${ntPc(c.tgtPct)}, והחלק הזול ביותר לסגור.` : ''}
-      </div>
-      <div class="ins-act">
-        <div class="ins-act-h">פעולה עירונית</div>
-        <div class="ins-act-b">לאתר אילו בתי ספר נספרים במצבת ואינם בגיליון, ולהשלים אותם.
-          אם הם קיימים בעיר — מרחיבים את הגיליון ולא מתווכחים על המכנה.</div>
+        הנתון שאנחנו מכירים משורות בתי הספר שבגיליון הוא <strong>${ntPc(cityPct(2))}</strong>.
+        הנתון של משרד החינוך, שמחושב על שורת המצבת, הוא <strong>${ntPc(c.live12)}</strong> —
+        והוא <strong>הקובע</strong> כלפי חוץ ובכל השוואה בין רשויות.
+        ההפרש נובע מ-<strong>${num(Math.abs(c.heads12))}</strong> בוגרי יב׳ שנספרים במצבת
+        ואינם מופיעים בשורות בתי הספר שבגיליון.
+        ${c.gap != null? `<strong>${c.cost12.toFixed(1)} מתוך ${(c.tgtPct - c.live12).toFixed(1)} נקודות</strong> הפער ליעד הן הפרש הספירה הזה.` : ''}
       </div>
     </div>` : '';
 
@@ -4971,7 +5090,9 @@ function execGoal(c){
   <div class="card">
     <div class="card-head"><div>
       <div class="card-title">היעד — כניסה לחמישייה מבין ${CITIES.length} הגדולות</div>
-      <div class="card-sub">הסף נגזר מהדירוג עצמו: מקום ${RANK_TGT} מוחזק היום בידי
+      <div class="card-sub"><strong>קפיצה מ-${ntPc(c.live12)} ל-${ntPc(c.tgtPct)} תוך ${EXEC_SPAN} שנים —
+        ${(c.tgtPct - c.live12).toFixed(1)} נקודות, ${num(c.gap)} זכאים נוספים בשכבת יב׳.</strong><br>
+        הסף נגזר מהדירוג עצמו: מקום ${RANK_TGT} מוחזק היום בידי
         ${c.defend.name} עם ${ntPc(c.tgtPct)}. נתוני ${CITY_YEAR}.</div>
     </div></div>
     ${top}
@@ -5125,7 +5246,7 @@ function execSchools(c){
       <div class="cmp-note">
         <strong>המכנה כאן פנימי, לא מצבת.</strong> לבתי ספר אין שורת מצבת, ולכן היעד תורגם
         למכנה שלהם: ${ntPc(c.tgtPct)} במצבת ≙ <strong>${ntPc(tgtIn)}</strong> בשורות בתי הספר,
-        לפי אותו יחס שמוצג ככרטיס "מחיר המכנה" בתצוגת חולון–ארצי.<br>
+        לפי אותו יחס שמוצג בכרטיס "המצבת הקובעת" למעלה ובכרטיס המכנה בתצוגת חולון–ארצי.<br>
         <strong>הסכום ${num(sum)} גדול מ-${num(c.gap)} שבכרטיס היעד</strong>, כי
         ${above? nSchools(above)+' כבר מעל היעד ותורמים 0' : 'אף בית ספר אינו מעל היעד'} —
         עודף מעל היעד אינו מקזז חוסר במקום אחר. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת.
@@ -5221,7 +5342,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v55';
+const BUILD = 'v56';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
