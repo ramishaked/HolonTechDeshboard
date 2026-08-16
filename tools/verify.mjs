@@ -36,6 +36,45 @@ const problems = [];
 const fail = m => { problems.push(m); console.error('  ✗ ' + m); };
 const pass = m => console.log('  ✓ ' + m);
 
+// ── מפת פונקציות — נגזרת מהקובץ, לא כתובה ביד ────────────────────
+// מפה סטטית ב-CLAUDE.md התיישנה תוך שעה (תצוגה נוספה, שלוש nt* הוסרו),
+// והייתה מגנט להתנגשויות בין סשנים מקבילים. הגזירה כאן לא יכולה להתיישן.
+const MAP_GROUPS = [
+  [/^(renderYY|yy)/,             'השוואה שנתית (תצוגה 8)'],
+  [/^render/,                    'רינדור תצוגה'],
+  [/^nt/,                        'ערים אחרות (תצוגות 9–10)'],
+  [/^ft/,                        'עתיד טק (תצוגה 7)'],
+  [/^tr[A-Z]/,                   'מגמות לאורך תקופות'],
+  [/^(city|studentsAtGrade)/,    'מדד ומכנה עירוני'],
+  [/^school/,                    'בית ספר בודד'],
+  [/^(boot|fetch|csvParse|parseSheet|applyPeriod|withPeriod|periodsSorted|parsePeriodName)/,
+                                 'טעינה, פרסינג ותקופות'],
+  [/^(switchView|destroyChart|refLine|initDeepDive)/, 'ניווט וגרפים'],
+];
+
+function functionMap() {
+  const html = fs.readFileSync(PAGE, 'utf8');
+  const names = new Set();
+  for (const m of html.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) names.add(m[1]);
+  for (const m of html.matchAll(/^\s*const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/gm)) names.add(m[1]);
+
+  const build = html.match(/const BUILD\s*=\s*'([^']+)'/);
+  const lines = html.split('\n').length;
+  console.log(`\nמפת פונקציות — ${build ? build[1] : '?'} · ${lines} שורות · ${names.size} פונקציות`);
+  console.log('נגזר מ-index.html בזמן ריצה. אין כאן שום שם צרוב.\n');
+
+  const left = new Set(names);
+  for (const [re, title] of MAP_GROUPS) {
+    const hit = [...left].filter(n => re.test(n)).sort();
+    if (!hit.length) continue;
+    hit.forEach(n => left.delete(n));
+    console.log(`${title} (${hit.length})`);
+    console.log('  ' + hit.join(' · ') + '\n');
+  }
+  const rest = [...left].sort();
+  if (rest.length) console.log(`עזרים (${rest.length})\n  ` + rest.join(' · ') + '\n');
+}
+
 // ── 1. שער התחביר ────────────────────────────────────────────────
 function syntaxGate() {
   console.log('\n── תחביר ──');
@@ -264,6 +303,8 @@ async function browserRun() {
 }
 
 // ── main ─────────────────────────────────────────────────────────
+if (process.argv.includes('--map')) { functionMap(); process.exit(0); }
+
 syntaxGate();
 if (!process.argv.includes('--syntax')) {
   if (problems.length) console.error('\nשער התחביר נכשל — לא מריצים דפדפן.');
