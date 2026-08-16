@@ -1063,16 +1063,14 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">מסע הבנות לאורך השכבות</div>
+          <div class="card-title">מסע הבנות לאורך השכבות (י׳–יב׳)</div>
           <div class="card-sub">% בנות בקרב לומדי כל מקצוע, בכל שכבה. ככל שהקו עולה — שיעור הבנות גדל. כלל בתי הספר בעיר (כולל חד-מגדריים).</div>
         </div>
       </div>
       <div class="chart-box tall">
         <canvas id="genderJourney"></canvas>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
-        ⚠ בז׳–ט׳ אין הפרדת מקצועות במקור — רק קבוצת עמ"ט. לכן מוצג <strong>קו אפור אחד</strong> (% בנות בקבוצה), וקווי המקצוע מתחילים ב-י׳.
-      </div>
+      <div id="gjAxis" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">—</div>
     </div>
 
     <!-- School comparison -->
@@ -2842,47 +2840,50 @@ function renderGender(){
     {label:'בנות ב-5 יח"ל מתמטיקה', subIdx:3, color:COL.ma},
     {label:'בנות בקרב זכאי בגרוטק', subIdx:4, color:COL.primary}
   ];
-  // ז'-ט' = שכבות עמ"ט (אין הפרדת מקצועות) → קווי המקצוע מתחילים רק ב-י׳.
+  // הגרף מציג י׳–יב׳ בלבד. בז׳–ט׳ אין הפרדת מקצועות במקור (רישום קבוצת עמ"ט),
+  // ולכן שלוש נקודות ריקות שגזלו שני שליש מרוחב הגרף.
+  const GI0 = ALL_GRADES.indexOf(GRADES[0]);   // היסט י׳ בתוך ALL_GRADES (=3)
   const ds = subs.map(sub=>({
     label: sub.label,
-    data: ALL_GRADES.map((_,gi)=> gi<3 ? null : cityGirlsPctOfSubjAtGrade(gi, sub.subIdx)),
+    data: GRADES.map((_,i)=> cityGirlsPctOfSubjAtGrade(GI0+i, sub.subIdx)),
     borderColor: sub.color, backgroundColor: sub.color+'18',
     borderWidth: 3, pointRadius: 6, pointBackgroundColor: sub.color, pointBorderColor:'#fff', pointBorderWidth:2,
     tension: 0.25, spanGaps: true, fill: false,
     datalabels:{ anchor:'end', align:'top', offset:4, color: sub.color, font:{family:'Heebo',size:11,weight:'700'},
       formatter: v => v==null? '' : v.toFixed(0)+'%' }
   }));
-  // קו קבוצת עמ"ט בז'-ט': % בנות בקבוצה (ניתן לחשב, כי ht_g קיים גם שם)
-  ds.unshift({
-    label:'בנות בקבוצת עמ"ט (ז׳–ט׳)',
-    data: ALL_GRADES.map((_,gi)=> gi<3 ? cityGirlsPctOfSubjAtGrade(gi, 4) : null),
-    borderColor:'#9aa0a6', backgroundColor:'rgba(154,160,166,0.12)',
-    borderWidth:3, borderDash:[7,4], pointRadius:6, pointStyle:'rectRot',
-    pointBackgroundColor:'#9aa0a6', pointBorderColor:'#fff', pointBorderWidth:2,
-    tension:0.25, spanGaps:false, fill:false,
-    datalabels:{ anchor:'end', align:'top', offset:4, color:'#5f6368',
-      font:{family:'Heebo',size:11,weight:'700'},
-      formatter: v => v==null? '' : v.toFixed(0)+'%' }
-  });
-  // קו ייחוס: 36.3% ארצי
-  ds.push({ label:'ארצי '+NATIONAL_GIRLS+'%', data: ALL_GRADES.map(()=>NATIONAL_GIRLS),
+  // קו ייחוס ארצי
+  ds.push({ label:'ארצי '+NATIONAL_GIRLS+'%', data: GRADES.map(()=>NATIONAL_GIRLS),
     borderColor:'#5f6368', borderDash:[5,4], borderWidth:1.5, pointRadius:0, tension:0, fill:false,
     datalabels:{display:false} });
   // קו 50% (אם כל המינים שווים, היינו רואים 50%)
-  ds.push({ label:'איזון מלא (50%)', data: ALL_GRADES.map(()=>50),
+  ds.push({ label:'איזון מלא (50%)', data: GRADES.map(()=>50),
     borderColor:'rgba(0,0,0,0.18)', borderDash:[2,3], borderWidth:1, pointRadius:0, tension:0, fill:false,
     datalabels:{display:false} });
 
+  // ציר Y נגזר מהנתונים ואינו 0–100. הקווים נעים בטווח של ~20 נק׳, ועל ציר מלא
+  // הם נמעכים לחמישית מהגובה והשינוי בין השכבות נעלם. הטווח מכסה גם את שני קווי
+  // הייחוס (הם כבר ב-ds), מרופד ב-4 נק׳ ומעוגל לכפולות של 5 כדי שהשנתות יֵצאו עגולות.
+  // **הציר אינו מתחיל באפס, והכרטיס אומר זאת מתחת לגרף** — בלי זה נראה כאילו
+  // הפער בין השכבות גדול פי כמה משהוא.
+  const gjVals = ds.flatMap(d=> d.data).filter(v=> v != null);
+  const gjLo = Math.max(0,   Math.floor((Math.min(...gjVals) - 4) / 5) * 5);
+  const gjHi = Math.min(100, Math.ceil ((Math.max(...gjVals) + 4) / 5) * 5);
+
   charts.genderJourney = new Chart(document.getElementById('genderJourney'), {
     type:'line',
-    data:{ labels: ALL_GRADES.map(g=>'שכבה '+g), datasets: ds },
-    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,right:12,left:12}},
+    data:{ labels: GRADES.map(g=>'שכבה '+g), datasets: ds },
+    // י׳ ו-יב׳ יושבות עכשיו על קצות הציר, ולא באמצעו — בלי ריפוד אופקי התוויות שלהן נחתכות
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,right:30,left:30}},
       plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%')}} },
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:false, min:gjLo, max:gjHi,
+                  ticks:{stepSize:5, callback:v=>v+'%', font:HF, color:'#5f6368'}, grid:{color:GC}} } }
   });
+  document.getElementById('gjAxis').textContent =
+    `ציר האנכי מתחיל ב-${gjLo}% ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = 5 נקודות אחוז.`;
 
   // === ייצוג לפי בית ספר ===
   destroyChart('genderBySchool');
@@ -4260,7 +4261,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v28';
+const BUILD = 'v30';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
