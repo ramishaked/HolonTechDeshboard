@@ -1957,9 +1957,10 @@ function renderOverview(){
           datalabels:{display:false} }
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
-      // ⚠ `layout.padding.top` דוחף גם את הלגנדה, לא רק את אזור השרטוט —
-      // 36 פתחו רצועה לבנה בין כותרת הכרטיס ללגנדה. פנאי התוויות מגיע
-      // מ-`suggestedMax` שלמטה, ולכן כאן מספיק מרווח נשימה קטן.
+      // ⚠ **`layout.padding.top` דוחף גם את הלגנדה**, לא רק את אזור השרטוט —
+      // ולכן ערך גדול פותח רצועה לבנה בין כותרת הכרטיס ללגנדה. הכלל בכל
+      // גרפי הדשבורד: ריפוד עליון קטן (10–14), והפנאי לתוויות שמעל הנקודות
+      // מגיע מציר ה-Y (`grace` / `suggestedMax` / min-max מפורש).
       layout:{padding:{top:12,right:20,left:20}},
       plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14}},
         tooltip:{callbacks:{label:ctx=> ctx.datasetIndex===0
@@ -2019,14 +2020,14 @@ function renderSubjects(){
           borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:v=>v}}
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:30}},
+      layout:{padding:{top:12}},
       plugins:{legend:{position:'top',labels:{font:HF,color:'#5f6368'}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=> ctx.datasetIndex===0
             ? 'מדד טק: '+ctx.parsed.y+' ('+cityPct(ctx.dataIndex).toFixed(1)+'%)'
             : ctx.dataset.label+': '+ctx.parsed.y }}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:true,grace:'12%',ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   const drops=[
@@ -2214,10 +2215,10 @@ function renderDeepDive(){
         backgroundColor: COL.primary, borderRadius:6,
         datalabels:{anchor:'end',align:'end',color:COL.primaryD,font:hf2(),
           formatter:(v,ctx)=>{ const i=ctx.dataIndex; return hasGrade(school,i)? v+' ('+schoolGradePct(school,i).toFixed(0)+'%)' : '—'; }} }]},
-    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:24}},
+    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:10}},
       plugins:{legend:{display:false}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
-               y:{ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{grace:'14%',ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // מקצועות השכבה הבוגרת — השכבה הגבוהה ביותר שזמינה בפועל (גם ז'-ט' לחט"ב)
@@ -2348,14 +2349,14 @@ function renderDeepDive(){
     type:'line',
     data:{ labels: ALL_GRADES.map(g=>'שכבה '+g), datasets: ds },
     options:{ responsive:true, maintainAspectRatio:false,
-      layout:{padding:{top:24,right:12,left:12}},
+      layout:{padding:{top:12,right:12,left:12}},
       plugins:{
         legend:{position:'top', align:'end', labels:{font:HF, color:'#5f6368', boxWidth:14, padding:10}},
         tooltip:{ mode:'index', intersect:false,
           callbacks:{ label: ctx => ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%') } }
       },
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // Compare to city + national
@@ -2373,10 +2374,10 @@ function renderDeepDive(){
         refLine('ממוצע עירוני', cityAvg, COL.bad),
         refLine('ארצי '+NATIONAL+'%', NATIONAL, COL.info)
       ]},
-    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:28}},
+    options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:12}},
       plugins:{legend:{display:true,labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% טק'}}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
-               y:{ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{grace:'14%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // תובנות איכותניות מבוססות נתונים
@@ -2992,7 +2993,7 @@ function renderGender(){
     type:'line',
     data:{ labels: GRADES.map(g=>'שכבה '+g), datasets: ds },
     // י׳ ו-יב׳ יושבות עכשיו על קצות הציר, ולא באמצעו — בלי ריפוד אופקי התוויות שלהן נחתכות
-    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,right:30,left:30}},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:12,right:30,left:30}},
       plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y==null?'—':ctx.parsed.y.toFixed(1)+'%')}} },
@@ -3035,7 +3036,8 @@ function renderGender(){
         { label:'ארצי '+NATIONAL_GIRLS+'%', data: ordered.map(()=>NATIONAL_GIRLS),
           type:'line',borderColor:COL.info,borderDash:[6,4],borderWidth:2,pointRadius:0,fill:false,datalabels:{display:false} },
       ]},
-    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:28}},
+    // כאן הציר נעול ל-0–100 ואי אפשר להוסיף `grace`, ולכן הריפוד מעט גדול יותר
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:14}},
       plugins:{legend:{labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% בנות בקרב לומדי הטק'}}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
                y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
@@ -3610,7 +3612,9 @@ function renderYYDecade(A, B){
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
-      layout:{ padding:{ top:34, right:26, left:26 } },
+      // הפנאי לתוויות מגיע מ-`grace` שעל ציר ה-Y (למטה), ולכן הריפוד
+      // העליון קטן — ריפוד גדול כאן דוחף את הלגנדה ופותח רצועה לבנה.
+      layout:{ padding:{ top:14, right:26, left:26 } },
       interaction:{ mode:'index', intersect:false },
       plugins:{
         legend:{ position:'top', align:'end',
@@ -4515,7 +4519,7 @@ function navSave(){
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v43';
+const BUILD = 'v44';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
