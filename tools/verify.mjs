@@ -31,6 +31,7 @@ import { PERIODS, DEFAULT_GID, csvFor, expectedFor } from './fixture.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const PAGE = path.join(ROOT, 'index.html');
+const DATA = path.join(ROOT, 'data', 'national.json');
 
 const problems = [];
 const fail = m => { problems.push(m); console.error('  ✗ ' + m); };
@@ -303,6 +304,51 @@ async function browserRun() {
 
   const charts = await page.evaluate(() => (window.__CHARTS_BUILT__ || []).length);
   if (charts > 0) pass(`${charts} גרפים נבנו`); else fail('אף גרף לא נבנה');
+
+  // ── 4ב. הנתון הגולמי מול data/national.json ────────────────────
+  // הקבועים הארציים חייבים להיות צרובים ב-index.html (כלל "קובץ אחד"),
+  // ולכן data/national.json הוא עותק. עותק שאיש אינו בודק מתיישן — כאן
+  // הוא נבדק. הערכים נקראים מהדף החי ולא ב-regex.
+  console.log('\n── נתון גולמי (data/national.json) ──');
+  if (!fs.existsSync(DATA)) fail('data/national.json חסר');
+  else {
+    const ref = JSON.parse(fs.readFileSync(DATA, 'utf8'));
+    const live = await page.evaluate(() => ({
+      NAT, NAT_2014, NAT_GIRLS_2024, HOLON_MOE, HOLON_HIST, HOLON_MID,
+      CITY_DATA, CITY_ASTERISK, CITY_NEAR, POP_BAND,
+    }));
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const nat = ref['ארצי_סדרות'], g = ref['ארצי_שיעור_תלמידות_2024'], c = ref['רשויות'];
+    const checks = [
+      ['שנים',            live.NAT.years, nat['שנים']],
+      ['בגרות הייטק',     live.NAT.tech,  nat['בגרות_הייטק']],
+      ['מתמטיקה 5',       live.NAT.ma5,   nat['מתמטיקה_5']],
+      ['פיזיקה 5',        live.NAT.ph,    nat['פיזיקה_5']],
+      ['מדעי המחשב 5',    live.NAT.cs,    nat['מדעי_המחשב_5']],
+      ['אנגלית 5',        live.NAT.en5,   nat['אנגלית_5']],
+      ['עוגן 2014',       [live.NAT_2014.tech, live.NAT_2014.ma5],
+                          [ref['ארצי_עוגן_2014'].tech, ref['ארצי_עוגן_2014'].ma5]],
+      ['שיעור תלמידות 2024',
+        [live.NAT_GIRLS_2024.tech, live.NAT_GIRLS_2024.ma5, live.NAT_GIRLS_2024.ph, live.NAT_GIRLS_2024.cs],
+        [g['בגרות_הייטק']['אחוז'], g['מתמטיקה_5']['אחוז'], g['פיזיקה_5']['אחוז'], g['מדעי_המחשב_5']['אחוז']]],
+      ['חולון — משה"ח',   [live.HOLON_MOE.years, live.HOLON_MOE.tech, live.HOLON_MOE.ma5],
+        [ref['חולון_סדרות']['רשמי_משהח']['שנים'], ref['חולון_סדרות']['רשמי_משהח']['בגרות_הייטק'],
+         ref['חולון_סדרות']['רשמי_משהח']['מתמטיקה_5']]],
+      ['33 רשויות',       live.CITY_DATA, c['שורות']],
+      ['כוכבית',          live.CITY_ASTERISK, c['כוכבית']],
+      ['רצועת גודל',      live.POP_BAND, c['רצועת_גודל']],
+    ];
+    let bad = 0;
+    for (const [name, a, b] of checks) if (!eq(a, b)) { fail(`${name}: index.html ≠ data/national.json`); bad++; }
+    if (!bad) pass(`${checks.length} קבוצות ערכים זהות בין index.html ל-data/national.json`);
+
+    // שיעור התלמידות חייב לצאת מהמספרים המוחלטים שבאותו מקור
+    for (const k of ['בגרות_הייטק', 'מתמטיקה_5', 'פיזיקה_5', 'מדעי_המחשב_5']) {
+      const r = g[k], calc = +(r['תלמידות'] / r['זכאים'] * 100).toFixed(1);
+      if (Math.abs(calc - r['אחוז']) > 0.1) fail(`${k}: ${r['תלמידות']}/${r['זכאים']} = ${calc}% ולא ${r['אחוז']}%`);
+    }
+    pass('שיעורי התלמידות 2024 נגזרים מהמספרים המוחלטים שבדו"ח');
+  }
 
   // ── 5. מספרים ──────────────────────────────────────────────────
   await page.click('.sb-item[data-view="overview"]');
