@@ -3357,7 +3357,7 @@ function renderYYDecade(A, B){
   // **שני הקווים מתויגים בכל הנקודות.** ההפרדה בתפר, שם הם מתקרבים ל-2 נק׳,
   // היא תפקידו של `sideOf` ולא של צמצום התיוג.
   const line = (label, data, col, align, other) => ({
-    label, data, borderColor: col, backgroundColor: col,
+    label, data, order: 1, borderColor: col, backgroundColor: col,
     borderWidth: 3.5, tension: 0.25,
     pointRadius: ctx=> ctx.dataIndex >= nR ? 7 : 5,
     pointStyle: ctx=> ctx.dataIndex >= nR ? 'rectRot' : 'circle',
@@ -3384,27 +3384,39 @@ function renderYYDecade(A, B){
     }
   });
 
-  // נקודות הייחוס הארציות — אפור ניטרלי, כדי שייקראו כייחוס חיצוני ולא
-  // כסדרה של חולון. יוצאות מה-tooltip לגמרי; המספר יושב על הגרף.
-  //
-  // ⚠ **התווית מוזזת אופקית (`align:'left'`) ולא מעל/מתחת.** ב-x=2024 יש ארבע
-  // נקודות בטווח של ~10 נק׳ (כתום 20.6 · ארצי 16.0 · טורקיז 13.7 · ארצי 10.8);
-  // תיוג אנכי של כולן מחזיר בדיוק את ההתנגשות שתוקנה ב-v25. ההזזה שמאלה
-  // מוציאה את שתי תוויות הארצי אל השטח הריק שבין הקווים.
-  // הקנבס כפוי ל-direction:ltr (v27), ולכן 'left' הוא לכיוון השנה הקודמת.
-  const natDot = (label, val) => ({
-    label, data: Array(nR-1).fill(null).concat([val], Array(labels.length-nR).fill(null)),
-    borderColor: NATC, backgroundColor: NATC, showLine: false,
-    pointRadius: 7, pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 2,
-    datalabels:{
-      display: ctx=> shown(ctx) && ctx.dataset.data[ctx.dataIndex] != null,
-      anchor:'end', align:'left', offset: 10, color: NATC,
-      backgroundColor:'#fff', borderRadius: 3,
-      padding:{top:1, bottom:1, left:4, right:4},
-      font:{family:'Heebo', size:10, weight:'700'},
-      formatter: v=> v==null? '' : 'ארצי '+v.toFixed(1)+'%'
-    }
+  // ── הסדרה הארצית כקו מלא, לא כנקודה בודדת ──────────────────────
+  // השנה הלועזית של כל עמודה: טרום-התפר מהסדרה ההיסטורית, ומהתפר ואילך
+  // מ-`p.year` (תשפ"ה=2025). כך `NAT` 2018–2025 נשתל על אותו ציר, וה-2025
+  // הארצי נופל בדיוק על תשפ"ה שלנו.
+  const yearAt = i=> i < nR ? sT[i].y : (ours[i-nR] && ours[i-nR].p.year) || null;
+  const natSeries = metric=> labels.map((_, i)=>{
+    const k = NAT.years.indexOf(yearAt(i));
+    return k < 0 ? null : NAT[metric][k];
   });
+  const natLastIdx = arr=>{ for(let i=arr.length-1; i>=0; i--) if(arr[i] != null) return i; return -1; };
+
+  // אפור ניטרלי ודק, `order` גבוה יותר → מצויר **מאחורי** הקווים של חולון,
+  // כדי שייקרא כרקע ייחוס ולא כסדרה מתחרה. מחוץ ל-tooltip.
+  // ⚠ התווית מוזזת אופקית (`align:'left'`) — תיוג אנכי מחזיר את התנגשות
+  // ארבע התוויות שתוקנה ב-v25. הקנבס כפוי ל-ltr (v27), ולכן 'left' = אחורה.
+  const natLine = (label, metric) => {
+    const data = natSeries(metric), last = natLastIdx(data);
+    return {
+      label, data, order: 2,
+      borderColor: NATC, backgroundColor: NATC, borderWidth: 2, tension: 0.25,
+      fill: false, spanGaps: false,
+      pointRadius: ctx=> ctx.dataIndex === last ? 5 : 2.5,
+      pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 1.5,
+      datalabels:{
+        display: ctx=> shown(ctx) && ctx.dataIndex === last,
+        anchor:'end', align:'left', offset: 10, color: NATC,
+        backgroundColor:'#fff', borderRadius: 3,
+        padding:{top:1, bottom:1, left:4, right:4},
+        font:{family:'Heebo', size:10, weight:'700'},
+        formatter: v=> v==null? '' : 'ארצי '+v.toFixed(1)+'%'
+      }
+    };
+  };
 
   const CITY_Y = NAT.years.indexOf(2024) >= 0 ? 2024 : NAT.years[NAT.years.length-1];
   const natTech = NAT.tech[NAT.years.indexOf(CITY_Y)], natMa5 = NAT.ma5[NAT.years.indexOf(CITY_Y)];
@@ -3432,8 +3444,7 @@ function renderYYDecade(A, B){
     data:{ labels, datasets:[
       line('בגרות הייטק',    techData, TEAL, 'bottom', ma5Data),
       line('מתמטיקה 5 יח״ל', ma5Data,  GOLD, 'top',    techData),
-      natDot('ארצי — הייטק', natTech),
-      natDot('ארצי — מתמטיקה', natMa5)
+      natLine('ארצי — הייטק', 'tech')
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -3447,7 +3458,7 @@ function renderYYDecade(A, B){
           // על הגרף נקודה בודדת בלי הקו שהיא משווה אליו
           onClick(e, item, legend){
             const ch = legend.chart, i = item.datasetIndex;
-            const linked = { 0:2, 1:3 }[i];       // קו → נקודת הייחוס הארצית שלו
+            const linked = { 0:2 }[i];            // הייטק גורר את הקו הארצי שלו
             const vis = !ch.isDatasetVisible(i);
             ch.setDatasetVisibility(i, vis);
             if(linked != null) ch.setDatasetVisibility(linked, vis);
@@ -3485,7 +3496,8 @@ function renderYYDecade(A, B){
     `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
     `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
     `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
-    `<span class="alt-num">הנקודות האפורות הן הממוצע הארצי ל-${CITY_Y}.</span>`;
+    `<span class="alt-num">הקו האפור הוא <strong>בגרות הייטק הארצית</strong> (משרד החינוך, ${NAT.years[0]}–${NAT.years[NAT.years.length-1]}). ` +
+    `במתמטיקה 5 יח״ל הארצי עומד על ${_last(NAT.ma5).toFixed(1)}% — קו ארצי שני היה חוצה כאן את קו ההייטק של חולון ולכן אינו מוצג.</span>`;
 
   const pill = (lbl, val, ref, col) =>
     `<div class="meta-pill"><span style="color:var(--muted);">${lbl}</span>
@@ -4261,7 +4273,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v30';
+const BUILD = 'v31';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
