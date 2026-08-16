@@ -307,6 +307,41 @@ body{
 .pot-num{font-size:38px;font-weight:900;color:#a04a10;line-height:1;flex-shrink:0;}
 .pot-txt{font-size:13px;color:var(--text);line-height:1.6;}
 
+/* ─── חולון מול ערים אחרות (תצוגה 9) ─── */
+/* שורת רשות — דירוג, שם, מוט, ערך, גלולת % בנות. חולון מודגשת בכתום */
+.ct-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;}
+.ct-row.me{background:var(--accent-l);box-shadow:inset 0 0 0 1px #f6c99a;}
+.ct-row.dim{opacity:0.55;}
+.ct-rank{width:24px;flex-shrink:0;text-align:center;font-size:12px;font-weight:900;color:var(--muted);}
+.ct-row.me .ct-rank{color:#a04a10;}
+.ct-name{width:126px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ct-track{flex:1;min-width:0;display:flex;align-items:center;gap:7px;position:relative;}
+.ct-bar{height:16px;border-radius:0 4px 4px 0;background:var(--primary-l);min-width:2px;transition:width .3s;}
+.ct-row.me .ct-bar{background:var(--accent);}
+.ct-val{font-size:12px;font-weight:900;color:var(--primary-d);white-space:nowrap;}
+.ct-row.me .ct-val{color:#a04a10;}
+.ct-g{font-size:10.5px;font-weight:700;color:#ad1457;background:#fce4ec;border:1px solid #f8bbd0;
+  border-radius:6px;padding:1px 6px;white-space:nowrap;flex-shrink:0;width:58px;text-align:center;}
+.ct-g.top{background:#ad1457;color:#fff;border-color:#ad1457;}
+.ct-nat{position:absolute;top:-3px;bottom:-3px;width:0;border-right:2px dashed #9aa0a6;pointer-events:none;}
+.ct-nat span{position:absolute;top:-16px;right:4px;font-size:10px;font-weight:700;
+  color:#5f6368;white-space:nowrap;}
+.ct-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+  padding:0 8px 10px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+
+/* כרטיס המכנה — ההסבר וההמלצה */
+.dn-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:16px 18px;margin-top:14px;}
+.dn-card h4{font-size:13px;font-weight:900;color:var(--primary-d);margin-bottom:8px;}
+.dn-card ol{margin:0;padding-inline-start:18px;font-size:12.5px;line-height:1.85;color:var(--text);}
+.dn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+.dn-cell{background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;}
+.dn-cell .l{font-size:11px;color:var(--muted);margin-bottom:5px;}
+.dn-cell .v{font-size:22px;font-weight:900;color:var(--primary-d);line-height:1;}
+.dn-cell.cost .v{color:#a04a10;}
+.dn-cell .s{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;}
+
 /* ─── SINGLE-GENDER SCHOOL CARDS ─── */
 .sg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .sg-card{padding:18px 20px;border-radius:12px;border:1px solid;}
@@ -554,6 +589,10 @@ body{
     <div class="sb-item" data-view="trends">
       <span class="sb-ico">📈</span>
       <span>השוואה שנתית</span>
+    </div>
+    <div class="sb-item" data-view="national">
+      <span class="sb-ico">🏙️</span>
+      <span>חולון מול ערים אחרות</span>
     </div>
 
     <div class="sb-section" style="margin-top:14px;">בקרוב</div>
@@ -1106,6 +1145,118 @@ body{
 
   </section>
 
+  <!-- VIEW 9: חולון מול ערים אחרות — תצוגה ארצית -->
+  <section class="view" id="view-national">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">חולון מול ערים אחרות</h1>
+        <p class="page-sub" id="ntSub">—</p>
+      </div>
+      <div class="page-meta">
+        <div class="meta-pill">מקור <strong>דו"ח המצוינות של ישראל</strong> <i class="ti" data-tip="המכון לשלטון מקומי, אוניברסיטת תל אביב + קרן טראמפ · מדד בגרות הייטק 2024 (תשפ&quot;ד). הנתונים כאן אינם בגיליון העירוני ולכן צרובים בקוד — הם נתונים רשמיים מפורסמים ודורשים עדכון פעם בשנה.">i</i></div>
+        <div class="meta-pill">שנת מדידה <strong id="ntYear">—</strong> <i class="ti" data-tip="כל הרשויות בתצוגה נמדדות באותה שנה ובאותה הגדרה. זה מה שהופך את ההשוואה לכשרה.">i</i></div>
+        <div class="meta-pill" style="background:#fce4ec;color:#ad1457;border-color:#f8bbd0;">♀ ייצוג בנות <strong id="ntMetaGirls">—</strong> <i class="ti" data-tip="שיעור התלמידות בקרב זכאי בגרות ההייטק בחולון, לפי דו&quot;ח המצוינות.">i</i></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="ntKpis"></div>
+
+    <!-- 1 — הדירוג המלא -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">הדירוג — 20 הרשויות הגדולות בישראל</div>
+          <div class="card-sub" id="ntRankSub">—</div>
+        </div>
+      </div>
+      <div class="ct-legend">
+        <span>▬ שיעור זכאי בגרות ההייטק מהשנתון</span>
+        <span style="color:#ad1457;">▬ הגלולה הוורודה: % תלמידות בקרב הזכאים</span>
+        <span>┆ הקו המקווקו: הממוצע הארצי</span>
+      </div>
+      <div id="ntRank"></div>
+      <div class="insight" id="ntRankIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+    </div>
+
+    <!-- 2 — קבוצת ההשוואה הקרובה -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">השכנות — גוש דן</div>
+          <div class="card-sub">הרשויות הגדולות שסביב חולון. אוכלוסייה דומה, אותו שוק תעסוקה, אותם מוסדות המשך — ולכן ההשוואה הרלוונטית ביותר לוועדת ההיגוי.</div>
+        </div>
+      </div>
+      <div id="ntNear"></div>
+      <div class="insight" id="ntNearIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+    </div>
+
+    <!-- 3 — החתך המגדרי -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">החתך המגדרי — ההישג של חולון</div>
+          <div class="card-sub">כל נקודה היא רשות. הציר האופקי — מדד ההייטק; הציר האנכי — שיעור התלמידות בקרב הזכאים. הפינה הימנית-עליונה היא המקום שרוצים להיות בו: מדד גבוה <strong>וגם</strong> ייצוג נשי גבוה.</div>
+        </div>
+      </div>
+      <div class="chart-box tall"><canvas id="ntScatter"></canvas></div>
+      <div class="insight" id="ntGenderIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+      <div class="cmp-note" id="ntGenderNote"></div>
+    </div>
+
+    <!-- 4 — לאורך העשור -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">לאורך העשור</div>
+          <div class="card-sub">הקו הסגול — הממוצע הארצי לפי משרד החינוך. הכתום — חולון לפי דו"ח המצוינות. שתי נקודות עוגן בלבד לחולון; הסדרה השנתית המלאה טרם התקבלה.</div>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="ntDecade"></canvas></div>
+      <div id="ntDecadeStrip"></div>
+      <div class="insight" id="ntDecadeIns">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+    </div>
+
+    <!-- 5 — המכנה -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">המכנה — למה המספר שלנו והמספר של משרד החינוך אינם זהים</div>
+          <div class="card-sub">הנקודה הטכנית שמכריעה כל השוואה בין-עירונית. ההמלצה בתחתית הכרטיס.</div>
+        </div>
+      </div>
+      <div class="dn-grid" id="ntDenomGrid"></div>
+      <div id="ntDenomRows"></div>
+      <div class="dn-card" id="ntDenomRule"></div>
+      <div class="cmp-note" id="ntDenomNote"></div>
+    </div>
+
+    <!-- 6 — לאן אפשר להגיע + מה חסר -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">לאן אפשר להגיע</div>
+          <div class="card-sub">הרשויות המובילות ארצית — לא בהכרח הגדולות. מסקנת דו"ח המצוינות: מצוינות אינה תוצר של גיאוגרפיה או אשכול חברתי-כלכלי אלא של בחירה והנהגה רשותית.</div>
+        </div>
+      </div>
+      <div id="ntLeaders"></div>
+      <div class="cmp-note" id="ntGapsNote"></div>
+    </div>
+
+  </section>
+
 </main>
 
 
@@ -1178,6 +1329,75 @@ const NAT_LAST = { tech:_last(NAT.tech), ma5:_last(NAT.ma5), ph:_last(NAT.ph), c
 let NATIONAL = NAT_LAST.tech;          // 11.6 — נגזר, לא מספר נפרד
 let NATIONAL_GIRLS = 36.3;
 let DATA_LABEL = '';
+
+// ════════════════════════════════════════════════════════════════
+// דירוג רשותי — דו"ח המצוינות של ישראל, מדד בגרות הייטק 2024 (§12.2)
+// המכון לשלטון מקומי, אוניברסיטת ת"א + קרן טראמפ. שנה שביעית ברציפות.
+// אוכלוסיית הדירוג: 20 הרשויות מעל 80,000 תושבים.
+//   tech  — שיעור זכאי בגרות ההייטק מהשנתון, לפי ההגדרה הרשמית:
+//           5 יח"ל מתמטיקה + 5 יח"ל אנגלית + 5 יח"ל פיזיקה ו/או מדמ"ח
+//   girls — שיעור התלמידות בקרב זכאי ההייטק באותה רשות
+// ⚠ המכנה כאן הוא של משרד החינוך (מצבת), לא סכום שורות בתי הספר שבגיליון.
+//   לכן המספר של חולון כאן (13.7%) אינו זהה למדד שהדשבורד מחשב — ראה
+//   כרטיס "המכנה" בתצוגה, §3.2 ו-§12.3 במפרט. אין להציג אותם על אותו מוט.
+// עדכון: פעם בשנה, כשמתפרסם הדו"ח הבא.
+// ════════════════════════════════════════════════════════════════
+const CITY_YEAR = 2024;                // שנת המדידה של כל השורות כאן
+const CITY_ME   = 'חולון';
+const CITIES = [
+  { name:'הרצליה',              tech:22.0, girls:36.4 },
+  { name:'רמת גן',              tech:19.7, girls:35.0 },
+  { name:'מודיעין-מכבים-רעות',  tech:19.4, girls:36.9 },
+  { name:'ראשון לציון',         tech:18.4, girls:39.5 },
+  { name:'כפר סבא',             tech:17.4, girls:30.2 },
+  { name:'חיפה',                tech:16.7, girls:36.3 },
+  { name:'רחובות',              tech:15.0, girls:30.1 },
+  { name:'חולון',               tech:13.7, girls:41.6 },
+  { name:'תל אביב-יפו',         tech:13.3, girls:30.6 },
+  { name:'פתח תקווה',           tech:13.1, girls:37.5 },
+  { name:'אשדוד',               tech:12.0, girls:41.4 },
+  { name:'אשקלון',              tech:11.4, girls:43.2 },
+  { name:'באר שבע',             tech: 9.9, girls:34.9 },
+  { name:'נתניה',               tech: 9.6, girls:35.8 },
+  { name:'לוד',                 tech: 8.8, girls:42.3 },
+  { name:'חדרה',                tech: 8.7, girls:40.5 },
+  { name:'בת ים',               tech: 8.7, girls:36.2 },
+  { name:'ירושלים',             tech: 5.5, girls:29.9 },
+  { name:'בית שמש',             tech: 3.6, girls:67.9 },
+  { name:'בני ברק',             tech: 1.3, girls:18.8 },
+];
+// רשויות שבהן מדד ההייטק הנמוך משקף מגזר שאינו נבחן לבגרות עיונית מלאה,
+// ולא פער פדגוגי בר-השוואה. מוצגות בדירוג (הן חלק מ-20 הגדולות) אך מסומנות,
+// כדי ש-67.9% בנות בבית שמש לא ייקרא כיעד לחיקוי.
+const CITY_ASTERISK = {
+  'בני ברק':  'מגזר חרדי — רוב התלמידים אינם ניגשים לבגרות עיונית מלאה',
+  'בית שמש':  'רוב חרדי — הזכאים הם קבוצה קטנה ולא מייצגת, ומכאן גם 67.9% הבנות'
+};
+
+// קבוצת ההשוואה הגיאוגרפית. נגזרת מרשימת 20 הגדולות עצמה ואינה דורשת
+// נתון חיצוני נוסף: רשויות גוש דן בהיקף אוכלוסייה ובשוק תעסוקה דומים.
+const CITY_NEAR = ['ראשון לציון','רמת גן','חולון','תל אביב-יפו','פתח תקווה','בת ים'];
+
+// 20 המובילות ארצית (לא הגדולות). רשויות ערביות אינן נכללות בתצוגה זו.
+const CITY_LEADERS = [
+  { name:'גבעת שמואל', tech:31.6 },
+  { name:'רמת השרון',  tech:29.5 },
+  { name:'קריית אונו', tech:26.7 },
+  { name:'הרצליה',     tech:22.0 },
+];
+
+// חולון לאורך העשור — דו"ח המצוינות. שתי נקודות עוגן בלבד;
+// הסדרה השנתית המלאה טרם התקבלה. כשתתקבל — להוסיף איברים כאן.
+const HOLON_HIST = {
+  tech: [{ y:2014, v: 7.4 }, { y:2024, v:13.7 }],
+  ma5:  [{ y:2014, v:10.0 }, { y:2024, v:20.6 }],
+  techN:322, ma5N:485, socio:7
+};
+
+// חתכים שדורשים נתון שטרם התקבל. ברגע שיתמלאו — החתכים נפתחים מעצמם
+// (renderNational בודקת כיסוי ולא מציגה חתך חלקי).
+const CITY_SOCIO = { 'חולון':7 };      // אשכול חברתי-כלכלי (למ"ס), פר רשות
+const CITY_POP   = {};                 // גודל אוכלוסייה, פר רשות
 
 const GRADES = ['י','יא','יב'];                       // בסיס המדד העירוני
 const ALL_GRADES = ['ז','ח','ט','י','יא','יב'];       // למסע התלמיד בהעמקה
@@ -3086,6 +3306,391 @@ function renderYYInsights(A, B){
 }
 
 // ════════════════════════════════════════════════════════════════
+// VIEW 9: חולון מול ערים אחרות — תצוגה ארצית
+// ────────────────────────────────────────────────────────────────
+// מקור: דו"ח המצוינות של ישראל 2024 (§12.2) + סדרות משה"ח (§12.1).
+// ⚠ שתי הערות שמכתיבות את כל התצוגה:
+//   1. כל הרשויות כאן נמדדות באותה שנה ובאותה הגדרה. מותר להשוות ביניהן.
+//   2. המדד שהדשבורד מחשב מהגיליון הוא שנה אחרת, מכנה אחר ואולי הגדרה אחרת
+//      (§12.3). לכן הוא **לא** עולה על אף מוט בתצוגה הזו — הוא מופיע רק
+//      בכרטיס המכנה, מסומן ומוסבר.
+// ════════════════════════════════════════════════════════════════
+
+// הממוצע הארצי של אותה שנת מדידה. נגזר מ-NAT ולא מספר נפרד.
+function ntNat(){
+  const i = NAT.years.indexOf(CITY_YEAR);
+  return i >= 0 ? NAT.tech[i] : NAT_LAST.tech;
+}
+const ntMe = () => CITIES.find(c=> c.name === CITY_ME);
+// כל אחוז בתצוגה עובר כאן — אחרת 22.0 מודפס "22" ו-10.0 מודפס "10",
+// והטבלה נראית כאילו חלק מהמספרים מדויקים יותר מאחרים.
+const ntPc = v => (v == null ? '—' : Number(v).toFixed(1) + '%');
+const ntRank = name => CITIES.findIndex(c=> c.name === name) + 1;   // CITIES ממוינת לפי tech
+// דירוג לפי % בנות. asteriskOut=true מוציא רשויות שבהן המדד משקף מגזר
+// ולא פער פדגוגי — שם 67.9% בנות אינו הישג בר-השוואה.
+function ntGirlsOrder(asteriskOut){
+  return CITIES.filter(c=> !asteriskOut || !CITY_ASTERISK[c.name])
+               .slice().sort((a,b)=> b.girls - a.girls);
+}
+
+// ─── שורת רשות ──────────────────────────────────────────────────
+// rank='' מסתיר את המספר (בכרטיס המובילות אין דירוג רציף).
+function ntCityRow(c, rank, scale, nat, natLabel){
+  const isMe = c.name === CITY_ME;
+  const ast  = CITY_ASTERISK[c.name];
+  const w = v => Math.max(1.5, Math.min(100, (v / scale) * 100));
+  const natMark = (nat != null)
+    ? `<div class="ct-nat" style="right:${w(nat).toFixed(1)}%;">${natLabel? `<span>ארצי ${nat.toFixed(1)}%</span>`:''}</div>` : '';
+  const gTop = c.girls != null && !ast && c.girls >= 40 ? ' top' : '';
+  return `
+    <div class="ct-row${isMe?' me':''}${ast?' dim':''}"${ast? ` title="${ast}"`:''}>
+      <div class="ct-rank">${rank === '' ? '' : rank}</div>
+      <div class="ct-name">${c.name}${ast? ' *':''}</div>
+      <div class="ct-track">${natMark}
+        <div class="ct-bar" style="width:${w(c.tech).toFixed(1)}%"></div>
+        <div class="ct-val">${c.tech.toFixed(1)}%</div>
+      </div>
+      ${c.girls != null ? `<div class="ct-g${gTop}">♀ ${c.girls.toFixed(1)}%</div>` : '<div class="ct-g" style="visibility:hidden;">—</div>'}
+    </div>`;
+}
+
+function setIns(id, t, b){
+  const el = document.getElementById(id);
+  el.querySelector('.insight-t').textContent = t;
+  el.querySelector('.insight-b').innerHTML = b;
+}
+
+function renderNational(){
+  const me = ntMe(), nat = ntNat(), rank = ntRank(CITY_ME), N = CITIES.length;
+  if(!me) return;
+  const vsNat = me.tech - nat;
+
+  document.getElementById('ntYear').textContent = CITY_YEAR;
+  document.getElementById('ntMetaGirls').textContent = me.girls.toFixed(1)+'%';
+  document.getElementById('ntSub').innerHTML =
+    `מקום <strong>${rank}</strong> מתוך ${N} הרשויות הגדולות · <strong>${ntPc(me.tech)}</strong> מול ${ntPc(nat)} ארצי · שנת מדידה ${CITY_YEAR}`;
+
+  ntKpis(me, nat, rank, N, vsNat);
+  ntRanking(me, nat, rank, N, vsNat);
+  ntNear(me);
+  ntGender(me, nat);
+  ntDecade(me, nat);
+  ntDenom();
+  ntLeaders(me);
+}
+
+// ─── KPI ────────────────────────────────────────────────────────
+function ntKpis(me, nat, rank, N, vsNat){
+  const gAll  = ntGirlsOrder(false);
+  const gRank = gAll.findIndex(c=> c.name === CITY_ME) + 1;
+  const top10 = CITIES.slice(0, 10);
+  const bestTop10 = top10.reduce((a,b)=> b.girls > a.girls ? b : a);
+  const girlsSub = bestTop10.name === CITY_ME
+    ? `<strong style="color:#ad1457;">הגבוה ביותר בעשירייה הראשונה</strong> · מקום ${gRank} מתוך ${N}`
+    : `מקום ${gRank} מתוך ${N} · המוביל: ${bestTop10.name} ${ntPc(bestTop10.girls)}`;
+
+  const h0 = HOLON_HIST.tech[0], h1 = HOLON_HIST.tech[HOLON_HIST.tech.length-1];
+  const mult = h0.v ? h1.v / h0.v : null;
+
+  document.getElementById('ntKpis').innerHTML = `
+    <div class="kpi pri">
+      <div class="kpi-lbl">מקום בדירוג הארצי <i class="ti" data-tip="מתוך 20 הרשויות שמעל 80,000 תושבים, לפי מדד בגרות ההייטק ${CITY_YEAR}. אלו הרשויות שדו&quot;ח המצוינות מדרג כקבוצה אחת.">i</i></div>
+      <div class="kpi-val">${rank} <span class="alt-num" style="font-size:16px;">מתוך ${N}</span></div>
+      <div class="kpi-sub">20 הרשויות הגדולות · ${CITY_YEAR}</div>
+    </div>
+    <div class="kpi ${vsNat>=0?'good':'warn'}">
+      <div class="kpi-lbl">מדד בגרות ההייטק <i class="ti" data-tip="שיעור זכאי מסלול ההייטק מהשנתון: 5 יח&quot;ל מתמטיקה + 5 יח&quot;ל אנגלית + 5 יח&quot;ל פיזיקה ו/או מדעי המחשב. המכנה הוא של משרד החינוך — ראה כרטיס המכנה למטה.">i</i></div>
+      <div class="kpi-val">${ntPc(me.tech)}</div>
+      <div class="kpi-sub">${HOLON_HIST.techN} זכאים · <strong style="color:${vsNat>=0?'#137333':'#c5221f'}">${vsNat>=0?'+':''}${vsNat.toFixed(1)} נק׳ מול ארצי ${ntPc(nat)}</strong></div>
+    </div>
+    <div class="kpi acc">
+      <div class="kpi-lbl">♀ ייצוג תלמידות <i class="ti" data-tip="שיעור התלמידות בקרב זכאי בגרות ההייטק בחולון. זהו החתך שבו חולון בולטת ביותר מול הרשויות הגדולות.">i</i></div>
+      <div class="kpi-val" style="color:#ad1457;">${ntPc(me.girls)}</div>
+      <div class="kpi-sub">${girlsSub}</div>
+    </div>
+    <div class="kpi good">
+      <div class="kpi-lbl">העשור <i class="ti" data-tip="שתי נקודות עוגן מדו&quot;ח המצוינות. הסדרה השנתית המלאה בין ${h0.y} ל-${h1.y} טרם התקבלה.">i</i></div>
+      <div class="kpi-val">${mult ? '×'+mult.toFixed(2) : '—'}</div>
+      <div class="kpi-sub">${ntPc(h0.v)} ב-${h0.y} → <strong>${ntPc(h1.v)}</strong> ב-${h1.y}</div>
+    </div>`;
+}
+
+// ─── 1. הדירוג המלא ─────────────────────────────────────────────
+function ntRanking(me, nat, rank, N, vsNat){
+  const scale = Math.max(...CITIES.map(c=> c.tech)) * 1.14;
+  document.getElementById('ntRank').innerHTML =
+    CITIES.map((c,i)=> ntCityRow(c, i+1, scale, nat, i === 0)).join('');
+
+  const above = CITIES.filter(c=> c.tech >= nat).length;
+  document.getElementById('ntRankSub').innerHTML =
+    `כל הרשויות מעל 80,000 תושבים, ${CITY_YEAR}, באותה הגדרה ובאותו מכנה. ` +
+    `<strong>${above} מתוך ${N}</strong> מעל הממוצע הארצי — חולון ביניהן.`;
+
+  const leader = CITIES[0];
+  const tlv    = CITIES.find(c=> c.name === 'תל אביב-יפו');
+  const below  = CITIES.slice(rank);            // כל מי שמתחת לחולון
+  setIns('ntRankIns',
+    `מקום ${rank} מתוך ${N} — במחצית העליונה, ומעל הארצי`,
+    `חולון עומדת על <strong>${ntPc(me.tech)}</strong>, ${vsNat>=0?'מעל ה':'מתחת ל'}ממוצע הארצי ` +
+    `(${ntPc(nat)}) ב-<strong>${Math.abs(vsNat).toFixed(1)} נקודות</strong>. ` +
+    (tlv ? `היא <strong>מעל תל אביב-יפו</strong> (${ntPc(tlv.tech)}) ` : '') +
+    `ומעל ${below.length} מתוך ${N-1} הרשויות האחרות בקבוצה. ` +
+    `הפער מהמובילה (${leader.name}, ${ntPc(leader.tech)}) הוא <strong>${(leader.tech-me.tech).toFixed(1)} נקודות</strong> — ` +
+    `זה סדר הגודל של היעד, לא אחוזים בודדים. ` +
+    `<br><span class="alt-num">* רשויות מסומנות: המדד הנמוך משקף מגזר שאינו ניגש לבגרות עיונית מלאה, ולא פער פדגוגי בר-השוואה.</span>`);
+}
+
+// ─── 2. השכנות ──────────────────────────────────────────────────
+function ntNear(me){
+  const grp = CITIES.filter(c=> CITY_NEAR.includes(c.name));     // שומר על סדר ה-tech
+  const scale = Math.max(...grp.map(c=> c.tech)) * 1.14;
+  document.getElementById('ntNear').innerHTML =
+    grp.map((c,i)=> ntCityRow(c, i+1, scale, ntNat(), i === 0)).join('');
+
+  const pos = grp.findIndex(c=> c.name === CITY_ME) + 1;
+  const top = grp[0], last = grp[grp.length-1];
+  const avg = grp.reduce((s,c)=> s+c.tech, 0) / grp.length;
+  setIns('ntNearIns',
+    `בגוש דן — מקום ${pos} מתוך ${grp.length}`,
+    `ממוצע הקבוצה <strong>${ntPc(avg)}</strong>; חולון <strong>${ntPc(me.tech)}</strong>, ` +
+    `${me.tech>=avg?'מעל ':'מתחת ל'}ממוצע השכנות ב-<strong>${Math.abs(me.tech-avg).toFixed(1)} נק׳</strong>. ` +
+    `מול <strong>${last.name}</strong> (${ntPc(last.tech)}) חולון גבוהה פי <strong>${(me.tech/last.tech).toFixed(1)}</strong>; ` +
+    `מול <strong>${top.name}</strong> (${ntPc(top.tech)}) היא נמוכה ב-<strong>${(top.tech-me.tech).toFixed(1)} נק׳</strong>. ` +
+    `זה הפער שאפשר לסגור — אותו קהל, אותו שוק תעסוקה, אותם מוסדות המשך.`);
+}
+
+// ─── 3. החתך המגדרי ─────────────────────────────────────────────
+function ntGender(me, nat){
+  destroyChart('ntScatter');
+  const cmp    = CITIES.filter(c=> !CITY_ASTERISK[c.name]);       // בסיס ההשוואה
+  const gAvg   = cmp.reduce((s,c)=> s+c.girls, 0) / cmp.length;
+  const others = CITIES.filter(c=> c.name !== CITY_ME);
+  // מעוגל כלפי מעלה לחמישייה — אחרת הקצה מודפס כ-70.048000000000002%
+  const r5     = v => Math.ceil(v * 1.12 / 5) * 5;
+  const xMax   = r5(Math.max(...CITIES.map(c=> c.tech)));
+  const yMax   = r5(Math.max(...CITIES.map(c=> c.girls)));
+
+  charts.ntScatter = new Chart(document.getElementById('ntScatter'), {
+    type:'scatter',
+    data:{ datasets:[
+      { label:'ממוצע ארצי '+nat+'%', data:[{x:nat,y:0},{x:nat,y:yMax}], type:'line',
+        borderColor:'#9aa0a6', borderDash:[6,4], borderWidth:2, pointRadius:0, fill:false,
+        datalabels:{display:false} },
+      { label:'ממוצע % בנות בקבוצה '+gAvg.toFixed(1)+'%', data:[{x:0,y:gAvg},{x:xMax,y:gAvg}], type:'line',
+        borderColor:'#f8bbd0', borderDash:[6,4], borderWidth:2, pointRadius:0, fill:false,
+        datalabels:{display:false} },
+      { label:'רשויות אחרות',
+        data: others.map(c=> ({ x:c.tech, y:c.girls, n:c.name })),
+        backgroundColor: others.map(c=> CITY_ASTERISK[c.name] ? '#d5d0dd' : '#b9a8d6'),
+        pointRadius:6, pointHoverRadius:9,
+        datalabels:{ display:'auto', align:'top', offset:4, color:'#6a6080',
+          font:{family:'Heebo',size:10,weight:'700'}, formatter:(v)=> v.n } },
+      { label:'חולון',
+        data:[{ x:me.tech, y:me.girls, n:CITY_ME }],
+        backgroundColor: COL.accent, borderColor:'#a04a10', borderWidth:2,
+        pointRadius:12, pointHoverRadius:14,
+        datalabels:{ display:true, align:'top', offset:8, color:'#a04a10',
+          font:{family:'Heebo',size:14,weight:'900'}, formatter:()=> CITY_ME } }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,left:10,right:10}},
+      plugins:{
+        legend:{ labels:{ font:HF, color:'#5f6368', filter:i=> i.text !== 'רשויות אחרות' } },
+        tooltip:{ callbacks:{ label:c=> c.raw && c.raw.n
+          ? `${c.raw.n} · מדד ${c.raw.x}% · בנות ${c.raw.y}%` : '' } }
+      },
+      scales:{
+        x:{ min:0, max:xMax, title:{display:true, text:'מדד בגרות הייטק', font:hf2(), color:'#5f6368'},
+            ticks:{ callback:v=> v+'%', font:HF, color:'#5f6368' }, grid:{color:GC} },
+        y:{ min:0, max:yMax, title:{display:true, text:'% תלמידות בקרב הזכאים', font:hf2(), color:'#5f6368'},
+            ticks:{ callback:v=> v+'%', font:HF, color:'#5f6368' }, grid:{color:GC} } } }
+  });
+
+  // הטענה נגזרת מהמספרים: מי מוביל בייצוג בנות בעשירייה הראשונה, ומי מעל הארצי
+  const top10  = CITIES.slice(0, 10);
+  const best10 = top10.reduce((a,b)=> b.girls > a.girls ? b : a);
+  const overNat = cmp.filter(c=> c.tech >= nat).slice().sort((a,b)=> b.girls - a.girls);
+  const posOverNat = overNat.findIndex(c=> c.name === CITY_ME) + 1;
+  // מול השכנות בגוש דן — נבדק, לא נטען
+  const near     = CITIES.filter(c=> CITY_NEAR.includes(c.name)).slice().sort((a,b)=> b.girls - a.girls);
+  const bestNear = near[0];
+
+  setIns('ntGenderIns',
+    best10.name === CITY_ME
+      ? `${ntPc(me.girls)} תלמידות — הגבוה ביותר בעשירייה הראשונה`
+      : `${ntPc(me.girls)} תלמידות — מקום ${top10.slice().sort((a,b)=>b.girls-a.girls).findIndex(c=>c.name===CITY_ME)+1} בעשירייה הראשונה`,
+    `חולון מחזיקה מדד <strong>${me.tech-nat>=0?'מעל ה':'מתחת ל'}ארצי</strong> ביחד עם ייצוג נשי ` +
+    `<strong>${(me.girls-gAvg).toFixed(1)} נקודות מעל ממוצע הקבוצה</strong> (${ntPc(gAvg)}). ` +
+    `מבין ${overNat.length} הרשויות שמעל הממוצע הארצי היא במקום <strong>${posOverNat}</strong> בייצוג תלמידות` +
+    (posOverNat > 1 ? ` (מובילה: ${overNat[0].name}, ${ntPc(overNat[0].girls)}, אך עם מדד ${ntPc(overNat[0].tech)} בלבד)` : '') + `. ` +
+    (bestNear.name === CITY_ME ? `<strong>מול כל שכנותיה בגוש דן — היא הראשונה.</strong> ` : `בגוש דן מובילה ${bestNear.name} (${ntPc(bestNear.girls)}). `) +
+    `<br>שתי הרשויות עם המדד הגבוה בקבוצה, ${top10[0].name} (${ntPc(top10[0].girls)}) ו-${top10[1].name} (${ntPc(top10[1].girls)}), ` +
+    `נמוכות מחולון בייצוג נשי ב-<strong>${(me.girls-top10[0].girls).toFixed(1)}</strong> ו-<strong>${(me.girls-top10[1].girls).toFixed(1)} נקודות</strong>. ` +
+    `כלומר <strong>העלייה במדד לא באה כאן על חשבון הבנות</strong> — צירוף מדיד ולא שכיח, ` +
+    `ובדיוק הטענה שאפשר להביא איתה למשרד החינוך ולקרנות.`);
+
+  document.getElementById('ntGenderNote').innerHTML =
+    `הרשויות המסומנות באפור (${Object.keys(CITY_ASTERISK).join(', ')}) אינן נכללות בחישוב ממוצע הקבוצה. ` +
+    `שיעור בנות גבוה שם נובע מכך שרוב הבנים אינם ניגשים לבגרות עיונית מלאה — זה מספר אחר לגמרי, ` +
+    `ולא יעד לחיקוי. הן מוצגות בדירוג משום שהן חלק מ-20 הרשויות הגדולות.`;
+}
+
+// ─── 4. לאורך העשור ─────────────────────────────────────────────
+function ntDecade(me, nat){
+  destroyChart('ntDecade');
+  const y0 = Math.min(HOLON_HIST.tech[0].y, NAT.years[0]);
+  const y1 = Math.max(HOLON_HIST.tech[HOLON_HIST.tech.length-1].y, NAT.years[NAT.years.length-1]);
+  const yrs = []; for(let y=y0; y<=y1; y++) yrs.push(y);
+  const pick = (series, y)=>{ const p = series.find(p=> p.y === y); return p ? p.v : null; };
+
+  charts.ntDecade = new Chart(document.getElementById('ntDecade'), {
+    type:'line',
+    data:{ labels: yrs.map(String), datasets:[
+      { label:'ממוצע ארצי', data: yrs.map(y=>{ const i=NAT.years.indexOf(y); return i<0?null:NAT.tech[i]; }),
+        borderColor:COL.primary, backgroundColor:'rgba(106,62,156,0.08)', borderWidth:3,
+        pointRadius:4, tension:0.3, fill:true, spanGaps:true,
+        datalabels:{display:false} },
+      { label:'חולון', data: yrs.map(y=> pick(HOLON_HIST.tech, y)),
+        borderColor:COL.accent, backgroundColor:COL.accent, borderWidth:3, borderDash:[7,4],
+        pointRadius:7, tension:0, fill:false, spanGaps:true,
+        datalabels:{ display:true, align:'top', offset:6, color:'#a04a10', font:hf2(),
+          formatter:v=> v==null?'':v.toFixed(1)+'%' } }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:26}},
+      plugins:{ legend:{ labels:{font:HF, color:'#5f6368'} },
+        tooltip:{ callbacks:{ label:c=> c.parsed.y==null?'' : `${c.dataset.label}: ${c.parsed.y}%` } } },
+      scales:{ x:{ ticks:{font:HF, color:'#5f6368'}, grid:{display:false} },
+               y:{ beginAtZero:true, ticks:{callback:v=>v+'%', font:HF, color:'#5f6368'}, grid:{color:GC} } } }
+  });
+
+  // רצועת שתי נקודות העוגן — הייטק ומתמטיקה
+  const strip = (lbl, arr, tip)=>{
+    const a = arr[0], b = arr[arr.length-1];
+    const m = a.v ? b.v/a.v : null;
+    return `<div class="dn-cell">
+      <div class="l">${lbl} <i class="ti" data-tip="${tip}">i</i></div>
+      <div class="v">${ntPc(a.v)} → ${ntPc(b.v)}</div>
+      <div class="s">${a.y}–${b.y} · ${m? '×'+m.toFixed(2) : '—'}</div>
+    </div>`;
+  };
+  document.getElementById('ntDecadeStrip').innerHTML =
+    `<div class="dn-grid" style="margin:16px 0 0;">
+      ${strip('מדד בגרות ההייטק', HOLON_HIST.tech, 'שיעור זכאי מסלול ההייטק מהשנתון בחולון, לפי דו&quot;ח המצוינות.')}
+      ${strip('מתמטיקה 5 יח״ל', HOLON_HIST.ma5, 'שיעור זכאי 5 יח&quot;ל מתמטיקה בחולון. המקצוע שהוא תנאי הסף למסלול.')}
+    </div>`;
+
+  const natMin = Math.min(...NAT.tech), natMinY = NAT.years[NAT.tech.indexOf(natMin)];
+  const h0 = HOLON_HIST.tech[0], h1 = HOLON_HIST.tech[HOLON_HIST.tech.length-1];
+  const m0 = HOLON_HIST.ma5[0],  m1 = HOLON_HIST.ma5[HOLON_HIST.ma5.length-1];
+  setIns('ntDecadeIns',
+    `מ-${ntPc(h0.v)} ל-${ntPc(h1.v)} בעשור — וחצייה של הקו הארצי`,
+    `ב-${h0.y} חולון עמדה על <strong>${ntPc(h0.v)}</strong>, מתחת לערך הארצי הנמוך ביותר שיש בסדרה ` +
+    `(${ntPc(natMin)} ב-${natMinY}). ב-${h1.y} היא על <strong>${ntPc(h1.v)}</strong> — <strong>${(h1.v-nat).toFixed(1)} נקודות מעל הארצי</strong>. ` +
+    `במקביל מתמטיקה 5 יח״ל עלתה מ-${ntPc(m0.v)} ל-<strong>${ntPc(m1.v)}</strong> (${m1.v>=2*m0.v?'יותר מהכפלה':'כמעט הכפלה'}), ` +
+    `וזה ההסבר המבני: <strong>מתמטיקה 5 היא תנאי הסף</strong>, וכשהיא גדלה המדד עולה אחריה. ` +
+    `הארצי באותה תקופה זז הרבה פחות — כלומר העלייה של חולון אינה גל ארצי שסחף אותה, אלא תוצאה מקומית.`);
+}
+
+// ─── 5. המכנה ───────────────────────────────────────────────────
+// כאן — ורק כאן — המכנה הראשי הוא המצבת, כי זה המכנה שכל הרשויות
+// האחרות בתצוגה נמדדות בו. היפוך מכוון של §3.2, מתועד ומוסבר למשתמש.
+function ntDenom(){
+  const grid = document.getElementById('ntDenomGrid');
+  const rows = document.getElementById('ntDenomRows');
+  if(!SCHOOLS.length){ grid.innerHTML = ''; rows.innerHTML = ''; return; }
+
+  const own = cityOverallPct(), alt = cityOverallPctAlt();
+  let sStud = 0, sMatz = 0, anyM = false;
+  const per = GRADES.map((g,i)=>{
+    const st = cityStudents(i), mz = cityDenomAlt(g), tech = cityTotal(i);
+    sStud += st; if(mz){ sMatz += mz; anyM = true; } else sMatz += st;
+    return { g, st, mz, tech, own: st? tech/st*100 : null, alt: mz? tech/mz*100 : null };
+  });
+  const cost = (own != null && alt != null) ? own - alt : null;
+  const heads = anyM ? sMatz - sStud : null;
+
+  grid.innerHTML = `
+    <div class="dn-cell">
+      <div class="l">המדד לפי המצבת (משה"ח)</div>
+      <div class="v">${alt == null ? '—' : alt.toFixed(1)+'%'}</div>
+      <div class="s">המכנה שההשוואה הבין-עירונית מתבצעת בו. <strong>זה המספר להציג כלפי חוץ.</strong></div>
+    </div>
+    <div class="dn-cell">
+      <div class="l">המדד לפי שורות בתי הספר</div>
+      <div class="v">${own.toFixed(1)}%</div>
+      <div class="s">המכנה של כל שאר תצוגות הדשבורד — מה שהעיר מכירה ויכולה לפעול עליו.</div>
+    </div>
+    <div class="dn-cell cost">
+      <div class="l">מחיר המכנה</div>
+      <div class="v">${cost == null ? '—' : (cost>=0?'−':'+')+Math.abs(cost).toFixed(1)+' נק׳'}</div>
+      <div class="s">כמה חולון "מפסידה" בהשוואה החיצונית רק בגלל הבדל בהגדרת המכנה, בלי שאף תלמיד השתנה.</div>
+    </div>
+    <div class="dn-cell">
+      <div class="l">הפער במספר תלמידים</div>
+      <div class="v">${heads == null ? '—' : (heads>=0?'+':'−')+num(Math.abs(heads))}</div>
+      <div class="s">תלמידי י׳–יב׳ שנספרים במצבת של משרד החינוך ואינם בשורות בתי הספר שבגיליון.</div>
+    </div>`;
+
+  const scale = Math.max(...per.flatMap(p=> [p.own, p.alt]).filter(v=> v != null), 1) * 1.14;
+  const w = v => Math.max(1.5, Math.min(100, (v/scale)*100));
+  rows.innerHTML = per.map(p=>{
+    const d = (p.own != null && p.alt != null) ? p.alt - p.own : null;
+    const bar = (v, cls)=> v == null
+      ? `<div class="cmp-track"><div class="cmp-bar ${cls}" style="width:0"></div><div class="cmp-val ${cls}">—</div></div>`
+      : `<div class="cmp-track"><div class="cmp-bar ${cls}" style="width:${w(v).toFixed(1)}%"></div><div class="cmp-val ${cls}">${v.toFixed(1)}%</div></div>`;
+    return `
+      <div class="cmp-row">
+        <div class="cmp-lbl">שכבה ${p.g}׳<small>${num(p.st)} תלמידים · מצבת ${p.mz? num(p.mz):'—'}</small></div>
+        <div class="cmp-bars">${bar(p.own,'new')}${bar(p.alt,'old')}</div>
+        <div class="cmp-d"><span class="alt-num">${d == null ? '—' : (d>=0?'+':'−')+Math.abs(d).toFixed(1)+' נק׳'}</span></div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('ntDenomRule').innerHTML = `
+    <h4>ההמלצה — מכנה אחד לכל קהל, ותמיד לומר איזה</h4>
+    <ol>
+      <li><strong>בתצוגה הזו בלבד — המכנה הוא המצבת.</strong> 19 הרשויות האחרות נמדדו במכנה של משרד
+        החינוך. אם חולון תופיע באותה טבלה עם מכנה משלה, הפער בינה לבינן יערבב שני דברים שונים לגמרי:
+        הבדל אמיתי בהישג והבדל טכני בספירה. השוואה חייבת מכנה אחיד — גם כשהוא לרעתנו.</li>
+      <li><strong>בכל שאר התצוגות המכנה נשאר סכום שורות בתי הספר.</strong> זה המכנה שיש לעיר שליטה
+        עליו: הוא מתפרק לבתי ספר, לשכבות ולמגמות, ולכן ממנו נגזרות החלטות. המצבת אינה מתפרקת לכלום.</li>
+      <li><strong>להציג את מחיר המכנה במפורש, לא להסתיר ולא להתווכח.</strong> המספר שלמעלה
+        (${cost == null ? '—' : Math.abs(cost).toFixed(1)+' נק׳'}) הופך טענה מעורפלת — "המספר שלהם לא הוגן" —
+        למספר אחד שאפשר להניח על השולחן בוועדת ההיגוי ומול המשרד.</li>
+      <li><strong>הפער עצמו הוא משימה, לא גזרת גורל.</strong> ${heads == null ? '' : `<strong>${num(Math.abs(heads))} תלמידים</strong>
+        רשומים בחולון אצל משרד החינוך ואינם בשורות בתי הספר שבגיליון. `}שווה לברר את הרכבם — חינוך מיוחד,
+        חינוך חרדי, בתי ספר שאינם מדווחים לגיליון, או תלמידי חוץ. אם מתברר שמדובר בבתי ספר שפשוט אינם
+        בגיליון, <strong>הפתרון הוא להרחיב את הגיליון ולא לערער על המכנה</strong> — וחלק מהפער ייסגר מעצמו.</li>
+    </ol>`;
+
+  document.getElementById('ntDenomNote').innerHTML =
+    `המספרים בכרטיס הזה מחושבים חי מהגיליון, לתקופה שנבחרה בסיידבר (<strong>${DATA_LABEL||'—'}</strong>), ` +
+    `ולכן הם <strong>לא</strong> אותה שנה כמו ${CITY_YEAR} שבדירוג ואינם מוצגים על אף מוט בתצוגה. ` +
+    `בנוסף, ההגדרה הארצית דורשת גם 5 יח״ל אנגלית וייתכן ששורת <strong>זכאות למדד טק</strong> שבגיליון אינה ` +
+    `(§12.3 במפרט) — כלומר גם אחרי איחוד המכנים ייתכן פער הגדרה. עד שזה יאומת מול הגיליון, ` +
+    `המספר הרשמי של חולון בכל חומר חיצוני הוא <strong>${ntPc(ntMe().tech)} לשנת ${CITY_YEAR}</strong>.`;
+}
+
+// ─── 6. לאן אפשר להגיע ──────────────────────────────────────────
+function ntLeaders(me){
+  const list = [...CITY_LEADERS, { name:CITY_ME, tech:me.tech, girls:me.girls }]
+    .sort((a,b)=> b.tech - a.tech);
+  const scale = Math.max(...list.map(c=> c.tech)) * 1.14;
+  document.getElementById('ntLeaders').innerHTML =
+    list.map((c,i)=> ntCityRow(c, '', scale, ntNat(), i === 0)).join('');
+
+  const top = list[0];
+  const socioKnown = Object.keys(CITY_SOCIO).length, popKnown = Object.keys(CITY_POP).length;
+  document.getElementById('ntGapsNote').innerHTML =
+    `הפער בין חולון למובילה הארצית (${top.name}, ${ntPc(top.tech)}) הוא <strong>${(top.tech-me.tech).toFixed(1)} נקודות</strong>. ` +
+    `חולון באשכול חברתי-כלכלי <strong>${HOLON_HIST.socio}</strong>, כלומר חלק מהפער מוסבר ברקע — אבל לא כולו: ` +
+    `הדו"ח מצא רשויות באותו אשכול משני צדי הדירוג. רשויות ערביות אינן נכללות בתצוגה זו.` +
+    `<br><br><strong>שני חתכים ממתינים לנתון:</strong> לפי <strong>אשכול חברתי-כלכלי</strong> ` +
+    `(ידוע כרגע ל-${socioKnown} מתוך ${CITIES.length} הרשויות) ולפי <strong>גודל אוכלוסייה</strong> ` +
+    `(${popKnown} מתוך ${CITIES.length}). ברגע שיתקבלו הטבלאות המלאות מהדו"ח, ` +
+    `החתכים ייפתחו כאן בלי שינוי נוסף במבנה התצוגה.`;
+}
+
+// ════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
@@ -3103,6 +3708,7 @@ function switchView(viewId){
   if(viewId==='gender') renderGender();
   if(viewId==='futuretech') renderFutureTech();
   if(viewId==='trends') renderTrends();
+  if(viewId==='national') renderNational();
 }
 document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
@@ -3113,7 +3719,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v17';
+const BUILD = 'v18';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
