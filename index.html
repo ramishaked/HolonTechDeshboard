@@ -1551,31 +1551,34 @@ const HOLON_HIST = {
   techN:322, ma5N:485
 };
 
-// ── ערכי הביניים 2015–2023 — משוערים, מופרדים בכוונה (§12.5) ────
-// הדו"ח אינו מדפיס אותם; הם קיימים בו רק כצורה בגרף (תמונת רסטר 1080×681).
-// חולצו במדידת פיקסלים: זיהוי הרכיב הקשיר הגדול ביותר בכל צבע — מבודד את
-// הקו מתוויות הטקסט ומנקודות הלגנדה — ואז כיול ליניארי של ציר ה-Y.
-// **אימות:** הכיול נעשה על קו ההייטק (7.4→13.7) ונבדק על שתי נקודות מודפסות
-// שלא שימשו לו — מתמטיקה 2014 ו-2024: 9.87 מול 10.0, ו-20.72 מול 20.6.
-// שגיאה ≤0.15 נק'.
-//
-// ⚠ החלטה זו **מחליפה** את הכלל הקודם "לא לאמוד ערכי גרף בעין" (§11, 16.08.2026).
-// הכלל ההוא הניח דיוק של ±0.3 נק'; המדידה בפועל מדויקת פי שניים ומאומתת מול
-// נקודות מוחזקות. המשתמש אישר במפורש. **להחזרה:** למחוק את הקבוע הזה —
-// `holonSeries()` תיפול חזרה לשתי נקודות העוגן בלבד, בלי שינוי נוסף בקוד.
-const HOLON_MID = {
-  years:[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
-  tech: [ 7.9,  9.6, 10.6, 12.3, 12.0, 13.2, 14.9, 13.5, 13.4],
-  ma5:  [10.6, 13.5, 17.0, 18.4, 17.5, 18.1, 20.7, 20.8, 21.2]
+// ── הסדרה הרשמית של משרד החינוך, תשע"ו–תשפ"ד (§12.5) ────────────
+// **מקור רשמי** — הופק ע"י המשתמש מאתר משרד החינוך (16.08.2026), דף חולון.
+// מחליף את ערכי המדידה-מהגרף שהיו כאן ב-v23–v24: כשיש נתון רשמי הוא גובר.
+// תשפ"ד = 2024 · תשע"ו = 2016. תשפ"ד תואם במדויק את הדו"ח (13.7 / 20.6).
+const HOLON_MOE = {
+  years:[2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+  tech: [ 9.6, 11.0, 12.0, 11.8, 13.5, 15.0, 13.6, 13.4, 13.7],
+  ma5:  [13.3, 16.7, 18.1, 17.8, 18.3, 21.0, 20.6, 21.1, 20.6]
 };
 
-// הסדרה המלאה: עוגנים מדויקים + ביניים משוערים, ממוזגים לפי שנה.
+// ── 2015 בלבד — הערך המשוער היחיד שנותר (§12.5) ─────────────────
+// אינו מודפס בדו"ח ואינו באתר משה"ח; נמדד מהגרף שבעמ' 66.
+// המדידה אומתה בדיעבד מול 9 הערכים הרשמיים שלמעלה: הפרש מרבי 0.4 נק',
+// ממוצע 0.16 — ולכן 2015 נשאר, מסומן כמשוער.
+// **להחזרה:** למחוק את הקבוע — `holonSeries()` תדלג על 2015 בלי שינוי נוסף.
+const HOLON_MID = { years:[2015], tech:[7.9], ma5:[10.6] };
+
+// הסדרה המלאה. סדר קדימות: רשמי משה"ח > מודפס בדו"ח > משוער.
 // מחזירה [{y, v, exact}] — הדגל מאפשר להציג את ההבחנה במקום להחביא אותה.
 function holonSeries(metric){
-  const out = HOLON_HIST[metric].map(p=> ({ y:p.y, v:p.v, exact:true }));
+  const by = new Map();
+  const put = (y, v, exact)=>{ if(!by.has(y) || (exact && !by.get(y).exact)) by.set(y, {y, v, exact}); };
   if(typeof HOLON_MID !== 'undefined' && HOLON_MID[metric])
-    HOLON_MID.years.forEach((y,i)=> out.push({ y, v:HOLON_MID[metric][i], exact:false }));
-  return out.sort((a,b)=> a.y-b.y);
+    HOLON_MID.years.forEach((y,i)=> put(y, HOLON_MID[metric][i], false));
+  HOLON_HIST[metric].forEach(p=> put(p.y, p.v, true));
+  if(typeof HOLON_MOE !== 'undefined' && HOLON_MOE[metric])
+    HOLON_MOE.years.forEach((y,i)=> by.set(y, { y, v:HOLON_MOE[metric][i], exact:true }));
+  return [...by.values()].sort((a,b)=> a.y-b.y);
 }
 
 const POP_BAND = 0.25;                 // ±25% מאוכלוסיית חולון = "היקף דומה"
@@ -3294,9 +3297,13 @@ function renderYYDecade(A, B){
   const techData = sT.map(p=> p.v).concat(ours.map(o=> tOf(o.g)));
   const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> mOf(o.g)));
   const exact    = sT.map(p=> p.exact).concat(ours.map(()=> true));
-  const TEAL = '#16b3b3', GOLD = '#c8952f';
+  const TEAL = '#16b3b3', GOLD = '#c8952f', INNER = '#6a3e9c';
 
-  const line = (label, data, col) => ({
+  // תווית של סדרה שהוסתרה בלגנדה חייבת להיעלם איתה
+  const shown = ctx=> !ctx.chart.getDatasetMeta(ctx.datasetIndex).hidden;
+
+  // הקו התחתון מתייג כלפי מטה והעליון כלפי מעלה — אחרת התוויות נפגשות באמצע
+  const line = (label, data, col, align) => ({
     label, data, borderColor: col, backgroundColor: col,
     borderWidth: 3.5, tension: 0.25,
     pointRadius: ctx=> ctx.dataIndex >= nR ? 7 : 5,
@@ -3305,19 +3312,39 @@ function renderYYDecade(A, B){
     pointBorderColor: col, pointBorderWidth: 2.5, fill: false, spanGaps: false,
     segment: { borderDash: ctx=> ctx.p0DataIndex >= nR-1 ? [7,5] : undefined },
     datalabels: {
-      display: ctx=> [0, nR-1, ctx.dataset.data.length-1].includes(ctx.dataIndex),
-      anchor:'end', align:'top', offset: 7, color: col,
+      display: ctx=> shown(ctx) && [0, nR-1, ctx.dataset.data.length-1].includes(ctx.dataIndex),
+      anchor:'end', align, offset: 8, color: col,
       font:{family:'Heebo', size:13, weight:'900'},
       formatter: v=> v==null? '' : v.toFixed(1)+'%'
     }
   });
+
+  // הקו הפנימי — המדד כפי שהדשבורד מחשב אותו, על סכום שורות בתי הספר.
+  // קיים רק מהתפר ואילך; לשנות הדו"ח אין לנו נתון גולמי.
+  const innerLine = () => ({
+    label:'מדד פנימי — סכום בתי הספר',
+    data: Array(nR).fill(null).concat(ours.map(o=> o.g.techAlt)),
+    borderColor: INNER, backgroundColor: INNER, borderWidth: 3, tension: 0.25,
+    borderDash:[2,3], pointRadius: 7, pointStyle:'triangle',
+    pointBackgroundColor: INNER, pointBorderColor:'#fff', pointBorderWidth: 1.5,
+    fill:false, spanGaps:false,
+    datalabels:{
+      // בתקופה בלי מצבת שני הקווים מתלכדים — אז תווית אחת, לא שתיים זו על זו
+      display: ctx=> shown(ctx) && ctx.dataIndex === ctx.dataset.data.length-1 &&
+                     Math.abs((ctx.dataset.data[ctx.dataIndex] ?? 0) - (techData[ctx.dataIndex] ?? 0)) > 0.15,
+      anchor:'end', align:'top', offset: 8, color: INNER,
+      font:{family:'Heebo', size:13, weight:'900'},
+      formatter: v=> v==null? '' : v.toFixed(1)+'%'
+    }
+  });
+
+  // נקודות הייחוס הארציות — בלי תווית קבועה. ארבע תוויות על אותו x התנגשו,
+  // והדו"ח מציג אותן בעמודה נפרדת שאין לנו. הערכים בתת-הכותרת וב-tooltip.
   const natDot = (label, val, col) => ({
     label, data: Array(nR-1).fill(null).concat([val], Array(labels.length-nR).fill(null)),
     borderColor: col, backgroundColor: col, showLine: false,
     pointRadius: 7, pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 2,
-    datalabels:{ anchor:'end', align:'bottom', offset: 6, color: col,
-      font:{family:'Heebo', size:11, weight:'700'},
-      formatter: v=> v==null?'':'ארצי '+v.toFixed(1)+'%' }
+    datalabels:{ display:false }
   });
 
   const CITY_Y = NAT.years.indexOf(2024) >= 0 ? 2024 : NAT.years[NAT.years.length-1];
@@ -3344,8 +3371,9 @@ function renderYYDecade(A, B){
   charts.yyDecade = new Chart(document.getElementById('yyDecade'), {
     type:'line',
     data:{ labels, datasets:[
-      line('בגרות הייטק', techData, TEAL),
-      line('מתמטיקה 5 יח״ל', ma5Data, GOLD),
+      line('בגרות הייטק', techData, TEAL, 'bottom'),   // הקו התחתון — תווית מתחת
+      line('מתמטיקה 5 יח״ל', ma5Data, GOLD, 'top'),
+      innerLine(),
       natDot('ארצי — הייטק', natTech, TEAL),
       natDot('ארצי — מתמטיקה', natMa5, GOLD)
     ]},
@@ -3356,7 +3384,17 @@ function renderYYDecade(A, B){
       plugins:{
         legend:{ position:'top', align:'end',
           labels:{ font:HF, color:'#5f6368', boxWidth:14, padding:10,
-            filter: i=> !i.text.startsWith('ארצי —') } },
+            filter: i=> !i.text.startsWith('ארצי —') },
+          // הסתרת קו גוררת גם את נקודת הייחוס הארצית שלו — אחרת נשארת
+          // על הגרף נקודה בודדת בלי הקו שהיא משווה אליו
+          onClick(e, item, legend){
+            const ch = legend.chart, i = item.datasetIndex;
+            const linked = { 0:3, 1:4 }[i];
+            const vis = !ch.isDatasetVisible(i);
+            ch.setDatasetVisibility(i, vis);
+            if(linked != null) ch.setDatasetVisibility(linked, vis);
+            ch.update();
+          } },
         tooltip:{ mode:'index', intersect:false, callbacks:{
           title: items=> labels[items[0].dataIndex] +
             (items[0].dataIndex >= nR ? ' — נתוני הגיליון' : ' — דו״ח המצוינות'),
@@ -3364,13 +3402,10 @@ function renderYYDecade(A, B){
             if(ctx.parsed.y == null) return null;
             let s = ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
             if(ctx.dataset.label.startsWith('ארצי')) return s;
-            if(!exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.2)';
+            if(ctx.datasetIndex === 2) return s + '  (מכנה: סכום בתי הספר)';
+            if(!exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.4)';
             const o = ours[ctx.dataIndex - nR];
-            if(o){                                   // הערך המקביל במכנה השני
-              const alt = ctx.datasetIndex===0 ? o.g.techAlt : o.g.ma5Alt;
-              s += o.g.matz ? `  ·  על סכום בתי הספר ${alt.toFixed(1)}%`
-                            : '  ·  אין מצבת — מחושב על סכום בתי הספר';
-            }
+            if(o) s += o.g.matz ? '  (מכנה: מצבת)' : '  (אין מצבת — סכום בתי הספר)';
             return s;
           } } }
       },
@@ -3386,7 +3421,8 @@ function renderYYDecade(A, B){
   document.getElementById('yyDecadeSub').innerHTML =
     `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
     `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
-    `<strong>2014–2024 מדו״ח המצוינות של ישראל</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן.`;
+    `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
+    `<span class="alt-num">ממוצע ארצי ${CITY_Y} (הנקודות המלאות): הייטק ${natTech.toFixed(1)}% · מתמטיקה ${natMa5.toFixed(1)}%</span>`;
 
   const pill = (lbl, val, ref, col) =>
     `<div class="meta-pill"><span style="color:var(--muted);">${lbl}</span>
@@ -3418,15 +3454,17 @@ function renderYYDecade(A, B){
         `אין כאן סתירה: הגרף הזה מודד <strong>בוגרים בלבד</strong> והמספר הגדול שבכרטיס הבא מודד את שלוש השכבות יחד. ` +
         `הכיוונים ההפוכים אומרים שהכיתות הצעירות מושכות את המשוקלל למעלה בזמן שהמחזור שמסיים קטן — וזה בדיוק מה שהגרף הזה נועד לחשוף. `
       : '') +
-    `<strong>המכנה.</strong> הדו״ח מדד את חולון במכנה של משרד החינוך, ולכן <strong>גם המשך הקו מחושב על המצבת</strong> ולא על סכום שורות בתי הספר — ` +
-    `אחרת הקפיצה בתפר הייתה נובעת מספירה ולא מהישג. ההיפוך הזה מקומי לכרטיס הזה בלבד (כמו בתצוגה 9); הערך במכנה השני מופיע ב-tooltip. ` +
-    (noMatz.length ? `<strong style="color:#a04a10;">ל-${noMatz.join(' ו-')} אין שורת מצבת, ולכן חושבו על סכום בתי הספר ואינם בני-השוואה מלאה לדו״ח.</strong> ` : '') +
-    `<br><strong>איך לקרוא את התפר.</strong> עד ${anchorY} המקור הוא דו״ח המצוינות; משם הקו ממשיך מהגיליון ולכן מקווקו. ` +
-    `הגדרת <strong>זכאות למדד טק</strong> שבגיליון כוללת גם 5 יח״ל אנגלית, כמו ההגדרה שבדו״ח — כלומר <strong>שני צדי התפר מודדים את אותו דבר</strong>. ` +
+    `<strong>שני הקווים הטורקיזיים.</strong> הקו המלא ממשיך את המכנה של משרד החינוך (המצבת), כי זה המכנה שבו נמדדו ` +
+    `הערכים שמשמאל לתפר — אחרת הקפיצה בתפר נובעת מספירה ולא מהישג. <strong style="color:${INNER};">הקו המנוקד הוא המדד הפנימי</strong>, ` +
+    `על סכום שורות בתי הספר — זה המספר שמופיע בשאר הדשבורד ובכרטיס שמתחת. ההפרש ביניהם הוא הפרש מכנה בלבד, לא הפרש הישג. ` +
+    (noMatz.length ? `<strong style="color:#a04a10;">ל-${noMatz.join(' ו-')} אין שורת מצבת, ולכן שני הקווים מתלכדים שם.</strong> ` : '') +
+    `<br><strong>איך לקרוא את התפר.</strong> עד ${anchorY} המקור הוא <strong>אתר משרד החינוך</strong> (§12.5); משם הקו ממשיך מהגיליון ולכן מקווקו. ` +
+    `הגדרת <strong>זכאות למדד טק</strong> שבגיליון כוללת גם 5 יח״ל אנגלית, כמו ההגדרה הארצית — כלומר <strong>שני צדי התפר מודדים את אותו דבר</strong>. ` +
     (jump != null && Math.abs(jump) > 1.5
-      ? `<strong style="color:#a04a10;">נותר הפרש של ${jump>0?'+':'−'}${Math.abs(jump).toFixed(1)} נק׳ בנקודת החלפת המקור</strong> — משהגדרות המונה והמכנה תואמות, נותרו הפרש בין שנות מדידה או הבדל באוכלוסיית בתי הספר הנספרת. שווה הצלבה לפני הצגה להנהלה. `
+      ? `<strong style="color:#a04a10;">נותר הפרש של ${jump>0?'+':'−'}${Math.abs(jump).toFixed(1)} נק׳ בנקודת החלפת המקור</strong> — משהגדרות המונה והמכנה תואמות, ההסבר הנותר הוא שנת מדידה או אוכלוסיית בתי הספר הנספרת. שווה הצלבה לפני הצגה להנהלה. `
       : '') +
-    (estN ? `${estN} ערכי הביניים (${est[0].y}–${est[est.length-1].y}) אינם מודפסים בדו״ח ונמדדו מהגרף שבו (±0.2 נק׳, §12.5); ${sT[0].y} ו-${anchorY} מודפסים ומדויקים.` : '');
+    (estN ? `<strong>${est.map(p=>p.y).join(', ')}</strong> ${estN>1?'אינם':'אינו'} מופיע${estN>1?'ים':''} באתר משה״ח ` +
+            `${estN>1?'ונמדדו':'ונמדד'} מהגרף שבדו״ח — ${estN>1?'מסומנים':'מסומן'} ב-tooltip. שאר הערכים רשמיים.` : '');
 }
 
 // ─── 1. מדד הטק ─────────────────────────────────────────────────
@@ -4144,7 +4182,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v24';
+const BUILD = 'v25';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
