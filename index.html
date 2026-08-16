@@ -3242,14 +3242,31 @@ function renderTrends(){
 // ─── 0. התפתחות לאורך העשור ─────────────────────────────────────
 // ממשיך את סדרת דו"ח המצוינות בנתוני הגיליון. **שכבת יב׳ בלבד** —
 // המדד שבדו"ח מודד בוגרים, ולכן זו השכבה היחידה בת-השוואה.
+//
+// ⚠ **המכנה כאן הוא המצבת** — היפוך של §3.2, מאותו נימוק בדיוק שבתצוגה 9:
+// הדו"ח מדד את חולון במכנה של משרד החינוך, ולהמשיך את הקו במכנה אחר פירושו
+// קפיצה מלאכותית בתפר שנובעת מספירה ולא מהישג. ההיפוך מקומי לכרטיס הזה בלבד.
+// שאר תצוגת ההשוואה השנתית ממשיכה על סכום שורות בתי הספר.
+//
+// כל הערכים דרך הנוסחאות הקיימות (`cityPctAlt` / `cityPct`), לא מימוש מקביל.
 function yyGrade12(key){
   return withPeriod(key, ()=>{
-    let tot=0, tech=0, ma5=0, gTech=0, gMa5=0;
+    const G12 = 2;                                   // GRADES = ['י','יא','יב']
+    const techN = cityTotal(G12);
+    const students = cityDenomByName('יב'), matz = cityDenomAlt('יב');
+    if(!students) return null;
+    let ma5=0, gTech=0, gMa5=0;
     SCHOOLS.forEach(s=>{ const r = s.grades['יב']; if(!r) return;
-      tot += r[0]; tech += r[4]; ma5 += r[3]; gTech += r[7]; gMa5 += r[9]; });
-    if(!tot) return null;
-    return { tot, techN:tech, ma5N:ma5, tech: tech/tot*100, ma5: ma5/tot*100,
-             girlsTech: tech? gTech/tech*100 : null, girlsMa5: ma5? gMa5/ma5*100 : null };
+      ma5 += r[3]; gTech += r[7]; gMa5 += r[9]; });
+    return {
+      techN, ma5N: ma5, students, matz,
+      tech:    cityPctAlt(G12),                      // המכנה של הדו"ח — null בלי מצבת
+      techAlt: cityPct(G12),                         // סכום בתי הספר, לרפרנס
+      ma5:     matz ? ma5/matz*100 : null,
+      ma5Alt:  ma5/students*100,
+      girlsTech: techN? gTech/techN*100 : null,
+      girlsMa5:  ma5?   gMa5/ma5*100   : null
+    };
   });
 }
 
@@ -3259,9 +3276,14 @@ function renderYYDecade(A, B){
   const nR = sT.length;                                   // אינדקס התפר
   const ours = [A, B].map(p=> ({ p, g: yyGrade12(p.key) })).filter(o=> o.g);
 
+  // נקודה בלי שורת מצבת אינה בת-השוואה למכנה של הדו"ח — נופלת חזרה לסכום
+  // בתי הספר ומסומנת, במקום להיעלם ולנתק את הקו.
+  const noMatz = ours.filter(o=> o.g.tech == null).map(o=> o.p.label);
+  const tOf = g=> g.tech ?? g.techAlt, mOf = g=> g.ma5 ?? g.ma5Alt;
+
   const labels = sT.map(p=> String(p.y)).concat(ours.map(o=> o.p.label.replace(/\s*\(.*\)/,'')));
-  const techData = sT.map(p=> p.v).concat(ours.map(o=> o.g.tech));
-  const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> o.g.ma5));
+  const techData = sT.map(p=> p.v).concat(ours.map(o=> tOf(o.g)));
+  const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> mOf(o.g)));
   const exact    = sT.map(p=> p.exact).concat(ours.map(()=> true));
   const TEAL = '#16b3b3', GOLD = '#c8952f';
 
@@ -3332,7 +3354,14 @@ function renderYYDecade(A, B){
           label: ctx=>{
             if(ctx.parsed.y == null) return null;
             let s = ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
-            if(!ctx.dataset.label.startsWith('ארצי') && !exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.2)';
+            if(ctx.dataset.label.startsWith('ארצי')) return s;
+            if(!exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.2)';
+            const o = ours[ctx.dataIndex - nR];
+            if(o){                                   // הערך המקביל במכנה השני
+              const alt = ctx.datasetIndex===0 ? o.g.techAlt : o.g.ma5Alt;
+              s += o.g.matz ? `  ·  על סכום בתי הספר ${alt.toFixed(1)}%`
+                            : '  ·  אין מצבת — מחושב על סכום בתי הספר';
+            }
             return s;
           } } }
       },
@@ -3346,9 +3375,9 @@ function renderYYDecade(A, B){
 
   const last = ours.length ? ours[ours.length-1] : null;
   document.getElementById('yyDecadeSub').innerHTML =
-    `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק. ` +
-    `<strong>2014–2024 מדו״ח המצוינות של ישראל</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — ` +
-    `שני מקורות, ולכן התפר מסומן.`;
+    `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
+    `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
+    `<strong>2014–2024 מדו״ח המצוינות של ישראל</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן.`;
 
   const pill = (lbl, val, ref, col) =>
     `<div class="meta-pill"><span style="color:var(--muted);">${lbl}</span>
@@ -3363,16 +3392,32 @@ function renderYYDecade(A, B){
       ${pill('♀ בנות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
     </div>` : '';
 
-  const anchor = sT[sT.length-1].v;
-  const jump = last ? last.g.tech - anchor : null;
-  const estN = sT.filter(p=> !p.exact).length;
+  const anchorY = sT[sT.length-1].y, anchorV = sT[sT.length-1].v;
+  const first = ours.length ? ours[0] : null;
+  const jump = first ? tOf(first.g) - anchorV : null;
+  const estN = sT.filter(p=> !p.exact).length, est = sT.filter(p=> !p.exact);
+
+  // המשוקלל י׳–יב׳ של אותן תקופות — כדי לומר במפורש כשהוא הולך לכיוון ההפוך
+  const wA = trOverall(A.key), wB = trOverall(B.key);
+  const d12 = (last && ours.length>1) ? tOf(ours[1].g) - tOf(ours[0].g) : null;
+  const dW  = (wA!=null && wB!=null) ? wB - wA : null;
+  const opposed = d12!=null && dW!=null && Math.sign(d12) !== Math.sign(dW) && Math.abs(d12)>0.3 && Math.abs(dW)>0.3;
+
   document.getElementById('yyDecadeNote').innerHTML =
-    `<strong>איך לקרוא את התפר.</strong> עד ${sT[sT.length-1].y} המקור הוא דו״ח המצוינות; משם הקו ממשיך מהגיליון העירוני ולכן מקווקו. ` +
-    `ההגדרה בדו״ח דורשת <strong>גם 5 יח״ל אנגלית</strong>, וייתכן ששורת <strong>זכאות למדד טק</strong> שבגיליון אינה (§12.3). ` +
-    (jump != null && Math.abs(jump) > 1.5
-      ? `<strong style="color:#a04a10;">הפרש של ${jump>0?'+':'−'}${Math.abs(jump).toFixed(1)} נק׳ בדיוק בנקודת החלפת המקור סביר יותר כהפרש הגדרה מאשר כשינוי אמיתי בשנה אחת</strong> — לא להציג אותו כהישג עד לאימות. `
+    (opposed
+      ? `<strong style="color:#a04a10;">שכבת יב׳ ירדה ${d12<0?'':'עלתה '}${Math.abs(d12).toFixed(1)} נק׳ בין ${A.label} ל-${B.label}, בעוד שהמשוקלל י׳–יב׳ ${dW>0?'עלה':'ירד'} ${Math.abs(dW).toFixed(1)} נק׳.</strong> ` +
+        `אין כאן סתירה: הגרף הזה מודד <strong>בוגרים בלבד</strong> והמספר הגדול שבכרטיס הבא מודד את שלוש השכבות יחד. ` +
+        `הכיוונים ההפוכים אומרים שהכיתות הצעירות מושכות את המשוקלל למעלה בזמן שהמחזור שמסיים קטן — וזה בדיוק מה שהגרף הזה נועד לחשוף. `
       : '') +
-    (estN ? `${estN} ערכי הביניים (${sT.filter(p=>!p.exact)[0].y}–${sT.filter(p=>!p.exact).slice(-1)[0].y}) אינם מודפסים בדו״ח ונמדדו מהגרף שבו (±0.2 נק׳, §12.5); ${sT[0].y} ו-${sT[sT.length-1].y} מודפסים ומדויקים.` : '');
+    `<strong>המכנה.</strong> הדו״ח מדד את חולון במכנה של משרד החינוך, ולכן <strong>גם המשך הקו מחושב על המצבת</strong> ולא על סכום שורות בתי הספר — ` +
+    `אחרת הקפיצה בתפר הייתה נובעת מספירה ולא מהישג. ההיפוך הזה מקומי לכרטיס הזה בלבד (כמו בתצוגה 9); הערך במכנה השני מופיע ב-tooltip. ` +
+    (noMatz.length ? `<strong style="color:#a04a10;">ל-${noMatz.join(' ו-')} אין שורת מצבת, ולכן חושבו על סכום בתי הספר ואינם בני-השוואה מלאה לדו״ח.</strong> ` : '') +
+    `<br><strong>איך לקרוא את התפר.</strong> עד ${anchorY} המקור הוא דו״ח המצוינות; משם הקו ממשיך מהגיליון ולכן מקווקו. ` +
+    `הגדרת <strong>זכאות למדד טק</strong> שבגיליון כוללת גם 5 יח״ל אנגלית, כמו ההגדרה שבדו״ח — כלומר <strong>שני צדי התפר מודדים את אותו דבר</strong>. ` +
+    (jump != null && Math.abs(jump) > 1.5
+      ? `<strong style="color:#a04a10;">נותר הפרש של ${jump>0?'+':'−'}${Math.abs(jump).toFixed(1)} נק׳ בנקודת החלפת המקור</strong> — משהגדרות המונה והמכנה תואמות, נותרו הפרש בין שנות מדידה או הבדל באוכלוסיית בתי הספר הנספרת. שווה הצלבה לפני הצגה להנהלה. `
+      : '') +
+    (estN ? `${estN} ערכי הביניים (${est[0].y}–${est[est.length-1].y}) אינם מודפסים בדו״ח ונמדדו מהגרף שבו (±0.2 נק׳, §12.5); ${sT[0].y} ו-${anchorY} מודפסים ומדויקים.` : '');
 }
 
 // ─── 1. מדד הטק ─────────────────────────────────────────────────
@@ -4154,7 +4199,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v23';
+const BUILD = 'v24';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
