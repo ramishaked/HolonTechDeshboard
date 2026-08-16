@@ -99,6 +99,10 @@ body{
 }
 .sb-head:hover{color:rgba(255,255,255,0.8);}
 .sb-group + .sb-group{margin-top:7px;}
+/* פריט בודד מחוץ לקבוצות — קו מפריד מתחתיו, אחרת הוא נקרא כאילו
+   הוא שייך לקבוצה הראשונה שמתחתיו */
+.sb-solo{margin-bottom:6px;padding-bottom:13px;
+  border-bottom:1px solid rgba(255,255,255,0.08);}
 
 /* ─── סיידבר מכווץ ─── */
 /* רוחב בלבד: ה-main הוא flex:1 ולכן מתרחב מעצמו. הפריטים נשארים בדיוק
@@ -550,6 +554,43 @@ body{
 .tbl td.dn{color:#c5221f;font-weight:700;}
 .cv-empty{padding:28px;text-align:center;color:var(--muted);font-size:13px;}
 
+/* ─── תקציר מנהלים (תצוגה 11) ────────────────────────────────────
+   כללים מקומיים בלבד. כל הרכיבים כאן שאולים מתצוגות קיימות
+   (.st-card · .ins-card · .ct-row · .cmp-row · .tbl) ואין כאן שפה
+   עיצובית חדשה — רק שני דברים שלא היו: בלוק מתקפל, וכרטיס חסם
+   בגוון "אדמיניסטרטיבי" שאינו אחד משלושת הגוונים של מנוע הגלאים. */
+#view-exec details.card{padding:0;}
+#view-exec details.card > summary{
+  list-style:none;cursor:pointer;padding:20px 24px;display:flex;
+  align-items:baseline;gap:10px;user-select:none;}
+#view-exec details.card > summary::-webkit-details-marker{display:none;}
+#view-exec details.card > summary:hover .card-title{color:var(--primary);}
+#view-exec details.card > summary .ex-cv{font-size:12px;color:var(--muted);
+  transition:transform .18s;flex-shrink:0;}
+#view-exec details[open].card > summary .ex-cv{transform:rotate(-90deg);}
+#view-exec details.card > .ex-in{padding:0 24px 22px;}
+/* חסם אדמיניסטרטיבי — כחול מידע, כדי שלא ייקרא כממצא פדגוגי */
+#view-exec .ins-card.admin{border-right-color:var(--info);}
+#view-exec .ins-card.admin .ins-num{color:var(--info);}
+#view-exec .ins-card.admin .ins-tag{background:#e8f0fe;color:#1967d2;}
+/* כותרת קבוצה בין בלוקים — אין `.card` סביבה, אחרת כרטיסי החסמים
+   היו כרטיסים בתוך כרטיס */
+#view-exec .ex-h{font-size:16px;font-weight:900;color:var(--text);
+  margin:22px 0 12px;padding-right:11px;border-right:3px solid var(--primary);}
+/* מחיר הממצא בתלמידים — צמוד לכותרת, כי הוא סיבת הדירוג */
+#view-exec .ex-cost{font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;
+  background:var(--bg);color:var(--muted);white-space:nowrap;}
+#view-exec .tbl th{cursor:default;}
+#view-exec .tbl th:hover{color:var(--muted);}
+#view-exec .tbl tr.ex-click{cursor:pointer;}
+#view-exec .tbl tr.ex-click:hover td{background:var(--primary-l);}
+#view-exec .tbl tr.ex-sum td{font-weight:900;border-top:1.5px solid var(--border);background:var(--bg);}
+#view-exec .tbl td.ex-add{font-weight:900;color:#a04a10;}
+#view-exec .tbl tr.ex-warn td{background:var(--accent-l);color:#a04a10;}
+/* שורת "…" בין החמישייה לבין חולון בכרטיס היעד */
+#view-exec .ex-gapline{text-align:center;color:var(--border);font-size:16px;
+  font-weight:900;letter-spacing:3px;padding:2px 0;}
+
 /* כרטיס המכנה — ההסבר וההמלצה */
 .dn-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;
   padding:16px 18px;margin-top:14px;}
@@ -805,6 +846,12 @@ body{
        ולא יעדים עצמאיים, ובתפריט הן רק האריכו רשימה שכבר הייתה ארוכה.
        `switchView` מדליק במקומן את פריט ההורה (`PARENT_OF`). -->
   <nav class="sb-nav">
+    <!-- תקציר מנהלים יושב **מחוץ** לקבוצות בכוונה: הוא נקודת הכניסה
+         ולא אחד הפילוחים, ולכן אינו נסגר עם אף אקורדיאון. -->
+    <div class="sb-item sb-solo" data-view="exec" title="תקציר מנהלים">
+      <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-6-3.2-6 3.2z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 11.8h5.6"/></svg><span>תקציר מנהלים</span>
+    </div>
+
     <div class="sb-group" data-group="city">
       <div class="sb-head"><span class="sb-cv">▾</span><span>תמונה עירונית</span></div>
       <div class="sb-list">
@@ -861,6 +908,20 @@ body{
 
 <!-- ─── MAIN CONTENT ─── -->
 <main class="main">
+
+  <!-- VIEW 11: תקציר מנהלים ─────────────────────────────────────────
+       השלד בלבד. כל התוכן נבנה ב-`renderExec()` מפונקציות קיימות —
+       אין כאן אף מספר, ובמיוחד לא סף היעד. -->
+  <section class="view" id="view-exec">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">תקציר מנהלים</h1>
+        <p class="page-sub" id="exSub">—</p>
+      </div>
+      <div class="page-meta" id="exMeta"></div>
+    </div>
+    <div id="exBody"></div>
+  </section>
 
   <!-- VIEW 1: OVERVIEW -->
   <section class="view active" id="view-overview">
@@ -4677,6 +4738,403 @@ function renderCities(){
   cvRender();
 }
 
+// ════════════════════════════════════════════════════════════════
+// VIEW 11: תקציר מנהלים — השורה התחתונה, החסמים, והיעד
+//
+// מסך אחד לראש העיר ולמנהל מינהל החינוך: מה המצב, מה חוסם, ולאן
+// הולכים. **אפס נוסחאות חדשות** — כל מספר עובר דרך פונקציה שכבר
+// קיימת, ולכן זהה *בהגדרה* לזה שבתצוגות האחרות ולא "כמעט זהה".
+//
+// המכנה כאן הוא **המצבת, שכבת יב׳** — היפוך מכוון של §3.2, מאותו
+// נימוק כמו בתצוגה 9: 19 הרשויות האחרות נמדדו במכנה של משרד החינוך,
+// והיעד מנוסח כמיקום מולן. **הטבלה לפי בית ספר חוזרת למכנה הפנימי**,
+// כי לבתי ספר אין שורת מצבת — והתרגום בין השניים מפורש שם.
+//
+// ⚠ סף היעד אינו צרוב. הוא נגזר מ-`CITIES` בזמן ריצה, ולכן עדכון
+// שנתי של `CITY_DATA` מזיז אותו מעצמו — כמו כל טענה בתצוגה 9.
+// ════════════════════════════════════════════════════════════════
+const RANK_TGT  = 5;     // היעד: כניסה לחמישייה מבין 20 הגדולות
+const EXEC_SPAN = 3;     // אופק התוכנית, בשנים
+
+// שם שנה עברית משנה לועזית (2029 → תשפ״ט). ההיפוך של `hebYear`,
+// ומאומת מולה ב-verify — כדי שאבני הדרך ידברו בשנות הלימודים.
+const _GEMR = [[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],
+  [60,'ס'],[50,'נ'],[40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],
+  [6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
+function hebYearName(gy){
+  let v = gy + 3760 - 5000;
+  if(v <= 0) return String(gy);
+  let out = '';
+  for(const [n,ch] of _GEMR){
+    if(v === 15){ out += 'טו'; v = 0; break; }   // ולא יה
+    if(v === 16){ out += 'טז'; v = 0; break; }   // ולא יו
+    while(v >= n){ out += ch; v -= n; }
+  }
+  return out.length > 1 ? out.slice(0,-1) + '״' + out.slice(-1) : out;
+}
+
+// כל המספרים של המסך במקום אחד, כדי שהרינדור יהיה הרכבה בלבד.
+// `den12 === null` (תקופה בלי שורת מצבת) → נפילה לסכום שורות בתי
+// הספר, **עם דגל** — בדיוק כמו גרף העשור. אין כאן נפילה שקטה.
+function execCtx(){
+  const me      = ntMe();
+  const rank    = CITIES.findIndex(c=> c.name === CITY_ME) + 1;
+  const done    = rank > 0 && rank <= RANK_TGT;          // כבר בחמישייה
+  const defend  = CITIES[RANK_TGT-1] || null;            // מי שצריך לעבור
+  const tgtPct  = done ? null : (defend ? defend.tech : null);
+
+  const den12   = cityDenomAlt('יב');
+  const onAlt   = den12 != null;                          // המכנה שבו אנחנו
+  const den     = onAlt ? den12 : cityStudents(2);
+  const cur12   = cityTotal(2);
+  const live12  = onAlt ? cityPctAlt(2) : (den? cityPct(2) : null);
+
+  const need = (tgtPct != null && den) ? Math.ceil(tgtPct/100 * den) : null;
+  const gap  = need != null ? Math.max(0, need - cur12) : null;
+
+  // מחיר המכנה — אותה נוסחה של `ntDenom`, ממוקדת לשכבת יב׳ בלבד,
+  // כי זו השכבה שבה היעד חי.
+  const cost12  = onAlt ? cityPct(2) - cityPctAlt(2) : null;
+  const heads12 = onAlt ? den12 - cityStudents(2) : null;
+
+  return { me, rank, done, defend, tgtPct, den12, onAlt, den, cur12, live12,
+           need, gap, cost12, heads12 };
+}
+
+// הכיוון בין שתי דגימות סוף-השנה, **באותו מכנה** שבו נמדד היעד.
+// דרך `withPeriod` על נוסחה קיימת ולא נוסחה מקבילה (ראה CLAUDE.md).
+function execTrend(onAlt){
+  const yp = yyPeriods();
+  if(!yp.pair || yp.pair.length < 2) return null;
+  const f = ()=> onAlt ? cityPctAlt(2) : cityPct(2);
+  const a = withPeriod(yp.pair[0].key, f), b = withPeriod(yp.pair[1].key, f);
+  if(a == null || b == null) return null;
+  return { from:a, to:b, d:b-a, labA:yp.pair[0].label, labB:yp.pair[1].label, exact:yp.exact };
+}
+
+function renderExec(){
+  const c = execCtx();
+  const box = document.getElementById('exBody');
+  if(!c.me || !SCHOOLS.length || !c.den){
+    document.getElementById('exMeta').innerHTML = '';
+    box.innerHTML = '<div class="insight warn"><div class="insight-t">אין מספיק נתונים</div>' +
+      '<div class="insight-b">התקופה הנבחרת אינה מכילה שכבת יב׳, ולכן אי אפשר לגזור את המדד ואת היעד.</div></div>';
+    return;
+  }
+
+  document.getElementById('exSub').textContent =
+    'השורה התחתונה, החסמים, והיעד' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
+  document.getElementById('exMeta').innerHTML =
+    `<div class="meta-pill">מקום <strong>#${c.rank}</strong> מתוך ${CITIES.length}</div>` +
+    (c.tgtPct != null ? `<div class="meta-pill">יעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '');
+
+  box.innerHTML = execBottomLine(c) + execBlockers(c) + execGoal(c) +
+                  execSubjects(c) + execSchools(c);
+}
+
+// ── 1 · השורה התחתונה ───────────────────────────────────────────
+function execBottomLine(c){
+  const dn  = c.live12 - NATIONAL;
+  const tr  = execTrend(c.onAlt);
+  // דירוג התלמידות מחושב בלי `CITY_ASTERISK` — 67.9% בבית שמש אינו
+  // הישג אלא תוצר מגזרי, וממוצע או דירוג שכולל אותו משקר.
+  const gRows = CITIES.filter(x=> !CITY_ASTERISK[x.name])
+                      .slice().sort((a,b)=> b.girls - a.girls);
+  const gRank = gRows.findIndex(x=> x.name === CITY_ME) + 1;
+  const gLive = cityGirlsPctOfTech();
+
+  const tiles = [
+    { cls:'c1', lbl:`מדד הטק בשכבת יב׳ · ${c.onAlt? 'מצבת משה״ח' : 'סכום שורות בתי הספר'}`,
+      num: ntPc(c.live12),
+      sub: `<strong>${num(c.cur12)}</strong> זכאים מתוך ${num(c.den)} בוגרים. ` +
+           `<strong style="color:${dn>=0?'#137333':'#c5221f'}">${dn>=0?'+':'−'}${Math.abs(dn).toFixed(1)} נק׳</strong> מול הארצי ${NATIONAL}%.` +
+           (c.onAlt? '' : ' <strong>אין שורת מצבת בתקופה זו</strong> — המספר מחושב על סכום שורות בתי הספר.') +
+           ` <span class="alt-num">הרשמי ${CITY_YEAR}: ${ntPc(c.me.tech)}</span>` },
+    { cls:'c3', lbl:`מיקום מבין ${CITIES.length} הרשויות הגדולות`,
+      num:`#${c.rank}`, den:` / ${CITIES.length}`,
+      sub: c.done
+        ? `<strong>חולון כבר בחמישייה.</strong> נתוני ${CITY_YEAR}.`
+        : `כדי להיכנס לחמישייה צריך לעבור את <strong>${c.defend.name}</strong> — ${ntPc(c.tgtPct)}. ` +
+          `הפער: <strong>${(c.tgtPct - c.me.tech).toFixed(1)} נק׳</strong> מהמספר הרשמי.` },
+    // הצבע נגזר מהסימן. כרטיס ירוק סביב מספר שלילי אומר "טוב" בזמן
+    // שהמספר אומר ירידה — הקורא מאמין לצבע.
+    { cls: (!tr || tr.d >= 0) ? 'c2' : 'c3', lbl:'הכיוון בין שתי דגימות סוף השנה',
+      num: tr? `<span style="color:${tr.d>=0?'#137333':'#c5221f'}">${(tr.d>=0?'+':'−') + Math.abs(tr.d).toFixed(1)}</span>` : '—',
+      den: tr? ' נק׳' : '',
+      sub: tr
+        ? `${tr.labA} ← ${tr.labB}: ${ntPc(tr.from)} → <strong>${ntPc(tr.to)}</strong>. ` +
+          (tr.exact? '' : '<strong>אין שתי דגימות סוף-שנה</strong> — ההשוואה על שתי האחרונות מכל סוג. ')
+        : 'אין שתי תקופות עם מכנה זהה להשוואה.' },
+    { cls:'c1', lbl:'ייצוג תלמידות בקרב לומדי הטק',
+      num: ntPc(gLive),
+      sub: gRank
+        ? `בנתוני ${CITY_YEAR} חולון <strong>#${gRank}</strong> מתוך ${gRows.length} בייצוג תלמידות ` +
+          `(${ntPc(c.me.girls)}). <strong>זה ההישג הבולט של העיר</strong>, והוא לא בא על חשבון המדד.`
+        : `נתוני הגיליון לתקופה הנוכחית.` }
+  ];
+
+  return `<div class="st-grid">` + tiles.map(t=>`
+    <div class="st-card ${t.cls}">
+      <div class="st-lbl">${t.lbl}</div>
+      <div><span class="st-num">${t.num}</span>${t.den? `<span class="st-den">${t.den}</span>`:''}</div>
+      <div class="st-sub">${t.sub}</div>
+    </div>`).join('') + `</div>`;
+}
+
+// ── 2 · החסמים ──────────────────────────────────────────────────
+// שלושה מתוך מנוע הגלאים, ממוינים לפי `cost` — כמה תלמידים הבעיה
+// עולה לעיר. **אין כאן גלאי חדש.** ולצדם, מופרד ומסומן, החסם
+// האדמיניסטרטיבי: היחידה שלו אינה "תלמידים שאבדו" אלא "נקודות
+// שלא נספרות", ומיון מולם היה משווה תפוחים לתפוזים.
+function execBlockers(c){
+  CTX = insightCtx();
+  const found = CITY_DETECTORS
+    .map(d=>{ const ev = d.test(CTX); return ev? {d, ev, cost:d.cost(ev)} : null; })
+    .filter(Boolean)
+    .sort((a,b)=> b.cost - a.cost)
+    .slice(0,3);
+
+  const cards = found.map((f,i)=>`
+    <div class="ins-card ${f.d.kind}" onclick="switchView('insights')" style="cursor:pointer;">
+      <div class="ins-head"><span class="ins-num">${i+1}</span>
+        <div class="ins-title">${f.d.title(f.ev)}</div>
+        <span class="ex-cost">${num(f.cost)} תלמידים</span>
+        <span class="ins-tag">${f.d.tag}</span></div>
+      <div class="ins-act">
+        <div class="ins-act-h">פעולה עירונית</div>
+        <div class="ins-act-b">${f.d.action(f.ev)}</div>
+      </div>
+    </div>`).join('');
+
+  const admin = (c.cost12 != null && c.cost12 > 0.05) ? `
+    <div class="ins-card admin">
+      <div class="ins-head"><span class="ins-num">◆</span>
+        <div class="ins-title">מחיר המכנה — ${c.cost12.toFixed(1)} נק׳ שאינן פדגוגיה</div>
+        <span class="ex-cost">${num(Math.abs(c.heads12))} תלמידים</span>
+        <span class="ins-tag">אדמיניסטרטיבי</span></div>
+      <div class="ins-body">
+        המצבת של משרד החינוך סופרת <strong>${num(Math.abs(c.heads12))}</strong> בוגרי יב׳ יותר משורות
+        בתי הספר שבגיליון. לכן אותה עיר נמדדת ${ntPc(cityPct(2))} פנימה ו-${ntPc(c.live12)} החוצה —
+        <strong>${c.cost12.toFixed(1)} נקודות</strong> שנעלמות בלי שאף תלמיד השתנה.
+        ${c.gap != null? `זהו חלק מהפער ל-${ntPc(c.tgtPct)}, והחלק הזול ביותר לסגור.` : ''}
+      </div>
+      <div class="ins-act">
+        <div class="ins-act-h">פעולה עירונית</div>
+        <div class="ins-act-b">לאתר אילו בתי ספר נספרים במצבת ואינם בגיליון, ולהשלים אותם.
+          אם הם קיימים בעיר — מרחיבים את הגיליון ולא מתווכחים על המכנה.</div>
+      </div>
+    </div>` : '';
+
+  if(!found.length && !admin) return '';
+  return `<div class="ex-h">החסמים העיקריים</div>${cards}${admin}`;
+}
+
+// ── 3 · היעד ואבני הדרך ─────────────────────────────────────────
+function execGoal(c){
+  if(c.done) return `
+    <div class="card"><div class="card-head"><div>
+      <div class="card-title">היעד — הושג</div>
+      <div class="card-sub">חולון במקום #${c.rank} מבין ${CITIES.length} הרשויות הגדולות.</div>
+    </div></div>
+    <div class="insight"><div class="insight-t">מה עכשיו</div>
+      <div class="insight-b">היעד שהוגדר — כניסה לחמישייה — הושג. כדאי לקבוע סף חדש
+        מול המובילה (${CITIES[0].name}, ${ntPc(CITIES[0].tech)}) ולעדכן את התצוגה.</div></div>
+    </div>`;
+
+  const scale = Math.max(...CITIES.slice(0, RANK_TGT).map(x=> x.tech), c.me.tech) * 1.14;
+  const top   = CITIES.slice(0, RANK_TGT)
+                      .map((x,i)=> ntCityRow(x, i+1, scale, null, false,
+                        i === RANK_TGT-1 ? 'הסף לחמישייה' : '')).join('');
+  const mine  = ntCityRow(c.me, c.rank, scale, null, false, `נתוני ${CITY_YEAR}`);
+
+  // אבני דרך — פריסה לינארית של הפער על פני האופק. השנים נגזרות
+  // מהתקופה המוצגת ולא צרובות.
+  const baseY = (ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year) || 0;
+  const step  = (c.tgtPct - c.live12) / EXEC_SPAN;
+  const miles = Array.from({length:EXEC_SPAN}, (_,i)=>{
+    const pct = c.live12 + step*(i+1);
+    const cnt = Math.ceil(pct/100 * c.den);
+    const w   = Math.max(1.5, Math.min(100, pct/(c.tgtPct*1.14)*100));
+    const last = i === EXEC_SPAN-1;
+    return `
+      <div class="cmp-row">
+        <div class="cmp-lbl">${baseY? hebYearName(baseY+i+1) : 'שנה +'+(i+1)}<small>${baseY? baseY+i+1 : ''}${last? ' · היעד':''}</small></div>
+        <div class="cmp-bars"><div class="cmp-track">
+          <div class="cmp-bar ${last?'new':'old'}" style="width:${w.toFixed(1)}%"></div>
+          <div class="cmp-val ${last?'new':'old'}">${ntPc(pct)}</div>
+        </div></div>
+        <div class="cmp-d"><span class="alt-num">${num(cnt)} זכאים</span></div>
+      </div>`;
+  }).join('');
+
+  return `
+  <div class="card">
+    <div class="card-head"><div>
+      <div class="card-title">היעד — כניסה לחמישייה מבין ${CITIES.length} הגדולות</div>
+      <div class="card-sub">הסף נגזר מהדירוג עצמו: מקום ${RANK_TGT} מוחזק היום בידי
+        ${c.defend.name} עם ${ntPc(c.tgtPct)}. נתוני ${CITY_YEAR}.</div>
+    </div></div>
+    ${top}
+    <div class="ex-gapline">···</div>
+    ${mine}
+    <div class="pot-box">
+      <div class="pot-num">${num(c.gap)}</div>
+      <div class="pot-txt">
+        <strong>תלמידים.</strong> כדי לעבור את ${c.defend.name} נדרשים <strong>${num(c.need)}</strong>
+        זכאי מדד טק בשכבת יב׳ — מול <strong>${num(c.cur12)}</strong> היום, במצבת של ${num(c.den)} בוגרים.
+        זהו כל הפער, ופירוקו למקצועות בבלוק שמתחת.
+      </div>
+    </div>
+    <div class="card-title" style="margin-top:22px;">אבני דרך — ${EXEC_SPAN} שנים</div>
+    ${miles}
+    <div class="cmp-note">הפריסה לינארית: ${((c.tgtPct-c.live12)/EXEC_SPAN).toFixed(1)} נק׳ בשנה,
+      כ-${num(Math.ceil(c.gap/EXEC_SPAN))} זכאים נוספים בכל שנה. נקודת המוצא היא המדד החי
+      (${ntPc(c.live12)}) ולא המספר הרשמי של ${CITY_YEAR} — הם נמדדים באותו מכנה אך בשנים שונות.</div>
+  </div>`;
+}
+
+// ── 4 · תוכנית הגידול לפי מקצוע ─────────────────────────────────
+// שני מסלולים נפרדים, ו**אינם מתחברים בחיבור**: תוספת בפיזיקה או
+// במדמ"ח מייצרת זכאות רק אצל מי שכבר עם 5 יח"ל מתמטיקה ואנגלית.
+function execSubjects(c){
+  if(c.gap == null) return '';
+  const ma5 = citySubjectByGrade(3)[2];
+  const ph  = citySubjectByGrade(2)[2];
+  const cs  = citySubjectByGrade(1)[2];
+  const en5 = citySubjectByGrade(14)[2];
+
+  const pool  = Math.max(0, ma5 - c.cur12);            // יש מתמטיקה, אין זכאות
+  const ratio = ma5? c.cur12 / ma5 : null;             // יחס ההמרה הנצפה
+  const ma5N  = ratio? Math.ceil(c.need / ratio) : null;
+  const mix   = (ph + cs) || 1;
+  const phN   = ph + Math.round(c.gap * (ph/mix));
+  const csN   = cs + Math.round(c.gap * (cs/mix));
+
+  const row = (name, now, need, warn)=>{
+    if(need == null) return `
+      <tr class="ex-warn"><td class="nm">${name}</td><td>${warn||'—'}</td>
+        <td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    const add = Math.max(0, need - now);
+    return `
+      <tr><td class="nm">${name}</td><td>${num(now)}</td><td>${num(need)}</td>
+        <td class="ex-add">+${num(add)}</td>
+        <td>${now? '+'+(add/now*100).toFixed(1)+'%' : '—'}</td>
+        <td>${num(Math.ceil(add/EXEC_SPAN))}</td></tr>`;
+  };
+  const sum = `
+    <tr class="ex-sum"><td class="nm">זכאות למדד טק</td><td>${num(c.cur12)}</td>
+      <td>${num(c.need)}</td><td class="ex-add">+${num(c.gap)}</td>
+      <td>+${(c.gap/c.cur12*100).toFixed(1)}%</td><td>${num(Math.ceil(c.gap/EXEC_SPAN))}</td></tr>`;
+
+  // שורת האנגלית אינה מוזנת כשיש יותר זכאים מלומדי אנגלית — בדיקה
+  // נגזרת ולא הודעה צרובה. §12.3 קבעה שאנגלית חלק מההגדרה, ולכן
+  // השורה הזו היא שהופכת את מאגר הפוטנציאל לחסם עליון.
+  const enBad = en5 < c.cur12;
+
+  return `
+  <details class="card">
+    <summary><span class="ex-cv">◂</span><div>
+      <div class="card-title">תוכנית הגידול לפי מקצוע</div>
+      <div class="card-sub">כמה תלמידים ואיזה אחוז גידול, בכל אחד משלושת המקצועות.</div>
+    </div></summary>
+    <div class="ex-in">
+      <table class="tbl">
+        <thead><tr><th>מקצוע</th><th>היום · יב׳</th><th>נדרש ${(ALLDATA[CURRENT_PERIOD]&&ALLDATA[CURRENT_PERIOD].year)? hebYearName(ALLDATA[CURRENT_PERIOD].year+EXEC_SPAN) : 'ביעד'}</th>
+          <th>תוספת</th><th>גידול</th><th>לשנה</th></tr></thead>
+        <tbody>
+          ${row('מתמטיקה 5 יח״ל', ma5, ma5N)}
+          ${row('פיזיקה 5 יח״ל', ph, phN)}
+          ${row('מדעי המחשב 5 יח״ל', cs, csN)}
+          ${enBad
+            ? row('אנגלית 5 יח״ל', en5, null, `⚠ ${num(en5)} מול ${num(c.cur12)} זכאים — השורה אינה מוזנת`)
+            : row('אנגלית 5 יח״ל', en5, c.need)}
+          ${sum}
+        </tbody>
+      </table>
+
+      <div class="insight"><div class="insight-t">שני מסלולים — ולא לחבר ביניהם</div>
+        <div class="insight-b">
+          <strong>א׳ · המרת הפוטנציאל.</strong> ${num(pool)} תלמידי יב׳ כבר עם 5 יח״ל מתמטיקה
+          ובלי זכאות. סגירת הפער דורשת להמיר <strong>${pool? (c.gap/pool*100).toFixed(0)+'%' : '—'}</strong> מהם —
+          כלומר להוסיף להם פיזיקה או מדעי המחשב. זה המסלול המהיר, והוא פועל על מחזור שכבר בבית הספר.<br>
+          <strong>ב׳ · הרחבת הבסיס.</strong> מתוך לומדי מתמטיקה 5 מגיעים לזכאות
+          <strong>${ratio? (ratio*100).toFixed(1)+'%' : '—'}</strong>. בקצב הזה נדרשים
+          <strong>${ma5N? num(ma5N) : '—'}</strong> לומדי מתמטיקה 5 בשכבה — גיוס שמתחיל היום ב-ט׳ ו-י׳.<br>
+          תוספת בפיזיקה או במדמ״ח מייצרת זכאות <strong>רק</strong> אצל מי שכבר עם מתמטיקה 5
+          ואנגלית 5, ולכן שני המסלולים אינם מתחברים בחיבור.
+        </div></div>
+
+      <div class="cmp-note">
+        <strong>הנחת הפיצול, מוצהרת:</strong> התוספת מתחלקת בין פיזיקה למדמ״ח לפי התמהיל הקיים
+        (${num(ph)}:${num(cs)} ≈ ${(ph/mix*100).toFixed(0)}%:${(cs/mix*100).toFixed(0)}%).
+        <strong>זו החלטת מדיניות ולא נגזרת מהנתונים</strong> — הנתונים אינם קובעים באיזה מקצוע להשקיע.
+        ${enBad? `<br><strong>⚠ שורת אנגלית 5 יח״ל אינה מוזנת בגיליון</strong> — ${num(en5)} לומדים מול
+        ${num(c.cur12)} זכאים, כלומר יותר זכאים מלומדים. ההגדרה כוללת אנגלית (§12.3), ולכן
+        מאגר ${num(pool)} התלמידים הוא <strong>חסם עליון ולא מספר מדויק</strong>: חלק מהם חסרים אנגלית ולא מדע.` : ''}
+      </div>
+    </div>
+  </details>`;
+}
+
+// ── 5 · מי תורם כמה ─────────────────────────────────────────────
+// כאן המכנה חוזר להיות **פנימי** — לבתי ספר אין שורת מצבת, וערבוב
+// מכנים הוא בדיוק מה ש-§3.2 אוסר. היעד מתורגם דרך אותו יחס שמוצג
+// ככרטיס "מחיר המכנה" בתצוגה 9.
+function execSchools(c){
+  if(c.gap == null) return '';
+  const ownPct = cityPct(2);
+  const tgtIn  = (c.onAlt && c.live12) ? c.tgtPct * (ownPct / c.live12) : c.tgtPct;
+
+  const rows = SCHOOLS.filter(s=> hasGrade(s,2) && totalStudents(s,2) > 0)
+    .map(s=>{
+      const st = totalStudents(s,2), tech = totalTech(s,2);
+      return { name:s.name, st, tech, pct: schoolGradePct(s,2), note: badge(s),
+               add: Math.max(0, Math.round(tgtIn/100 * st) - tech) };
+    })
+    .sort((a,b)=> b.add - a.add || b.st - a.st);
+  if(!rows.length) return '';
+
+  const sum   = rows.reduce((a,r)=> a + r.add, 0);
+  const above = rows.filter(r=> r.add === 0).length;
+
+  return `
+  <details class="card">
+    <summary><span class="ex-cv">◂</span><div>
+      <div class="card-title">מי תורם כמה — לפי בית ספר</div>
+      <div class="card-sub">כמה זכאי יב׳ נוספים דרושים בכל בית ספר כדי שיעמוד ביעד העירוני.</div>
+    </div></summary>
+    <div class="ex-in">
+      <table class="tbl">
+        <thead><tr><th>בית ספר</th><th>תלמידי יב׳</th><th>זכאים היום</th>
+          <th>% טק</th><th>נדרש ביעד</th><th>תוספת</th></tr></thead>
+        <tbody>${rows.map(r=>`
+          <tr class="ex-click" onclick="goToDeepDive('${r.name.replace(/'/g,"\\'")}')">
+            <td class="nm">${r.name}${r.note}</td>
+            <td>${num(r.st)}</td><td>${num(r.tech)}</td>
+            <td>${r.pct.toFixed(1)}%</td>
+            <td>${num(Math.round(tgtIn/100 * r.st))}</td>
+            <td class="ex-add">${r.add? '+'+num(r.add) : '✓'}</td>
+          </tr>`).join('')}
+          <tr class="ex-sum"><td class="nm">סך הכל</td>
+            <td>${num(rows.reduce((a,r)=>a+r.st,0))}</td>
+            <td>${num(rows.reduce((a,r)=>a+r.tech,0))}</td>
+            <td>${ownPct.toFixed(1)}%</td><td>—</td>
+            <td class="ex-add">+${num(sum)}</td></tr>
+        </tbody>
+      </table>
+      <div class="cmp-note">
+        <strong>המכנה כאן פנימי, לא מצבת.</strong> לבתי ספר אין שורת מצבת, ולכן היעד תורגם
+        למכנה שלהם: ${ntPc(c.tgtPct)} במצבת ≙ <strong>${ntPc(tgtIn)}</strong> בשורות בתי הספר,
+        לפי אותו יחס שמוצג ככרטיס "מחיר המכנה" בתצוגת חולון–ארצי.<br>
+        <strong>הסכום ${num(sum)} גדול מ-${num(c.gap)} שבכרטיס היעד</strong>, כי
+        ${above? nSchools(above)+' כבר מעל היעד ותורמים 0' : 'אף בית ספר אינו מעל היעד'} —
+        עודף מעל היעד אינו מקזז חוסר במקום אחר. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת.
+        לחיצה על שורה פותחת את ההעמקה לאותו בית ספר.
+      </div>
+    </div>
+  </details>`;
+}
+
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
@@ -4698,6 +5156,7 @@ function switchView(viewId){
     if(grp) grp.classList.add('has-active');
   }
   window.scrollTo(0, 0);
+  if(viewId==='exec') renderExec();
   if(viewId==='overview') renderOverview();
   if(viewId==='subjects') renderSubjects();
   if(viewId==='schools')  renderSchools();
@@ -4762,7 +5221,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v54';
+const BUILD = 'v55';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
