@@ -1102,6 +1102,19 @@ body{
     </div>
 
     <div id="yyBody">
+      <!-- 0 — התפתחות לאורך העשור -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">התפתחות לאורך השנים — שכבת יב׳</div>
+            <div class="card-sub" id="yyDecadeSub">—</div>
+          </div>
+        </div>
+        <div class="chart-box tall"><canvas id="yyDecade"></canvas></div>
+        <div id="yyDecadePills"></div>
+        <div class="cmp-note" id="yyDecadeNote"></div>
+      </div>
+
       <!-- 1 — מדד הטק -->
       <div class="card">
         <div class="card-head">
@@ -1479,13 +1492,40 @@ const CITY_LEADERS = [
   { name:'הרצליה',     tech:22.0 },
 ];
 
-// חולון לאורך העשור — דו"ח המצוינות. שתי נקודות עוגן בלבד;
-// הסדרה השנתית המלאה טרם התקבלה. כשתתקבל — להוסיף איברים כאן.
+// חולון לאורך העשור — דו"ח המצוינות. **הערכים המדויקים בלבד**: אלה
+// שני המספרים שהדו"ח מדפיס בכרטיס חולון (עמ' 66). כאן לא ייכנס אף ערך משוער.
 const HOLON_HIST = {
   tech: [{ y:2014, v: 7.4 }, { y:2024, v:13.7 }],
   ma5:  [{ y:2014, v:10.0 }, { y:2024, v:20.6 }],
   techN:322, ma5N:485          // האשכול יושב ב-CITY_SOCIO בלבד — מקור אמת אחד
 };
+
+// ── ערכי הביניים 2015–2023 — משוערים, מופרדים בכוונה (§12.5) ────
+// הדו"ח אינו מדפיס אותם; הם קיימים בו רק כצורה בגרף (תמונת רסטר 1080×681).
+// חולצו במדידת פיקסלים: זיהוי הרכיב הקשיר הגדול ביותר בכל צבע — מבודד את
+// הקו מתוויות הטקסט ומנקודות הלגנדה — ואז כיול ליניארי של ציר ה-Y.
+// **אימות:** הכיול נעשה על קו ההייטק (7.4→13.7) ונבדק על שתי נקודות מודפסות
+// שלא שימשו לו — מתמטיקה 2014 ו-2024: 9.87 מול 10.0, ו-20.72 מול 20.6.
+// שגיאה ≤0.15 נק'.
+//
+// ⚠ החלטה זו **מחליפה** את הכלל הקודם "לא לאמוד ערכי גרף בעין" (§11, 16.08.2026).
+// הכלל ההוא הניח דיוק של ±0.3 נק'; המדידה בפועל מדויקת פי שניים ומאומתת מול
+// נקודות מוחזקות. המשתמש אישר במפורש. **להחזרה:** למחוק את הקבוע הזה —
+// `holonSeries()` תיפול חזרה לשתי נקודות העוגן בלבד, בלי שינוי נוסף בקוד.
+const HOLON_MID = {
+  years:[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+  tech: [ 7.9,  9.6, 10.6, 12.3, 12.0, 13.2, 14.9, 13.5, 13.4],
+  ma5:  [10.6, 13.5, 17.0, 18.4, 17.5, 18.1, 20.7, 20.8, 21.2]
+};
+
+// הסדרה המלאה: עוגנים מדויקים + ביניים משוערים, ממוזגים לפי שנה.
+// מחזירה [{y, v, exact}] — הדגל מאפשר להציג את ההבחנה במקום להחביא אותה.
+function holonSeries(metric){
+  const out = HOLON_HIST[metric].map(p=> ({ y:p.y, v:p.v, exact:true }));
+  if(typeof HOLON_MID !== 'undefined' && HOLON_MID[metric])
+    HOLON_MID.years.forEach((y,i)=> out.push({ y, v:HOLON_MID[metric][i], exact:false }));
+  return out.sort((a,b)=> a.y-b.y);
+}
 
 // ── אשכול חברתי-כלכלי (למ"ס) ────────────────────────────────────
 // המקור: דף הרשות בדו"ח המצוינות — הספרה הגדולה בתחתית כל כרטיס.
@@ -3192,10 +3232,147 @@ function renderTrends(){
     `<strong>${A.label}</strong> מול <strong>${B.label}</strong>` +
     (exact ? '' : ' <span class="alt-num">(אין שתי דגימות סוף-שנה — מוצגות שתי הדגימות האחרונות)</span>');
 
+  renderYYDecade(A, B);
   renderYYIndex(A, B);
   renderYYSubjects(A, B);
   renderYYSchools(A, B);
   renderYYInsights(A, B);
+}
+
+// ─── 0. התפתחות לאורך העשור ─────────────────────────────────────
+// ממשיך את סדרת דו"ח המצוינות בנתוני הגיליון. **שכבת יב׳ בלבד** —
+// המדד שבדו"ח מודד בוגרים, ולכן זו השכבה היחידה בת-השוואה.
+function yyGrade12(key){
+  return withPeriod(key, ()=>{
+    let tot=0, tech=0, ma5=0, gTech=0, gMa5=0;
+    SCHOOLS.forEach(s=>{ const r = s.grades['יב']; if(!r) return;
+      tot += r[0]; tech += r[4]; ma5 += r[3]; gTech += r[7]; gMa5 += r[9]; });
+    if(!tot) return null;
+    return { tot, techN:tech, ma5N:ma5, tech: tech/tot*100, ma5: ma5/tot*100,
+             girlsTech: tech? gTech/tech*100 : null, girlsMa5: ma5? gMa5/ma5*100 : null };
+  });
+}
+
+function renderYYDecade(A, B){
+  destroyChart('yyDecade');
+  const sT = holonSeries('tech'), sM = holonSeries('ma5');
+  const nR = sT.length;                                   // אינדקס התפר
+  const ours = [A, B].map(p=> ({ p, g: yyGrade12(p.key) })).filter(o=> o.g);
+
+  const labels = sT.map(p=> String(p.y)).concat(ours.map(o=> o.p.label.replace(/\s*\(.*\)/,'')));
+  const techData = sT.map(p=> p.v).concat(ours.map(o=> o.g.tech));
+  const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> o.g.ma5));
+  const exact    = sT.map(p=> p.exact).concat(ours.map(()=> true));
+  const TEAL = '#16b3b3', GOLD = '#c8952f';
+
+  const line = (label, data, col) => ({
+    label, data, borderColor: col, backgroundColor: col,
+    borderWidth: 3.5, tension: 0.25,
+    pointRadius: ctx=> ctx.dataIndex >= nR ? 7 : 5,
+    pointStyle: ctx=> ctx.dataIndex >= nR ? 'rectRot' : 'circle',
+    pointBackgroundColor: ctx=> ctx.dataIndex >= nR ? col : '#fff',
+    pointBorderColor: col, pointBorderWidth: 2.5, fill: false, spanGaps: false,
+    segment: { borderDash: ctx=> ctx.p0DataIndex >= nR-1 ? [7,5] : undefined },
+    datalabels: {
+      display: ctx=> [0, nR-1, ctx.dataset.data.length-1].includes(ctx.dataIndex),
+      anchor:'end', align:'top', offset: 7, color: col,
+      font:{family:'Heebo', size:13, weight:'900'},
+      formatter: v=> v==null? '' : v.toFixed(1)+'%'
+    }
+  });
+  const natDot = (label, val, col) => ({
+    label, data: Array(nR-1).fill(null).concat([val], Array(labels.length-nR).fill(null)),
+    borderColor: col, backgroundColor: col, showLine: false,
+    pointRadius: 7, pointStyle:'circle', pointBorderColor:'#fff', pointBorderWidth: 2,
+    datalabels:{ anchor:'end', align:'bottom', offset: 6, color: col,
+      font:{family:'Heebo', size:11, weight:'700'},
+      formatter: v=> v==null?'':'ארצי '+v.toFixed(1)+'%' }
+  });
+
+  const CITY_Y = NAT.years.indexOf(2024) >= 0 ? 2024 : NAT.years[NAT.years.length-1];
+  const natTech = NAT.tech[NAT.years.indexOf(CITY_Y)], natMa5 = NAT.ma5[NAT.years.indexOf(CITY_Y)];
+
+  const seam = {
+    id:'yySeam',
+    beforeDatasetsDraw(chart){
+      const {ctx, chartArea:a, scales:{x}} = chart;
+      if(!a || !ours.length) return;
+      const xs = (x.getPixelForValue(nR-1) + x.getPixelForValue(nR)) / 2;
+      ctx.save();
+      ctx.fillStyle = 'rgba(106,62,156,0.055)';
+      ctx.fillRect(xs, a.top, a.right - xs, a.bottom - a.top);
+      ctx.strokeStyle = '#9aa0a6'; ctx.lineWidth = 2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(xs, a.top); ctx.lineTo(xs, a.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#5f6368'; ctx.font = '700 11px Heebo'; ctx.textAlign = 'center';
+      ctx.fillText('נתוני הגיליון העירוני', (xs + a.right)/2, a.bottom - 8);
+      ctx.restore();
+    }
+  };
+
+  charts.yyDecade = new Chart(document.getElementById('yyDecade'), {
+    type:'line',
+    data:{ labels, datasets:[
+      line('בגרות הייטק', techData, TEAL),
+      line('מתמטיקה 5 יח״ל', ma5Data, GOLD),
+      natDot('ארצי — הייטק', natTech, TEAL),
+      natDot('ארצי — מתמטיקה', natMa5, GOLD)
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ top:34, right:26, left:26 } },
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ position:'top', align:'end',
+          labels:{ font:HF, color:'#5f6368', boxWidth:14, padding:10,
+            filter: i=> !i.text.startsWith('ארצי —') } },
+        tooltip:{ mode:'index', intersect:false, callbacks:{
+          title: items=> labels[items[0].dataIndex] +
+            (items[0].dataIndex >= nR ? ' — נתוני הגיליון' : ' — דו״ח המצוינות'),
+          label: ctx=>{
+            if(ctx.parsed.y == null) return null;
+            let s = ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
+            if(!ctx.dataset.label.startsWith('ארצי') && !exact[ctx.dataIndex]) s += '  (מדידה מהגרף, ±0.2)';
+            return s;
+          } } }
+      },
+      scales:{
+        x:{ ticks:{ font:hf2(), color:'#5f6368' }, grid:{ display:false } },
+        y:{ beginAtZero:true, ticks:{ callback:v=> v+'%', font:HF, color:'#5f6368' }, grid:{ color:GC } }
+      }
+    },
+    plugins:[seam]
+  });
+
+  const last = ours.length ? ours[ours.length-1] : null;
+  document.getElementById('yyDecadeSub').innerHTML =
+    `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק. ` +
+    `<strong>2014–2024 מדו״ח המצוינות של ישראל</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — ` +
+    `שני מקורות, ולכן התפר מסומן.`;
+
+  const pill = (lbl, val, ref, col) =>
+    `<div class="meta-pill"><span style="color:var(--muted);">${lbl}</span>
+      <strong style="color:${col};">${val}</strong>
+      ${ref? `<span class="alt-num">(תשפ״ד ${ref})</span>` : ''}</div>`;
+  document.getElementById('yyDecadePills').innerHTML = last ? `
+    <div class="page-meta" style="margin-top:16px;justify-content:flex-start;">
+      ${pill('זכאי בגרוטק יב׳', last.g.techN.toLocaleString('he-IL'), HOLON_HIST.techN, TEAL)}
+      ${pill('♀ בנות בבגרוטק', last.g.girlsTech==null?'—':last.g.girlsTech.toFixed(1)+'%',
+             (typeof NAT_GIRLS_2024!=='undefined'? '41.6%' : null), '#ad1457')}
+      ${pill('לומדי מתמטיקה 5 יב׳', last.g.ma5N.toLocaleString('he-IL'), HOLON_HIST.ma5N, GOLD)}
+      ${pill('♀ בנות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
+    </div>` : '';
+
+  const anchor = sT[sT.length-1].v;
+  const jump = last ? last.g.tech - anchor : null;
+  const estN = sT.filter(p=> !p.exact).length;
+  document.getElementById('yyDecadeNote').innerHTML =
+    `<strong>איך לקרוא את התפר.</strong> עד ${sT[sT.length-1].y} המקור הוא דו״ח המצוינות; משם הקו ממשיך מהגיליון העירוני ולכן מקווקו. ` +
+    `ההגדרה בדו״ח דורשת <strong>גם 5 יח״ל אנגלית</strong>, וייתכן ששורת <strong>זכאות למדד טק</strong> שבגיליון אינה (§12.3). ` +
+    (jump != null && Math.abs(jump) > 1.5
+      ? `<strong style="color:#a04a10;">הפרש של ${jump>0?'+':'−'}${Math.abs(jump).toFixed(1)} נק׳ בדיוק בנקודת החלפת המקור סביר יותר כהפרש הגדרה מאשר כשינוי אמיתי בשנה אחת</strong> — לא להציג אותו כהישג עד לאימות. `
+      : '') +
+    (estN ? `${estN} ערכי הביניים (${sT.filter(p=>!p.exact)[0].y}–${sT.filter(p=>!p.exact).slice(-1)[0].y}) אינם מודפסים בדו״ח ונמדדו מהגרף שבו (±0.2 נק׳, §12.5); ${sT[0].y} ו-${sT[sT.length-1].y} מודפסים ומדויקים.` : '');
 }
 
 // ─── 1. מדד הטק ─────────────────────────────────────────────────
@@ -3977,7 +4154,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v22';
+const BUILD = 'v23';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
