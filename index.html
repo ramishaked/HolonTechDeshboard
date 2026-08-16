@@ -399,34 +399,39 @@ body{
   color:#5f6368;white-space:nowrap;}
 .cmp-note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;}
 /* ─── אפקט המשפך (תצוגה 8) ───────────────────────────────────────
-   מוט אחד לכל תקופה = כל לומדי מתמטיקה 5 ביב׳, חתוך לשניים:
-   מי שהמשיך לפיזיקה/מדמ״ח (= זכאי המדד) ומי שעצר במתמטיקה.
-   הצבעים אינם שרירותיים — הם **אותם צבעים בדיוק** של שני הקווים בגרף
-   שמעל: טורקיז = בגרות הייטק, זהוב = מתמטיקה 5. */
-.fnl{margin:4px 0 14px;}
-.fnl-h{font-size:12.5px;font-weight:900;color:var(--primary-d);margin-bottom:2px;}
-.fnl-s{font-size:11.5px;color:var(--muted);margin-bottom:11px;line-height:1.5;}
-.fnl-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
-.fnl-per{width:74px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--text);}
-/* המכל הוא זה שגמיש; המוט עצמו נושא את הרוחב היחסי — אחרת `flex:1`
-   דורס את ה-width ושתי התקופות יוצאות באותו אורך, כלומר בלי הסיפור */
+   שני שלבים לכל תקופה, **שניהם על סקאלת השכבה הגדולה ביותר**:
+     1. שכבת יב׳ = המכנה (אפור)
+     2. לומדי מתמטיקה 5 = המונה הפוטנציאלי, חתוך ל"המשיכו" (טורקיז,
+        וזה בדיוק מונה המדד) ול"עצרו במתמטיקה" (זהוב).
+   מכאן ש**האחוז שבכותרת הוא ממש היחס בין הטורקיז לאפור** — הירידה
+   נראית כשהאפור גדל והטורקיז לא. טורקיז וזהוב הם צבעי שני הקווים בגרף
+   שמעל, כדי שהמשפך ייקרא כהמשך שלו. */
+.fnl{margin:2px 0 12px;}
+.fnl-s{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.fnl-g{margin-bottom:13px;}
+.fnl-head{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;}
+.fnl-per{font-size:12.5px;font-weight:900;color:var(--text);}
+.fnl-pct{font-size:15px;font-weight:900;color:#0e8f8f;}
+.fnl-d{font-size:11px;font-weight:700;}
+.fnl-line{display:flex;align-items:center;gap:9px;margin-bottom:4px;}
+.fnl-cap{width:88px;flex-shrink:0;font-size:11px;color:var(--muted);}
 .fnl-bars{flex:1;min-width:0;}
-.fnl-track{display:flex;height:30px;border-radius:0 6px 6px 0;overflow:hidden;}
+.fnl-track{display:flex;height:22px;border-radius:0 5px 5px 0;overflow:hidden;transition:width .3s;}
+.fnl-track.grade{background:#ddd6e6;}
 .fnl-seg{display:flex;align-items:center;justify-content:center;min-width:2px;
-  font-size:12px;font-weight:900;color:#fff;white-space:nowrap;transition:width .3s;}
+  font-size:11.5px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;}
 .fnl-seg.pass{background:#16b3b3;}
 .fnl-seg.stop{background:#c8952f;}
-.fnl-tot{width:96px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--muted);text-align:left;}
-.fnl-key{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);
-  margin-top:2px;margin-inline-start:84px;}   /* מיושר לתחילת המוטות, לא לקצה */
+.fnl-val{width:52px;flex-shrink:0;font-size:12px;font-weight:900;color:var(--text);}
+.fnl-key{display:flex;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+  margin-top:2px;margin-inline-start:97px;}
 .fnl-key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:5px;vertical-align:0;}
-/* פס המכנה — גורם נפרד לגמרי, ולכן מופרד גם ויזואלית */
-.fnl-den{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:11px;
+.fnl-den{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:11px;
   border-top:1px dashed var(--border);}
-.fnl-tile{flex:1;min-width:150px;background:rgba(255,255,255,0.75);border-radius:9px;padding:8px 11px;}
+.fnl-tile{flex:1;min-width:140px;background:rgba(255,255,255,0.75);border-radius:9px;padding:7px 11px;}
 .fnl-tile .l{font-size:10.5px;color:var(--muted);}
-.fnl-tile .v{font-size:16px;font-weight:900;color:var(--primary-d);margin-top:2px;}
-.fnl-tile .s{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
+.fnl-tile .v{font-size:15px;font-weight:900;color:var(--primary-d);margin-top:1px;}
+.fnl-tile .s{font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.4;}
 /* פילוח המקצועות בהעמקה — מוטות HTML על גבי רכיב ההשוואה, לא קנבס */
 .sj-wrap{display:flex;flex-direction:column;justify-content:center;height:100%;}
 .sj-head{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;}
@@ -3798,63 +3803,68 @@ function renderYYDecade(A, B){
       const ifSame = denB ? a.techN / denB * 100 : null;      // אילו מספר הזכאים לא היה זז
       const byDenom = ifSame == null ? null : tOf(a) - ifSame;
 
-      let body =
-        `<strong>מתמטיקה 5 יח״ל היא תנאי הכרחי למדד — אבל לא מספיק.</strong> ` +
-        `המדד דורש גם <strong>5 יח״ל פיזיקה או מדעי המחשב</strong>. ` +
-        `בשכבת יב׳ נוספו <strong>${sg(addMa5)} תלמידי מתמטיקה 5</strong>, ` +
-        `אך בפיזיקה ${sg(addPh)} ובמדעי המחשב ${sg(addCs)} בלבד — ` +
-        `כלומר כמעט כל התוספת <strong>עצרה במתמטיקה ולא המשיכה למקצוע המדעי</strong>, ולכן אינה נספרת במדד.` +
-        (gapA > 0 && gapB > 0
-          ? ` הפער בין לומדי מתמטיקה 5 לזכאי המדד גדל מ-<strong>${n(gapA)}</strong> ל-<strong>${n(gapB)}</strong> תלמידים.` : '');
+      // המלל מצטמצם למשפט אחד: המספרים כבר על המסך, והמשתמש ביקש פחות טקסט.
+      // מה שנשאר הוא **הכלל** שאי אפשר להסיק מהמוטות — שמתמטיקה היא תנאי
+      // הכרחי ולא מספיק — ולא חזרה על הספרות.
+      const body =
+        `<strong>מתמטיקה 5 יח״ל היא תנאי הכרחי למדד, לא מספיק</strong> — צריך גם ` +
+        `5 יח״ל פיזיקה או מדעי המחשב. התוספת עצרה במתמטיקה, ובמקביל השכבה גדלה: ` +
+        `שני גורמים נפרדים שמושכים את האחוז למטה.`;
 
-      if(byDenom != null && byDenom > 0.3)
-        // דרך `den` ולא `students`: כשהמתג על מצבת, המשפט חייב לצטט את המכנה
-        // שממנו חושבו האחוזים שמעליו — אחרת ההסבר סותר את הקו שהוא מסביר
-        body += `<br><strong>וגורם שני, נפרד: השכבה עצמה גדלה</strong> — מ-${n(den(a))} ל-${n(den(b))} תלמידי יב׳. ` +
-          `מספר הזכאים ${dTechN >= 0 ? 'עלה ב-' : 'ירד ב-'}${n(Math.abs(dTechN))} בלבד (${n(a.techN)}→${n(b.techN)}), ` +
-          `אבל האחוז ירד ${Math.abs(dTech).toFixed(1)} נק׳ — מתוכן <strong>${byDenom.toFixed(1)} נק׳ הן גידול המכנה בלבד</strong>. ` +
-          `גם אילו נשמר מספר הזכאים במדויק, המדד היה יורד ל-${ifSame.toFixed(1)}%.`;
-
-      // ── ההמחשה: משפך בשני שלבים, מוט לכל תקופה ──────────────────
-      // המוט כולו = לומדי מתמטיקה 5 ביב׳. החלק הטורקיז = מי שהמשיך
-      // לפיזיקה/מדמ״ח ולכן נספר במדד; הזהוב = מי שעצר במתמטיקה.
-      // שתי התקופות על **אותה סקאלה**, אחרת הגידול במשפך נעלם.
-      const mx = Math.max(a.ma5N, b.ma5N, 1);
-      const w  = v=> Math.max(1.5, v / mx * 100);
-      const fnlRow = (label, g)=>{
+      // ── ההמחשה: שני שלבים לכל תקופה, על סקאלה משותפת ─────────────
+      // האפור הוא המכנה (שכבת יב׳) והטורקיז הוא המונה — ולכן היחס ביניהם
+      // **הוא** האחוז שבכותרת. כשהאפור גדל והטורקיז לא, הירידה נראית לעין
+      // בלי להסביר אותה במילים. הזהוב מראה לאן הלכה תוספת המתמטיקה.
+      const mx = Math.max(den(a), den(b), 1);
+      const w  = v=> Math.max(1.2, v / mx * 100);
+      const grp = (label, g, pct, delta)=>{
         const stop = Math.max(0, g.ma5N - g.techN);
-        const pct  = g.ma5N ? stop / g.ma5N * 100 : 0;
-        return `<div class="fnl-row">
-          <div class="fnl-per">${label}</div>
-          <div class="fnl-bars"><div class="fnl-track" style="width:${w(g.ma5N).toFixed(1)}%;">
-            <div class="fnl-seg pass" style="width:${g.ma5N? (g.techN/g.ma5N*100).toFixed(1):0}%">${n(g.techN)}</div>
-            <div class="fnl-seg stop" style="width:${pct.toFixed(1)}%">${stop>0? n(stop):''}</div>
-          </div></div>
-          <div class="fnl-tot">${n(g.ma5N)} מתמטיקה 5</div>
+        const dTxt = delta == null ? '' :
+          `<span class="fnl-d" style="color:${delta<0?'#c5221f':'#137333'};">
+             ${delta<0?'▼':'▲'} ${Math.abs(delta).toFixed(1)} נק׳</span>`;
+        return `<div class="fnl-g">
+          <div class="fnl-head"><span class="fnl-per">${label}</span>
+            <span class="fnl-pct">${pct==null?'—':pct.toFixed(1)+'%'}</span>${dTxt}</div>
+          <div class="fnl-line">
+            <div class="fnl-cap">שכבת יב׳</div>
+            <div class="fnl-bars"><div class="fnl-track grade" style="width:${w(den(g)).toFixed(1)}%"></div></div>
+            <div class="fnl-val">${n(den(g))}</div>
+          </div>
+          <div class="fnl-line">
+            <div class="fnl-cap">מתמטיקה 5</div>
+            <div class="fnl-bars"><div class="fnl-track" style="width:${w(g.ma5N).toFixed(1)}%">
+              <div class="fnl-seg pass" style="width:${g.ma5N? (g.techN/g.ma5N*100).toFixed(1):0}%">${n(g.techN)}</div>
+              <div class="fnl-seg stop" style="width:${g.ma5N? (stop/g.ma5N*100).toFixed(1):0}%">${stop>0? n(stop):''}</div>
+            </div></div>
+            <div class="fnl-val">${n(g.ma5N)}</div>
+          </div>
         </div>`;
       };
-      const denA = den(a), denB2 = den(b);
       const fnl = `<div class="fnl">
-        <div class="fnl-h">אפקט המשפך</div>
-        <div class="fnl-s">כל מוט = לומדי מתמטיקה 5 יח״ל בשכבת יב׳. המוט גדל, אבל
-          כמעט כל התוספת נשארה בחלק שלא המשיך למקצוע מדעי — ולכן אינה נספרת במדד.</div>
-        ${fnlRow(A.label.replace(/\s*\(.*\)/,''), a)}
-        ${fnlRow(B.label.replace(/\s*\(.*\)/,''), b)}
+        <div class="fnl-s">המדד = <b style="color:#0e8f8f;">טורקיז</b> חלקי <b style="color:#7a6d92;">אפור</b>.
+          האפור גדל, הטורקיז לא — וזה כל הסיפור.</div>
+        ${grp(A.label.replace(/\s*\(.*\)/,''), a, tOf(a), null)}
+        ${grp(B.label.replace(/\s*\(.*\)/,''), b, tOf(b), dTech)}
         <div class="fnl-key">
           <span><i style="background:#16b3b3;"></i>המשיכו לפיזיקה/מדמ״ח = זכאי המדד</span>
           <span><i style="background:#c8952f;"></i>עצרו במתמטיקה</span>
+          <span><i style="background:#ddd6e6;"></i>שאר השכבה</span>
         </div>
-        ${(byDenom != null && byDenom > 0.3) ? `<div class="fnl-den">
+        <div class="fnl-den">
+          <div class="fnl-tile"><div class="l">תוספת המתמטיקה</div>
+            <div class="v">${sg(addMa5)}</div>
+            <div class="s">ומתוכה לפיזיקה ${sg(addPh)} · למדמ״ח ${sg(addCs)}</div></div>
           <div class="fnl-tile"><div class="l">עצרו במתמטיקה</div>
             <div class="v">${n(gapA)} → ${n(gapB)}</div>
-            <div class="s">תלמידים שעברו את המחסום הקשה ולא המשיכו הלאה</div></div>
-          <div class="fnl-tile"><div class="l">שכבת יב׳ (המכנה)</div>
-            <div class="v">${n(denA)} → ${n(denB2)}</div>
-            <div class="s">אותו מספר זכאים בשכבה גדולה יותר = אחוז נמוך יותר</div></div>
-          <div class="fnl-tile"><div class="l">מתוך ${Math.abs(dTech).toFixed(1)} נק׳ הירידה</div>
-            <div class="v">${byDenom.toFixed(1)} נק׳ מכנה</div>
-            <div class="s">${Math.max(0, Math.abs(dTech) - byDenom).toFixed(1)} נק׳ בלבד הן שינוי במספר הזכאים</div></div>
-        </div>` : ''}
+            <div class="s">עברו את המחסום הקשה ולא המשיכו</div></div>
+          <div class="fnl-tile"><div class="l">המכנה — שכבת יב׳</div>
+            <div class="v">${sg(den(b)-den(a))}</div>
+            <div class="s">${n(den(a))} → ${n(den(b))} תלמידים</div></div>
+          ${(byDenom != null && byDenom > 0.3) ? `<div class="fnl-tile">
+            <div class="l">פירוק ${Math.abs(dTech).toFixed(1)} נק׳ הירידה</div>
+            <div class="v">${byDenom.toFixed(1)} מכנה · ${Math.max(0, Math.abs(dTech)-byDenom).toFixed(1)} מונה</div>
+            <div class="s">בלי שינוי במספר הזכאים המדד היה ${ifSame.toFixed(1)}%</div></div>` : ''}
+        </div>
       </div>`;
 
       dvBox.querySelector('.insight-t').innerHTML =
@@ -4681,7 +4691,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v50';
+const BUILD = 'v51';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
