@@ -417,7 +417,9 @@ body{
 .fnl-cap{width:88px;flex-shrink:0;font-size:11px;color:var(--muted);}
 .fnl-bars{flex:1;min-width:0;}
 .fnl-track{display:flex;height:22px;border-radius:0 5px 5px 0;overflow:hidden;transition:width .3s;}
-.fnl-track.grade{background:#ddd6e6;}
+/* המכנה בסגול בינוני ולא באפור בהיר: על רקע הכרטיס (`--primary-l`) שני
+   גוונים בהירים נבלעו זה בזה, והגידול במכנה — חצי מהסיפור — לא נראה */
+.fnl-track.grade{background:#9d8fbe;}
 .fnl-seg{display:flex;align-items:center;justify-content:center;min-width:2px;
   font-size:11.5px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;}
 .fnl-seg.pass{background:#16b3b3;}
@@ -948,7 +950,7 @@ body{
     <div class="page-head">
       <div>
         <h1 class="page-title">מקצועות לאורך השכבות</h1>
-        <p class="page-sub">התפתחות מספר התלמידים בכל מקצוע לאורך י׳–יב׳ — תמונה עירונית כוללת</p>
+        <p class="page-sub">תמונת חתך של שלוש השכבות בתקופת הדגימה הנבחרת — כמה לומדים כל מקצוע ב-י׳, ב-יא׳ וב-יב׳. <strong>אין כאן מעקב אחרי מחזור לאורך זמן</strong>; להתפתחות בין שנים ראה "התפתחות המדד".</p>
       </div>
     </div>
 
@@ -975,8 +977,8 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">התפתחות מקצועות לפי שכבה</div>
-          <div class="card-sub">מדד הטק (סגול) לצד המקצועות שמרכיבים אותו — מספרים מוחלטים, י׳–יב׳</div>
+          <div class="card-title">המקצועות לפי שכבה</div>
+          <div class="card-sub">מדד הטק (סגול) לצד המקצועות שמרכיבים אותו — מספרים מוחלטים, שלוש השכבות באותה דגימה</div>
         </div>
       </div>
       <div class="chart-box tall">
@@ -992,8 +994,8 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">משפך המגמה לפי מקצוע</div>
-          <div class="card-sub">מספר הלומדים בכל שכבה — ככל שהבר מצטמצם, כך פחות תלמידים ממשיכים במקצוע</div>
+          <div class="card-title">מ-י׳ ל-יב׳ לפי מקצוע</div>
+          <div class="card-sub">כמה לומדים את המקצוע בכל שכבה, באותה שנה. בר קצר יותר ב-יב׳ = שכבה בוגרת עם פחות לומדים, לא נשירה שנמדדה על אותם תלמידים.</div>
         </div>
       </div>
       <div id="funnelBox"></div>
@@ -2091,10 +2093,17 @@ function renderSubjects(){
   document.getElementById('csTotal').textContent = cs.reduce((a,b)=>a+b,0);
   document.getElementById('phTotal').textContent = ph.reduce((a,b)=>a+b,0);
   document.getElementById('maTotal').textContent = ma.reduce((a,b)=>a+b,0);
-  const d = (a)=> a[0]? ((a[0]-a[2])/a[0]*100).toFixed(1) : '—';   // נשירה י׳→יב׳
-  document.getElementById('csTrend').textContent = `מגמה י׳→יב׳: ${d(cs)}%`;
-  document.getElementById('phTrend').textContent = `מגמה י׳→יב׳: ${d(ph)}%`;
-  document.getElementById('maTrend').textContent = `מגמה י׳→יב׳: ${d(ma)}%`;
+  // המגמה מחושבת על **אחוזים** ולא על מספרים — אותה הגדרה בדיוק שבה משתמשים
+  // ה-KPI העירוני ו-`schoolDropPct`. על מספרים היא סופגת גם את ההפרש בגודל
+  // השכבות, וזו בדיוק ההטיה שכרטיס "אפקט המשפך" נועד להפריד. `citySubjPctAtGrade`
+  // עובדת על אינדקס ALL_GRADES: 3=י׳, 5=יב׳.
+  const d = (idx)=>{
+    const a = citySubjPctAtGrade(3, idx), c = citySubjPctAtGrade(5, idx);
+    return (a && c) ? ((a - c) / a * 100).toFixed(1) : '—';
+  };
+  document.getElementById('csTrend').textContent = `בין שכבות י׳→יב׳: ${d(1)}%`;
+  document.getElementById('phTrend').textContent = `בין שכבות י׳→יב׳: ${d(2)}%`;
+  document.getElementById('maTrend').textContent = `בין שכבות י׳→יב׳: ${d(3)}%`;
 
   destroyChart('subjectsChart');
   const htByGrade = GRADES.map((_,gi)=> cityTotal(gi));   // זכאי בגרוטק — מדד הטק
@@ -2132,15 +2141,15 @@ function renderSubjects(){
   });
 
   const drops=[
-    {name:'מדעי המחשב', drop:parseFloat(d(cs))},
-    {name:'פיזיקה', drop:parseFloat(d(ph))},
-    {name:'מתמטיקה 5 יח"ל', drop:parseFloat(d(ma))}
+    {name:'מדעי המחשב', drop:parseFloat(d(1))},
+    {name:'פיזיקה', drop:parseFloat(d(2))},
+    {name:'מתמטיקה 5 יח"ל', drop:parseFloat(d(3))}
   ].filter(x=>!isNaN(x.drop)).sort((a,b)=> b.drop-a.drop);
   if(drops.length){
     const w=drops[0];
     document.getElementById('insightSubjects').innerHTML = `
-      <div class="insight-t">${w.name} — המגמה החדה ביותר</div>
-      <div class="insight-b">מבין שלושת המקצועות, ${w.name} מציג את הירידה הגבוהה ביותר מ-י׳ ל-יב׳
+      <div class="insight-t">${w.name} — הפער החד ביותר בין השכבות</div>
+      <div class="insight-b">מבין שלושת המקצועות, ${w.name} מציג את הפער הגדול ביותר בין י׳ ל-יב׳ באותה דגימה
         (<strong>${w.drop.toFixed(1)}%</strong>). שימו לב לפער המגדרי: בבתי ספר לבנות הפיזיקה כמעט נעלמת לטובת מדעי המחשב.</div>`;
   }
 
@@ -3874,6 +3883,9 @@ function renderYYDecade(A, B){
       // האפור הוא המכנה (שכבת יב׳) והטורקיז הוא המונה — ולכן היחס ביניהם
       // **הוא** האחוז שבכותרת. כשהאפור גדל והטורקיז לא, הירידה נראית לעין
       // בלי להסביר אותה במילים. הזהוב מראה לאן הלכה תוספת המתמטיקה.
+      // המכנה כאן הוא זה שהמתג בחר, ולכן הוא שונה מהמספר שבתצוגות אחרות
+      // (2,321 מול 2,112). בלי לומר זאת, ההפרש נקרא כסתירה.
+      const denLbl = onMatz ? 'מצבת' : 'סה״כ עירוני';
       const mx = Math.max(den(a), den(b), 1);
       const w  = v=> Math.max(1.2, v / mx * 100);
       const grp = (label, g, pct, delta)=>{
@@ -3885,7 +3897,7 @@ function renderYYDecade(A, B){
           <div class="fnl-head"><span class="fnl-per">${label}</span>
             <span class="fnl-pct">${pct==null?'—':pct.toFixed(1)+'%'}</span>${dTxt}</div>
           <div class="fnl-line">
-            <div class="fnl-cap">שכבת יב׳</div>
+            <div class="fnl-cap">שכבת יב׳ <span style="opacity:.75;">(${denLbl})</span></div>
             <div class="fnl-bars"><div class="fnl-track grade" style="width:${w(den(g)).toFixed(1)}%"></div></div>
             <div class="fnl-val">${n(den(g))}</div>
           </div>
@@ -3900,14 +3912,14 @@ function renderYYDecade(A, B){
         </div>`;
       };
       const fnl = `<div class="fnl">
-        <div class="fnl-s">המדד = <b style="color:#0e8f8f;">טורקיז</b> חלקי <b style="color:#7a6d92;">אפור</b>.
-          האפור גדל, הטורקיז לא — וזה כל הסיפור.</div>
+        <div class="fnl-s">המדד = <b style="color:#0e8f8f;">הקטע הטורקיז</b> חלקי
+          <b style="color:#6f5f95;">המוט העליון</b>. העליון גדל, הטורקיז לא — וזה כל הסיפור.</div>
         ${grp(A.label.replace(/\s*\(.*\)/,''), a, tOf(a), null)}
         ${grp(B.label.replace(/\s*\(.*\)/,''), b, tOf(b), dTech)}
         <div class="fnl-key">
           <span><i style="background:#16b3b3;"></i>המשיכו לפיזיקה/מדמ״ח = זכאי המדד</span>
           <span><i style="background:#c8952f;"></i>עצרו במתמטיקה</span>
-          <span><i style="background:#ddd6e6;"></i>שאר השכבה</span>
+          <span><i style="background:#9d8fbe;"></i>שאר השכבה</span>
         </div>
         <div class="fnl-den">
           <div class="fnl-tile"><div class="l">תוספת המתמטיקה</div>
@@ -4750,7 +4762,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v53';
+const BUILD = 'v54';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
