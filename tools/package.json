@@ -1,0 +1,14 @@
+{
+  "name": "holon-dashboard-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "כלי אימות מקומיים לדשבורד. אינם חלק מהאפליקציה המופצת.",
+  "scripts": {
+    "verify": "node verify.mjs",
+    "syntax": "node verify.mjs --syntax"
+  },
+  "dependencies": {
+    "playwright-core": "^1.56.0"
+  }
+}
