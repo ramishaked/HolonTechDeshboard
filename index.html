@@ -734,7 +734,7 @@ body{
         <div class="meta-pill"><strong id="metaSchools">—</strong> בתי ספר <i class="ti" data-tip="כל בתי הספר בגיליון. המדד בכל שכבה מחושב על כל בית ספר שיש לו נתונים באותה שכבה. דירוג בין בתי ספר ונשירה מחושבים רק על בעלי י׳–יב׳ מלאים.">i</i></div>
         <div class="meta-pill"><strong id="metaTotal">—</strong> תלמידי טק <i class="ti" data-tip="סך זכאי בגרוטק בשכבות י׳–יב׳ בכל בתי הספר, כולל בעלי נתונים חלקיים.">i</i></div>
         <div class="meta-pill">ארצי <strong>11.6%</strong> <i class="ti" data-tip="שיעור הזכאות הארצי למסלול ההייטק (5 יח״ל מתמ׳+אנג׳+פיזיקה/מדמ״ח), משה״ח, מחזור 2025.">i</i></div>
-        <div class="meta-pill" style="background:#fce4ec;color:#ad1457;border-color:#f8bbd0;cursor:pointer;" onclick="switchView('gender')">♀ ייצוג בנות <strong id="metaGirls">—</strong> <i class="ti" data-tip="% בנות בקרב לומדי הבגרוטק בעיר (י׳–יב׳). לחץ למעבר לפילוח המלא.">i</i></div>
+        <div class="meta-pill" style="background:#fce4ec;color:#ad1457;border-color:#f8bbd0;cursor:pointer;" onclick="switchView('gender')">♀ ייצוג תלמידות <strong id="metaGirls">—</strong> <i class="ti" data-tip="% תלמידות בקרב לומדי הבגרוטק בעיר (י׳–יב׳). לחץ למעבר לפילוח המלא.">i</i></div>
       </div>
     </div>
 
@@ -817,12 +817,12 @@ body{
     <!-- Subject summary cards -->
     <div class="subj-grid" style="margin-bottom:20px;">
       <div class="subj-card">
-        <div class="subj-name">💻 מדעי המחשב <i class="ti" data-tip="סך לומדי 5 יח״ל מדעי המחשב בשכבות י׳–יב׳ (בנים+בנות).">i</i></div>
+        <div class="subj-name">💻 מדעי המחשב <i class="ti" data-tip="סך לומדי 5 יח״ל מדעי המחשב בשכבות י׳–יב׳ (תלמידים+תלמידות).">i</i></div>
         <div class="subj-num cs" id="csTotal">—</div>
         <div class="subj-trend" id="csTrend">תלמידים בכלל השכבות</div>
       </div>
       <div class="subj-card">
-        <div class="subj-name">⚛ פיזיקה <i class="ti" data-tip="סך לומדי 5 יח״ל פיזיקה בשכבות י׳–יב׳ (בנים+בנות).">i</i></div>
+        <div class="subj-name">⚛ פיזיקה <i class="ti" data-tip="סך לומדי 5 יח״ל פיזיקה בשכבות י׳–יב׳ (תלמידים+תלמידות).">i</i></div>
         <div class="subj-num ph" id="phTotal">—</div>
         <div class="subj-trend" id="phTrend">תלמידים בכלל השכבות</div>
       </div>
@@ -903,7 +903,7 @@ body{
           <th onclick="sortSchools(3)"><span class="sa">▼</span>% טק <i class="ti" data-tip="לומדי טק חלקי סך התלמידים, י׳–יב׳ משוקלל.">i</i></th>
           <th onclick="sortSchools(4)"><span class="sa">▾</span>שכבה יב׳ <i class="ti" data-tip="אחוז לומדי הטק בשכבה יב׳ בלבד.">i</i></th>
           <th onclick="sortSchools(5)"><span class="sa">▾</span>נשירה י׳→יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></th>
-          <th onclick="sortSchools(6)"><span class="sa">▾</span>% בנות בטק <i class="ti" data-tip="אחוז הבנות מתוך כלל זכאי הבגרוטק בבית הספר (י׳–יב׳).">i</i></th>
+          <th onclick="sortSchools(6)"><span class="sa">▾</span>% תלמידות בטק <i class="ti" data-tip="אחוז התלמידות מתוך כלל זכאי הבגרוטק בבית הספר (י׳–יב׳).">i</i></th>
         </tr></thead>
         <tbody id="schoolTbody"></tbody>
       </table>
@@ -1031,29 +1031,29 @@ body{
     <div class="page-head">
       <div>
         <h1 class="page-title">פילוח מגדרי — מי בוחר/ת בטק?</h1>
-        <p class="page-sub" id="gnSub">ייצוג בנות במסלולי הטק לאורך השכבות והמקצועות.</p>
+        <p class="page-sub" id="gnSub">ייצוג תלמידות במסלולי הטק לאורך השכבות והמקצועות.</p>
       </div>
     </div>
 
     <!-- KPIs -->
     <div class="kpi-grid">
       <div class="kpi pri">
-        <div class="kpi-lbl">ייצוג בנות בבגרוטק (י׳–יב׳) <i class="ti" data-tip="בנות חלקי כלל זכאי הבגרוטק בכל בתי הספר במדד.">i</i></div>
+        <div class="kpi-lbl">ייצוג תלמידות בבגרוטק (י׳–יב׳) <i class="ti" data-tip="תלמידות חלקי כלל זכאי הבגרוטק בכל בתי הספר במדד.">i</i></div>
         <div class="kpi-val" id="gkOverall">—</div>
         <div class="kpi-sub" id="gkOverallSub">—</div>
       </div>
       <div class="kpi pri">
-        <div class="kpi-lbl">ייצוג בנות בבגרוטק — יב׳ בלבד <i class="ti" data-tip="הנתון הרלוונטי להשוואה לארצי.">i</i></div>
+        <div class="kpi-lbl">ייצוג תלמידות בבגרוטק — יב׳ בלבד <i class="ti" data-tip="הנתון הרלוונטי להשוואה לארצי.">i</i></div>
         <div class="kpi-val" id="gk12">—</div>
         <div class="kpi-sub" id="gk12Sub">—</div>
       </div>
       <div class="kpi acc">
-        <div class="kpi-lbl">ייצוג בנות במדמ"ח יב׳ <i class="ti" data-tip="בנות חלקי כלל לומדי 5 יח״ל מדמ״ח בשכבת יב׳.">i</i></div>
+        <div class="kpi-lbl">ייצוג תלמידות במדמ"ח יב׳ <i class="ti" data-tip="תלמידות חלקי כלל לומדי 5 יח״ל מדמ״ח בשכבת יב׳.">i</i></div>
         <div class="kpi-val" id="gkCS">—</div>
-        <div class="kpi-sub">מקצוע חזק יחסית לבנות</div>
+        <div class="kpi-sub">מקצוע חזק יחסית לתלמידות</div>
       </div>
       <div class="kpi warn">
-        <div class="kpi-lbl">ייצוג בנות בפיזיקה יב׳ <i class="ti" data-tip="בנות חלקי כלל לומדי 5 יח״ל פיזיקה בשכבת יב׳.">i</i></div>
+        <div class="kpi-lbl">ייצוג תלמידות בפיזיקה יב׳ <i class="ti" data-tip="תלמידות חלקי כלל לומדי 5 יח״ל פיזיקה בשכבת יב׳.">i</i></div>
         <div class="kpi-val" id="gkPH">—</div>
         <div class="kpi-sub" id="gkPHSub">צוואר הבקבוק המגדרי</div>
       </div>
@@ -1063,8 +1063,8 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">מסע הבנות לאורך השכבות (י׳–יב׳)</div>
-          <div class="card-sub">% בנות בקרב לומדי כל מקצוע, בכל שכבה. ככל שהקו עולה — שיעור הבנות גדל. כלל בתי הספר בעיר (כולל חד-מגדריים).</div>
+          <div class="card-title">מסע התלמידות לאורך השכבות (י׳–יב׳)</div>
+          <div class="card-sub">% תלמידות בקרב לומדי כל מקצוע, בכל שכבה. ככל שהקו עולה — שיעור התלמידות גדל. כלל בתי הספר בעיר (כולל חד-מגדריים).</div>
         </div>
       </div>
       <div class="chart-box tall">
@@ -1077,7 +1077,7 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">ייצוג בנות לפי בית ספר (י׳–יב׳)</div>
+          <div class="card-title">ייצוג תלמידות לפי בית ספר (י׳–יב׳)</div>
           <div class="card-sub">דירוג בתי הספר. קווים מקווקווים: ממוצע עירוני וארצי. בתי ספר חד-מגדריים מסומנים ולא נכללים בדירוג ההשוואתי.</div>
         </div>
       </div>
@@ -1090,8 +1090,8 @@ body{
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">סיפור הפיזיקה — איפה הבנות נמצאות?</div>
-          <div class="card-sub">פיזיקה היא חצי מהמסלול הארצי לבגרוטק (יחד עם מדמ״ח). בשכבת יב׳ — בנים מול בנות, לפי בית ספר.</div>
+          <div class="card-title">סיפור הפיזיקה — איפה התלמידות נמצאות?</div>
+          <div class="card-sub">פיזיקה היא חצי מהמסלול הארצי לבגרוטק (יחד עם מדמ״ח). בשכבת יב׳ — תלמידים מול תלמידות, לפי בית ספר.</div>
         </div>
       </div>
       <div class="chart-box tall">
@@ -1110,7 +1110,7 @@ body{
       <div id="singleGenderBox"></div>
       <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
         ⚠ הזיהוי נגזר מהגיליון ולא מרשימת שמות: בית ספר נחשב חד-מגדרי כשכל
-        עמודות הבנים — או כל עמודות הבנות — אצלו אפס בשכבות י׳–יב׳. אם בגיליון
+        עמודות התלמידים — או כל עמודות התלמידות — אצלו אפס בשכבות י׳–יב׳. אם בגיליון
         יוזן ולו ערך אחד שאינו אפס בעמודת המגדר השני, בית הספר לא יופיע כאן.
         התיאורים המילוליים (למשל אופי בית הספר) אינם בגיליון ולכן אינם מוצגים.
       </div>
@@ -1633,8 +1633,8 @@ function citySubjPctAtGrade(gi, idx){
   return tot? sub/tot*100 : null;
 }
 
-// ─── Gender helpers — באחוזי בנות בקרב לומדי המקצוע ───
-// בית-ספר: בנות במקצוע / סך לומדי המקצוע (cs/ph/ht) בשכבה
+// ─── Gender helpers — באחוזי תלמידות בקרב לומדי המקצוע ───
+// בית-ספר: תלמידות במקצוע / סך לומדי המקצוע (cs/ph/ht) בשכבה
 function girlsPctOfSubjAtGrade(school, gi, subjIdx){
   // subjIdx: 1=cs,2=ph,3=ma,4=ht ; girlsIdx: 5=cs_g,6=ph_g,9=ma_g,7=ht_g
   const girlsIdx = subjIdx===1?5: subjIdx===2?6: subjIdx===3?9: 7;
@@ -1800,12 +1800,12 @@ function renderOverview(){
   document.getElementById('kPct11').innerHTML = p11.toFixed(1)+'%'+altSpan(cityPctAlt(1));
   document.getElementById('k12Pct').innerHTML = p12.toFixed(1)+'%'+altSpan(cityPctAlt(2));
 
-  // % בנות מתוך לומדי הטק באותה שכבה
+  // % תלמידות מתוך לומדי הטק באותה שכבה
   const girlsAt = gi => SCHOOLS.reduce((s,sch)=> s+totalGirlsTech(sch,gi), 0);
   const gPill = gi => {
     const g = girlsAt(gi), t = cityTotal(gi);
     if(!t) return '';
-    return ` <span class="g-chip" title="${g} בנות מתוך ${t} לומדי טק בשכבה">♀ ${(g/t*100).toFixed(0)}%</span>`;
+    return ` <span class="g-chip" title="${g} תלמידות מתוך ${t} לומדי טק בשכבה">♀ ${(g/t*100).toFixed(0)}%</span>`;
   };
   // מכנה המצבת, בסוגריים — כדי שרואים את שני הבסיסים באותה נשימה
   const dAlt = gi => {
@@ -1951,7 +1951,7 @@ function renderSubjects(){
     {name:'פיזיקה',     icon:'⚛',  color:COL.ph, data:ph, subIdx:2},
     {name:'מתמטיקה 5 יח"ל', icon:'📐', color:COL.ma, data:ma, subIdx:3}
   ];
-  // לכל מקצוע — % בנות בכל שכבה (י,יא,יב). null למתמטיקה.
+  // לכל מקצוע — % תלמידות בכל שכבה (י,יא,יב). null למתמטיקה.
   const girlsByGrade = sub => {
     if(sub.subIdx===null) return [null,null,null];
     return [3,4,5].map(gi => cityGirlsPctOfSubjAtGrade(gi, sub.subIdx));  // ALL_GRADES: 3=י,4=יא,5=יב
@@ -1983,7 +1983,7 @@ function renderSubjects(){
       </div>
     </div>`;
   }).join('') + `<div style="font-size:11px;color:var(--muted);padding-top:10px;line-height:1.5;">
-    ♀ = % בנות בקרב לומדי המקצוע באותה שכבה (עירוני).
+    ♀ = % תלמידות בקרב לומדי המקצוע באותה שכבה (עירוני).
   </div>`;
 }
 
@@ -2036,7 +2036,7 @@ function sortSchools(col, keepDir){
   const rows = SCHOOLS.map(s=>{
     const girls = schoolGirlsTotal(s);
     const tech  = schoolTechTotal(s);
-    // בית ספר חד-מגדרי (יבנה/הראל): לא רלוונטי להציג % בנות
+    // בית ספר חד-מגדרי (יבנה/הראל): לא רלוונטי להציג % תלמידות
     const girlsPct = (s.note && (s.note.includes('בנות') || s.note.includes('בנים'))) ? null
                    : (tech? girls/tech*100 : null);
     return { name:s.name, total:schoolStudentTotal(s), tech, pct:schoolTechPct(s),
@@ -2061,7 +2061,7 @@ function sortSchools(col, keepDir){
     const drop = s.drop===null ? '<span style="color:var(--muted);">—</span>'
       : `<span style="color:${s.drop>40?'#c5221f':s.drop>25?'#b06000':'#137333'};font-weight:700;">▼ ${s.drop.toFixed(1)}%</span>`;
     const g12 = s.gr12<0 ? '—' : s.gr12.toFixed(1)+'%';
-    // % בנות: צבע לפי פער מהממוצע
+    // % תלמידות: צבע לפי פער מהממוצע
     let girlsCell;
     if(s.girlsPct === null){
       girlsCell = `<span style="color:var(--muted);font-size:11px;">${s.raw.note&&s.raw.note.includes('בנות')?'בנות בלבד':s.raw.note&&s.raw.note.includes('בנים')?'בנים בלבד':'—'}</span>`;
@@ -2082,7 +2082,7 @@ function sortSchools(col, keepDir){
       <td>${girlsCell}</td>
     </tr>`;
   }).join('') + `<tr><td colspan="8" style="font-size:11px;color:var(--muted);padding:12px;background:var(--bg);">
-    ⚠ אלון/ארן (ז׳–ט׳ בלבד) ויונתן (י׳ בלבד) לא נכללים במדד. ממוצע עירוני בנות בטק: ${cityG.toFixed(0)}% (ירוק=מעל, אדום=מתחת).</td></tr>`;
+    ⚠ אלון/ארן (ז׳–ט׳ בלבד) ויונתן (י׳ בלבד) לא נכללים במדד. ממוצע עירוני תלמידות בטק: ${cityG.toFixed(0)}% (ירוק=מעל, אדום=מתחת).</td></tr>`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2294,7 +2294,7 @@ function generateSchoolInsights(school){
     insights.push({
       kind: above?'good':'warn', icon: above?'✓':'⚠',
       title:'קבוצת עמ"ט בשכבה ט׳ — נקודת המסירה',
-      body:`<strong>${ht9}</strong> תלמידים בקבוצת עמ"ט (<strong>${p9.toFixed(1)}%</strong> מהשכבה), ${above?'מעל':'מתחת ל'}ממוצע העירוני בשכבה ט׳ (<strong>${cityP9.toFixed(1)}%</strong>). מהם <strong>${g9}</strong> בנות (${ht9? (g9/ht9*100).toFixed(0):0}%). אלה התלמידים שיגיעו לחט"ע — <strong>ובעיר אין כיום מעקב מסודר לאן הם נוחתים</strong>.`
+      body:`<strong>${ht9}</strong> תלמידים בקבוצת עמ"ט (<strong>${p9.toFixed(1)}%</strong> מהשכבה), ${above?'מעל':'מתחת ל'}ממוצע העירוני בשכבה ט׳ (<strong>${cityP9.toFixed(1)}%</strong>). מהם <strong>${g9}</strong> תלמידות (${ht9? (g9/ht9*100).toFixed(0):0}%). אלה התלמידים שיגיעו לחט"ע — <strong>ובעיר אין כיום מעקב מסודר לאן הם נוחתים</strong>.`
     });
     insights.push({
       kind:'warn', icon:'⚠',
@@ -2405,7 +2405,7 @@ function generateSchoolInsights(school){
     }
   }
 
-  // 6. פער מגדרי — % בנות בקרב לומדי הטק
+  // 6. פער מגדרי — % תלמידות בקרב לומדי הטק
   if(!isGirlsOnly && !isBoysOnly){
     const girls = schoolGirlsTotal(school), tech = schoolTechTotal(school);
     if(tech > 0){
@@ -2417,8 +2417,8 @@ function generateSchoolInsights(school){
       insights.push({
         kind: above?'good':(below?'warn':'neutral'),
         icon: above?'♀':(below?'⚠':'•'),
-        title: 'ייצוג בנות בקרב לומדי הטק',
-        body: `<strong>${girls}</strong> בנות מתוך <strong>${tech}</strong> זכאי בגרוטק — <strong>${sg.toFixed(0)}%</strong>. ממוצע עירוני: <strong>${cg.toFixed(0)}%</strong>. ${above?'ייצוג בנות גבוה מהממוצע — נקודת חוזק במגוון.':below?'תת-ייצוג בנות מול הממוצע העירוני — שווה לבחון איך בנות בוחרות את המסלול בכניסה לי׳.':''}`
+        title: 'ייצוג תלמידות בקרב לומדי הטק',
+        body: `<strong>${girls}</strong> תלמידות מתוך <strong>${tech}</strong> זכאי בגרוטק — <strong>${sg.toFixed(0)}%</strong>. ממוצע עירוני: <strong>${cg.toFixed(0)}%</strong>. ${above?'ייצוג תלמידות גבוה מהממוצע — נקודת חוזק במגוון.':below?'תת-ייצוג תלמידות מול הממוצע העירוני — שווה לבחון איך תלמידות בוחרות את המסלול בכניסה לי׳.':''}`
       });
     }
   } else if(isGirlsOnly){
@@ -2659,7 +2659,7 @@ const CITY_DETECTORS = [
       `זה מצמצם את מרחב הבחירה של התלמיד ותלוי לרוב בזמינות מורים ובמסורת בית-ספרית — לא בביקוש.`,
     action: ev=> `לבדוק בכמה בתי ספר ${ev.small} בכלל נפתח כמגמה, ומה חוסם — מורים, מעבדה, או מספר נרשמים מינימלי. פתיחת מסלול שני היא מנוף ישיר.` },
 
-  // 7. ייצוג בנות — יורה רק אם מתחת לארצי
+  // 7. ייצוג תלמידות — יורה רק אם מתחת לארצי
   { id:'genderGap', kind:'urgent', tag:'פער מגדרי',
     test(c){
       if(!c.girlsN || c.girlsPct >= NATIONAL_GIRLS) return null;
@@ -2668,11 +2668,11 @@ const CITY_DETECTORS = [
       return { gapPts, girlsPct:c.girlsPct, need: gapPts/100*techAll, girlsN:c.girlsN };
     },
     cost: ev=> ev.need,
-    title: ev=> `ייצוג בנות מתחת לארצי — פער של ${ev.gapPts.toFixed(1)} נקודות`,
-    body: ev=> `<strong>${ev.girlsPct.toFixed(1)}%</strong> מלומדי הטק בעיר (י׳–יב׳) הן בנות — <strong>${ev.girlsN}</strong> תלמידות — מול <strong>${NATIONAL_GIRLS}%</strong> ארצית. `+
+    title: ev=> `ייצוג תלמידות מתחת לארצי — פער של ${ev.gapPts.toFixed(1)} נקודות`,
+    body: ev=> `<strong>${ev.girlsPct.toFixed(1)}%</strong> מלומדי הטק בעיר (י׳–יב׳) הן תלמידות — <strong>${ev.girlsN}</strong> תלמידות — מול <strong>${NATIONAL_GIRLS}%</strong> ארצית. `+
       `סגירת הפער הזה לבדה שווה <strong>${num(ev.need)} תלמידות</strong> נוספות במסלול, בלי לגייס אף תלמיד חדש. `+
       `זהו מאגר הפוטנציאל הגדול והזול ביותר שיש לעיר.`,
-    action: ()=> 'לבחון את נקודת ההכוונה לי׳ בנפרד לבנים ולבנות. בתי הספר עם הייצוג הגבוה בעיר הם הבנצ׳מרק — לזמן אותם לשיתוף התהליך.' },
+    action: ()=> 'לבחון את נקודת ההכוונה לי׳ בנפרד לתלמידים ולתלמידות. בתי הספר עם הייצוג הגבוה בעיר הם הבנצ׳מרק — לזמן אותם לשיתוף התהליך.' },
 
   // 8. משפך עתיד טק — ט׳ מול י׳ (§3.6)
   { id:'futureTechFunnel', kind:'structural', tag:'עתיד טק',
@@ -2811,7 +2811,7 @@ function renderGender(){
   SCHOOLS.forEach(s=> GRADES.forEach((_,gi)=>{ gAll+=totalGirlsTech(s,gi); tAll+=totalTech(s,gi); }));
   const pAll = tAll? gAll/tAll*100 : 0;
   document.getElementById('gkOverall').textContent = pAll.toFixed(1)+'%';
-  document.getElementById('gkOverallSub').innerHTML = `${gAll} בנות מתוך ${tAll} זכאי טק`;
+  document.getElementById('gkOverallSub').innerHTML = `${gAll} תלמידות מתוך ${tAll} זכאי טק`;
 
   // 12 בלבד
   let g12=0, t12=0;
@@ -2822,23 +2822,23 @@ function renderGender(){
   document.getElementById('gk12Sub').innerHTML =
     `${g12} בוגרות בגרוטק · <strong style="color:${d12>=0?'#137333':'#c5221f'}">${d12>=0?'+':''}${d12.toFixed(1)} נק׳ מול ארצי ${NATIONAL_GIRLS}%</strong>`;
 
-  // בנות במדמ"ח יב'
+  // תלמידות במדמ"ח יב'
   let cs12g=0, cs12t=0; SCHOOLS.forEach(s=>{const r=s.grades['יב']; if(r){cs12g+=r[5]; cs12t+=r[1];}});
   document.getElementById('gkCS').textContent = (cs12t? cs12g/cs12t*100 : 0).toFixed(1)+'%';
-  // בנות בפיזיקה יב'
+  // תלמידות בפיזיקה יב'
   let ph12g=0, ph12t=0; SCHOOLS.forEach(s=>{const r=s.grades['יב']; if(r){ph12g+=r[6]; ph12t+=r[2];}});
   const phP = ph12t? ph12g/ph12t*100 : 0;
   document.getElementById('gkPH').textContent = phP.toFixed(1)+'%';
   // הסבר תת-כותרת לפיזיקה לפי הנתון
   document.getElementById('gkPHSub').textContent = phP < 30 ? 'צוואר בקבוק מגדרי חמור' : (phP < 40 ? 'תת-ייצוג מתון' : 'יחסית מאוזן');
 
-  // === מסע הבנות לאורך השכבות ===
+  // === מסע התלמידות לאורך השכבות ===
   destroyChart('genderJourney');
   const subs = [
-    {label:'בנות בקרב לומדי מדמ"ח', subIdx:1, color:COL.cs},
-    {label:'בנות בקרב לומדי פיזיקה', subIdx:2, color:COL.ph},
-    {label:'בנות ב-5 יח"ל מתמטיקה', subIdx:3, color:COL.ma},
-    {label:'בנות בקרב זכאי בגרוטק', subIdx:4, color:COL.primary}
+    {label:'תלמידות בקרב לומדי מדמ"ח', subIdx:1, color:COL.cs},
+    {label:'תלמידות בקרב לומדי פיזיקה', subIdx:2, color:COL.ph},
+    {label:'תלמידות ב-5 יח"ל מתמטיקה', subIdx:3, color:COL.ma},
+    {label:'תלמידות בקרב זכאי בגרוטק', subIdx:4, color:COL.primary}
   ];
   // הגרף מציג י׳–יב׳ בלבד. בז׳–ט׳ אין הפרדת מקצועות במקור (רישום קבוצת עמ"ט),
   // ולכן שלוש נקודות ריקות שגזלו שני שליש מרוחב הגרף.
@@ -2849,26 +2849,71 @@ function renderGender(){
     borderColor: sub.color, backgroundColor: sub.color+'18',
     borderWidth: 3, pointRadius: 6, pointBackgroundColor: sub.color, pointBorderColor:'#fff', pointBorderWidth:2,
     tension: 0.25, spanGaps: true, fill: false,
-    datalabels:{ anchor:'end', align:'top', offset:4, color: sub.color, font:{family:'Heebo',size:11,weight:'700'},
+    datalabels:{ anchor:'end', color: sub.color, font:{family:'Heebo',size:11,weight:'700'},
+      // רקע לבן **אטום** — תווית שנדחקה לצד יושבת לפעמים על קו של סדרה אחרת,
+      // וברקע שקוף הקו נראה מבעד לספרות. אותו נימוק כמו בגרף העשור.
+      backgroundColor:'#fff', borderRadius:3, padding:{top:1,bottom:1,left:3,right:3},
+      align:  ctx => gjSlot(ctx).align,
+      offset: ctx => gjSlot(ctx).offset,
       formatter: v => v==null? '' : v.toFixed(0)+'%' }
   }));
   // קו ייחוס ארצי
   ds.push({ label:'ארצי '+NATIONAL_GIRLS+'%', data: GRADES.map(()=>NATIONAL_GIRLS),
     borderColor:'#5f6368', borderDash:[5,4], borderWidth:1.5, pointRadius:0, tension:0, fill:false,
     datalabels:{display:false} });
-  // קו 50% (אם כל המינים שווים, היינו רואים 50%)
-  ds.push({ label:'איזון מלא (50%)', data: GRADES.map(()=>50),
-    borderColor:'rgba(0,0,0,0.18)', borderDash:[2,3], borderWidth:1, pointRadius:0, tension:0, fill:false,
-    datalabels:{display:false} });
 
   // ציר Y נגזר מהנתונים ואינו 0–100. הקווים נעים בטווח של ~20 נק׳, ועל ציר מלא
-  // הם נמעכים לחמישית מהגובה והשינוי בין השכבות נעלם. הטווח מכסה גם את שני קווי
-  // הייחוס (הם כבר ב-ds), מרופד ב-4 נק׳ ומעוגל לכפולות של 5 כדי שהשנתות יֵצאו עגולות.
+  // הם נמעכים לחמישית מהגובה והשינוי בין השכבות נעלם. הטווח מכסה גם את קו
+  // הייחוס (הוא כבר ב-ds), מרופד ב-4 נק׳ ומעוגל לכפולות של 5 כדי שהשנתות יֵצאו עגולות.
   // **הציר אינו מתחיל באפס, והכרטיס אומר זאת מתחת לגרף** — בלי זה נראה כאילו
   // הפער בין השכבות גדול פי כמה משהוא.
   const gjVals = ds.flatMap(d=> d.data).filter(v=> v != null);
   const gjLo = Math.max(0,   Math.floor((Math.min(...gjVals) - 4) / 5) * 5);
   const gjHi = Math.min(100, Math.ceil ((Math.max(...gjVals) + 4) / 5) * 5);
+
+  // ── פריסת התוויות ──────────────────────────────────────────────────────
+  // ב-יב׳ שלושה קווים יושבים בטווח של 2.2 נק׳, ותווית קבועה מעל כל נקודה
+  // נדחסת שם לגוש אחד. לכל שכבה בנפרד: ממיינים מלמעלה למטה, ולכל תווית
+  // מנסים קודם מעל ואז מתחת, במרחק שגדל, עד שנמצא מקום פנוי.
+  // הבדיקה ב**פיקסלים** ולא בנקודות אחוז — גובה התווית אינו תלוי בסקאלה,
+  // ושני ערכים שרחוקים חצי נקודה יכולים להיות רחוקים 5 פיקסלים בלבד.
+  const GJ_H = 16, GJ_GAP = 2, GJ_OFF = 7, GJ_SUBJ = subs.length;
+  let gjPlan = null, gjPlanKey = '';
+  function gjLayout(chart){
+    const y = chart.scales.y; if(!y) return {};
+    const out = {};
+    GRADES.forEach((_, i) => {
+      const taken = [];
+      ds.slice(0, GJ_SUBJ)
+        .map((d, di) => ({ di, v: d.data[i] }))
+        .filter(p => p.v != null && !chart.getDatasetMeta(p.di).hidden)
+        .sort((a, b) => b.v - a.v)                       // הגבוה תופס מקום ראשון
+        .forEach(p => {
+          const py = y.getPixelForValue(p.v);
+          let slot = null;
+          for(let k = 0; k < 4 && !slot; k++){
+            const off = GJ_OFF + k * (GJ_H + GJ_GAP);
+            for(const align of ['top','bottom']){
+              const c = align === 'top' ? py - off - GJ_H/2 : py + off + GJ_H/2;
+              if(taken.every(t => Math.abs(t - c) >= GJ_H + GJ_GAP)){
+                slot = { align, offset: off }; taken.push(c); break;
+              }
+            }
+          }
+          out[p.di + ':' + i] = slot || { align:'top', offset:GJ_OFF };
+        });
+    });
+    return out;
+  }
+  // נבנית פעם אחת לכל רינדור. המפתח הוא גובה אזור הציור ומצב ההסתרה של
+  // הסדרות — שינוי גודל חלון או כיבוי קו בלגנדה מזיזים נקודות ומחייבים חישוב מחדש.
+  function gjSlot(ctx){
+    const a = ctx.chart.chartArea;
+    const key = (a ? Math.round(a.height) : 0) + ':' +
+      ctx.chart.data.datasets.map((_,i)=> ctx.chart.getDatasetMeta(i).hidden ? 1 : 0).join('');
+    if(gjPlan === null || gjPlanKey !== key){ gjPlan = gjLayout(ctx.chart); gjPlanKey = key; }
+    return gjPlan[ctx.datasetIndex + ':' + ctx.dataIndex] || { align:'top', offset:GJ_OFF };
+  }
 
   charts.genderJourney = new Chart(document.getElementById('genderJourney'), {
     type:'line',
@@ -2883,11 +2928,11 @@ function renderGender(){
                   ticks:{stepSize:5, callback:v=>v+'%', font:HF, color:'#5f6368'}, grid:{color:GC}} } }
   });
   document.getElementById('gjAxis').textContent =
-    `ציר האנכי מתחיל ב-${gjLo}% ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = 5 נקודות אחוז.`;
+    `הציר האנכי מתחיל ב-${gjLo}% ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = 5 נקודות אחוז.`;
 
   // === ייצוג לפי בית ספר ===
   destroyChart('genderBySchool');
-  // לכל בית ספר (י-יב), % בנות בקרב לומדי הטק
+  // לכל בית ספר (י-יב), % תלמידות בקרב לומדי הטק
   const schoolGenderData = SCHOOLS.map(s=>{
     let g=0,t=0; GRADES.forEach((_,gi)=>{g+=totalGirlsTech(s,gi); t+=totalTech(s,gi);});
     const isSG = s.note && (s.note.includes('בנות')||s.note.includes('בנים'));
@@ -2903,7 +2948,7 @@ function renderGender(){
     type:'bar',
     data:{ labels: ordered.map(x=> x.name + (x.isSG?' ⚥':'')),
       datasets:[
-        { label:'% בנות בקרב לומדי הטק',
+        { label:'% תלמידות בקרב לומדי הטק',
           data: ordered.map(x=> x.pct),
           backgroundColor: ordered.map(x=>{
             if(x.isSG) return '#d8d0e8';
@@ -2918,14 +2963,14 @@ function renderGender(){
           type:'line',borderColor:COL.info,borderDash:[6,4],borderWidth:2,pointRadius:0,fill:false,datalabels:{display:false} },
       ]},
     options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:28}},
-      plugins:{legend:{labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% בנות בקרב לומדי הטק'}}},
+      plugins:{legend:{labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% תלמידות בקרב לומדי הטק'}}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
                y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
   // === סיפור הפיזיקה ===
   destroyChart('physicsGap');
-  // לכל בית ספר עם שכבת יב' — בנים/בנות בפיזיקה
+  // לכל בית ספר עם שכבת יב' — תלמידים/תלמידות בפיזיקה
   const phData = SCHOOLS.filter(s=> s.grades['יב']).map(s=>{
     const r=s.grades['יב'];
     return {name:s.name, boys: r[2]-r[6], girls: r[6], total:r[2], note:s.note};
@@ -2934,9 +2979,9 @@ function renderGender(){
     type:'bar',
     data:{ labels: phData.map(x=>x.name),
       datasets:[
-        { label:'בנים', data: phData.map(x=>x.boys), backgroundColor:'#1a73e8', borderRadius:4,
+        { label:'תלמידים', data: phData.map(x=>x.boys), backgroundColor:'#1a73e8', borderRadius:4,
           datalabels:{anchor:'center',align:'center',color:'#fff',font:hf2(),formatter:v=> v>2?v:''} },
-        { label:'בנות', data: phData.map(x=>x.girls), backgroundColor:'#e91e63', borderRadius:4,
+        { label:'תלמידות', data: phData.map(x=>x.girls), backgroundColor:'#e91e63', borderRadius:4,
           datalabels:{anchor:'center',align:'center',color:'#fff',font:hf2(),formatter:v=> v>2?v:''} }
       ]},
     options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:10}},
@@ -2971,13 +3016,16 @@ function sgCard({s, r, girlsOnly}){
   const tot=r[0], ht=r[4], cs=r[1], ph=r[2], ma=r[3];
   const pc  = v => tot? v/tot*100 : 0;
   const lowPh = pc(ph) < 3;                       // פיזיקה שולית — מסומנת באדום
-  const noun  = girlsOnly ? 'בנות' : 'בנים';
+  // שני מונחים, לא אחד: `tag` הוא הצירוף המקובע שמופיע גם בגיליון ("בנות בלבד"),
+  // ו-`noun` הוא המינוח התצוגתי. איחודם היה מכריח לוותר על אחד מהשניים.
+  const tag   = girlsOnly ? 'בנות' : 'בנים';
+  const noun  = girlsOnly ? 'תלמידות' : 'תלמידים';
   const stat = (label, v, style, dec) =>
     `<div class="sg-stat"><span>${label}</span>`+
     `<span class="sg-num"${style||''}>${v} (${pc(v).toFixed(dec||0)}%)</span></div>`;
   return `
       <div class="sg-card ${girlsOnly?'girls':'boys'}">
-        <h4>${girlsOnly?'♀':'♂'} ${s.name} — ${noun} בלבד</h4>
+        <h4>${girlsOnly?'♀':'♂'} ${s.name} — ${tag} בלבד</h4>
         <div class="sg-sub">שכבת יב׳: ${tot} ${noun}.</div>
         <div class="sg-rows">
           ${stat(girlsOnly?'זכאיות בגרוטק יב׳':'זכאי בגרוטק יב׳', ht)}
@@ -3013,8 +3061,8 @@ function generateGenderInsights(ctx){
   ins.push({
     kind: above>=0 ? 'good':'warn',
     icon: above>=0 ? '✓' : '⚠',
-    title: above>=0 ? 'חולון מעל הממוצע הארצי בייצוג בנות' : 'חולון מתחת לממוצע הארצי בייצוג בנות',
-    body: `שכבת יב׳ בחולון: <strong>${ctx.p12.toFixed(1)}%</strong> בנות בקרב זכאי בגרוטק. ארצי: <strong>${NATIONAL_GIRLS}%</strong>. הפער: <strong>${above>=0?'+':''}${above.toFixed(1)} נקודות אחוז</strong>. זה לא רק "מספר טוב" — בערים שמובילות פדגוגית בייצוג נשי בהייטק, זה משהו לחגוג עליו ביוזמת המשרד ולגייס סביבו תקציבים.`
+    title: above>=0 ? 'חולון מעל הממוצע הארצי בייצוג תלמידות' : 'חולון מתחת לממוצע הארצי בייצוג תלמידות',
+    body: `שכבת יב׳ בחולון: <strong>${ctx.p12.toFixed(1)}%</strong> תלמידות בקרב זכאי בגרוטק. ארצי: <strong>${NATIONAL_GIRLS}%</strong>. הפער: <strong>${above>=0?'+':''}${above.toFixed(1)} נקודות אחוז</strong>. זה לא רק "מספר טוב" — בערים שמובילות פדגוגית בייצוג נשי בהייטק, זה משהו לחגוג עליו ביוזמת המשרד ולגייס סביבו תקציבים.`
   });
 
   // 2. פער מקצועי: מדמ"ח מול פיזיקה
@@ -3022,7 +3070,7 @@ function generateGenderInsights(ctx){
   ins.push({
     kind: 'neutral', icon:'★',
     title: 'פיזיקה דווקא מאוזנת יותר ממדמ"ח — בעיר',
-    body: `בקרב לומדי 5 יח"ל ב-יב׳: <strong>${ctx.phP.toFixed(1)}% בנות בפיזיקה</strong>, <strong>${ctx.csP.toFixed(1)}% בנות במדמ"ח</strong>. ההפתעה: פיזיקה <strong>${Math.abs(subjGap).toFixed(1)} נק׳ ${subjGap>0?'יותר':'פחות'}</strong> מאוזנת ממדמ"ח. הסטריאוטיפ ש"בנות בורחות מפיזיקה" אינו נכון בחולון. ייתכן שזה תוצאה של עבודת קציר ואילון (% בנות גבוה אצלן בפיזיקה), אבל זה מצב המוצא לכל יוזמה — מה שצריך לפתור זה מדמ"ח, לא פיזיקה.`
+    body: `בקרב לומדי 5 יח"ל ב-יב׳: <strong>${ctx.phP.toFixed(1)}% תלמידות בפיזיקה</strong>, <strong>${ctx.csP.toFixed(1)}% תלמידות במדמ"ח</strong>. ההפתעה: פיזיקה <strong>${Math.abs(subjGap).toFixed(1)} נק׳ ${subjGap>0?'יותר':'פחות'}</strong> מאוזנת ממדמ"ח. הסטריאוטיפ ש"תלמידות בורחות מפיזיקה" אינו נכון בחולון. ייתכן שזה תוצאה של עבודת קציר ואילון (% תלמידות גבוה אצלן בפיזיקה), אבל זה מצב המוצא לכל יוזמה — מה שצריך לפתור זה מדמ"ח, לא פיזיקה.`
   });
 
   // 3. דירוג בתי הספר
@@ -3032,13 +3080,13 @@ function generateGenderInsights(ctx){
     ins.push({
       kind:'good', icon:'♀',
       title: `${top.name} — הייצוג הגבוה ביותר בעיר`,
-      body: `<strong>${top.pct.toFixed(1)}%</strong> בנות בקרב לומדי הטק (${top.girls}/${top.total}). הפער מהממוצע העירוני (${ctx.pAll.toFixed(1)}%): <strong>+${(top.pct-ctx.pAll).toFixed(1)} נק׳</strong>. אם רוצים ללמוד מה עובד — הם הנקודה.`
+      body: `<strong>${top.pct.toFixed(1)}%</strong> תלמידות בקרב לומדי הטק (${top.girls}/${top.total}). הפער מהממוצע העירוני (${ctx.pAll.toFixed(1)}%): <strong>+${(top.pct-ctx.pAll).toFixed(1)} נק׳</strong>. אם רוצים ללמוד מה עובד — הם הנקודה.`
     });
     ins.push({
       kind: bottom.pct < ctx.pAll-5 ? 'warn':'neutral',
       icon: bottom.pct < ctx.pAll-5 ? '⚠':'•',
       title: `${bottom.name} — הייצוג הנמוך ביותר`,
-      body: `<strong>${bottom.pct.toFixed(1)}%</strong> בנות בקרב לומדי הטק (${bottom.girls}/${bottom.total}). הפער מהממוצע: <strong>${(bottom.pct-ctx.pAll).toFixed(1)} נק׳</strong>. ${bottom.pct < ctx.pAll-5?'שווה לבחון בנפרד את תהליך ההכוונה לי׳ אצלן.':'בטווח הסביר אבל בקצה התחתון.'}`
+      body: `<strong>${bottom.pct.toFixed(1)}%</strong> תלמידות בקרב לומדי הטק (${bottom.girls}/${bottom.total}). הפער מהממוצע: <strong>${(bottom.pct-ctx.pAll).toFixed(1)} נק׳</strong>. ${bottom.pct < ctx.pAll-5?'שווה לבחון בנפרד את תהליך ההכוונה לי׳ אצלן.':'בטווח הסביר אבל בקצה התחתון.'}`
     });
   }
 
@@ -3049,7 +3097,7 @@ function generateGenderInsights(ctx){
     ins.push({
       kind:'warn', icon:'⚠',
       title: 'יבנה — פיזיקה כבעיה מבנית',
-      body: `<strong>${r[2]} בנות</strong> בלבד ב-5 יח"ל פיזיקה בשכבת יב׳ (מתוך ${r[0]} בנות בשכבה — <strong>${(r[2]/r[0]*100).toFixed(1)}%</strong>). זה לא פער, זו היעדרות. בית ספר לבנות שמפיק בוגרת בגרוטק (יש להן <strong>${(r[4]/r[0]*100).toFixed(0)}%</strong> זכאות) — אבל המסלול היחיד שזמין הוא דרך מדמ"ח. <strong>זה צמצום אופציות, לא בחירה.</strong>`
+      body: `<strong>${r[2]} תלמידות</strong> בלבד ב-5 יח"ל פיזיקה בשכבת יב׳ (מתוך ${r[0]} תלמידות בשכבה — <strong>${(r[2]/r[0]*100).toFixed(1)}%</strong>). זה לא פער, זו היעדרות. בית ספר לבנות שמפיק בוגרת בגרוטק (יש להן <strong>${(r[4]/r[0]*100).toFixed(0)}%</strong> זכאות) — אבל המסלול היחיד שזמין הוא דרך מדמ"ח. <strong>זה צמצום אופציות, לא בחירה.</strong>`
     });
   }
 
@@ -3483,10 +3531,10 @@ function renderYYDecade(A, B){
   document.getElementById('yyDecadePills').innerHTML = last ? `
     <div class="page-meta" style="margin-top:16px;justify-content:flex-start;">
       ${pill('זכאי בגרוטק יב׳', last.g.techN.toLocaleString('he-IL'), HOLON_HIST.techN, TEAL)}
-      ${pill('♀ בנות בבגרוטק', last.g.girlsTech==null?'—':last.g.girlsTech.toFixed(1)+'%',
+      ${pill('♀ תלמידות בבגרוטק', last.g.girlsTech==null?'—':last.g.girlsTech.toFixed(1)+'%',
              (typeof NAT_GIRLS_2024!=='undefined'? '41.6%' : null), '#ad1457')}
       ${pill('לומדי מתמטיקה 5 יב׳', last.g.ma5N.toLocaleString('he-IL'), HOLON_HIST.ma5N, GOLD)}
-      ${pill('♀ בנות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
+      ${pill('♀ תלמידות במתמטיקה 5', last.g.girlsMa5==null?'—':last.g.girlsMa5.toFixed(1)+'%', '49.3%', '#ad1457')}
     </div>` : '';
 
   const anchorY = sT[sT.length-1].y, anchorV = sT[sT.length-1].v;
@@ -4250,7 +4298,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v29';
+const BUILD = 'v30';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
