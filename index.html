@@ -974,8 +974,8 @@ body{
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">פילוח מקצועות — שכבה יב׳</div>
-            <div class="card-sub">חלוקת הבוגרים לפי מקצוע</div>
+            <div class="card-title">מקצועות 5 יח״ל בשכבה הבוגרת</div>
+            <div class="card-sub">כמה מהשכבה מגיעים לכל מקצוע. תלמיד נספר בכל מקצוע שהוא לומד, ולכן הסכום גדול ממספר התלמידים.</div>
           </div>
         </div>
         <div class="chart-box" id="ddSubjectsBox">
@@ -2140,7 +2140,7 @@ function renderDeepDive(){
                y:{ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
 
-  // Subjects pie — השכבה הגבוהה ביותר שזמינה בפועל (גם ז'-ט' לחט"ב)
+  // מקצועות השכבה הבוגרת — השכבה הגבוהה ביותר שזמינה בפועל (גם ז'-ט' לחט"ב)
   destroyChart('ddSubjects');
   let lastG = null;
   for(let i = ALL_GRADES.length-1; i >= 0; i--){
@@ -2153,7 +2153,7 @@ function renderDeepDive(){
   if(!lr){
     pieBox.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;">אין נתונים</div>';
   } else if(isAmatLast){
-    // שכבת עמ"ט — המקצועות אינם מופרדים במקור, אין טעם בעוגה
+    // שכבת עמ"ט — המקצועות אינם מופרדים במקור, אין מה לפלח
     pieBox.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px;">
       <div style="font-size:30px;font-weight:900;color:var(--primary-d);">${lr[4]}</div>
       <div style="font-size:13px;color:var(--muted);margin-top:4px;">בקבוצת עמ"ט, שכבה ${lastG}</div>
@@ -2161,14 +2161,42 @@ function renderDeepDive(){
         בשכבה זו בית הספר לא מפריד בין המקצועות במקור — אין פילוח זמין.</div>
     </div>`;
   } else {
+    // ⚠ **לא עוגה.** שלושת המקצועות אינם חלוקה של שלם: אותו תלמיד נספר
+    // גם במתמטיקה וגם במדמ"ח, והסכום גדול ממספר הלומדים בשכבה. עוגה
+    // מציגה כל מקצוע כנתח מתוך 100% ומשקרת בשני הכיוונים — גם על הגודל
+    // היחסי וגם על המכנה. מוטות אופקיים על **ציר משותף עד גודל השכבה**
+    // מציגים את מה שבאמת נמדד: כמה מהשכבה מגיעים לכל מקצוע, ובכמה מהם
+    // זה מתכנס לזכאות.
+    const rows = [
+      {n:'מתמטיקה 5 יח"ל', v:lr[3], c:COL.ma},
+      {n:'פיזיקה',          v:lr[2], c:COL.ph},
+      {n:'מדעי המחשב',      v:lr[1], c:COL.cs},
+      {n:'זכאות למדד טק',   v:lr[4], c:COL.primary}
+    ];
+    const gradeN = lr[0] || 0;
     charts.ddSubjects = new Chart(document.getElementById('ddSubjects'), {
-      type:'doughnut',
-      data:{ labels:['מדעי המחשב','פיזיקה','מתמטיקה 5 יח"ל'],
-        datasets:[{ data:[lr[1],lr[2],lr[3]], backgroundColor:[COL.cs,COL.ph,COL.ma], borderWidth:2, borderColor:'#fff',
-          datalabels:{color:'#fff',font:{family:'Heebo',size:14,weight:'700'},formatter:v=>v||''} }]},
-      options:{ responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:HF,color:'#5f6368',padding:12}},
-          title:{display:true,text:'שכבה '+lastG,font:{family:'Heebo',size:12},color:'#5f6368'}}}
+      type:'bar',
+      data:{ labels: rows.map(r=> r.n),
+        datasets:[{ data: rows.map(r=> r.v), backgroundColor: rows.map(r=> r.c),
+          borderRadius:4, barPercentage:0.72, categoryPercentage:0.82,
+          datalabels:{anchor:'end', align:'end', offset:6, color:'#5f6368',
+            font:{family:'Heebo',size:12,weight:'700'},
+            formatter:(v,ctx)=> !v ? '0' :
+              v + (gradeN ? ' · ' + (v/gradeN*100).toFixed(0) + '%' : '')} }]},
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        layout:{padding:{left:52, right:14, top:6}},
+        plugins:{ legend:{display:false},
+          title:{display:true, text:'שכבה '+lastG+(gradeN? ' · '+gradeN+' תלמידים':''),
+            font:{family:'Heebo',size:12}, color:'#5f6368'},
+          tooltip:{callbacks:{label: ctx=> ctx.parsed.x + ' תלמידים'
+            + (gradeN? ' — '+(ctx.parsed.x/gradeN*100).toFixed(1)+'% מהשכבה' : '')}} },
+        // המקסימום הוא גודל השכבה — כך אורך המוט הוא שיעור מהשכבה,
+        // והמכנה המשותף גלוי במקום מרומז
+        // הציר הפוך ותוויות הקטגוריה מימין — המוט גדל ימינה→שמאלה,
+        // כמו כל שאר המוטות האופקיים בדשבורד (`.cmp-bar`, `.bn-list`).
+        scales:{ x:{beginAtZero:true, max: gradeN || undefined, reverse:true,
+                    ticks:{font:HF,color:'#5f6368'}, grid:{color:GC}},
+                 y:{position:'right', ticks:{font:hf2(),color:'#5f6368'}, grid:{display:false}} } }
     });
   }
 
@@ -4336,7 +4364,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v37';
+const BUILD = 'v38';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
