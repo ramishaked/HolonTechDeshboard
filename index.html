@@ -252,7 +252,6 @@ body{
 /* Chart container */
 .chart-box{position:relative;width:100%;height:340px;}
 .chart-box.tall{height:420px;}
-.chart-box.mini{height:230px;}
 
 /* Insight box */
 .insight{background:var(--primary-l);border-right:3px solid var(--primary);
@@ -270,28 +269,43 @@ body{
 .kpi-val .alt-num{font-size:15px;margin-inline-start:7px;vertical-align:2px;}
 .kpi-sub .alt-num,.card-sub .alt-num,.ref-pill .alt-num{font-size:11.5px;margin-inline-start:4px;}
 
-/* ─── מגמות לאורך תקופות (תצוגה 7) ─── */
-/* מתג ציר הזמן — יושב ב-card-head, לא בסיידבר */
-.tg-seg{display:inline-flex;background:var(--primary-l);border-radius:9px;padding:3px;gap:3px;flex-shrink:0;}
-.tg-seg button{font-family:'Heebo',sans-serif;font-size:12px;font-weight:700;color:var(--primary-d);
-  background:transparent;border:0;border-radius:7px;padding:6px 13px;cursor:pointer;transition:background .15s,color .15s;}
-.tg-seg button:hover{background:rgba(106,62,156,0.10);}
-.tg-seg button.on{background:var(--primary);color:#fff;}
+/* ─── השוואה שנתית (תצוגה 8) ─── */
+/* כותרת: שני מספרים גדולים עם חץ ביניהם */
+.yy-head{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;
+  padding:6px 0 18px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.yy-side{text-align:center;}
+.yy-per{font-size:12px;color:var(--muted);margin-bottom:5px;}
+.yy-num{font-size:44px;font-weight:900;line-height:1;}
+.yy-num.old{color:var(--muted);}
+.yy-num.new{color:var(--primary);}
+.yy-arrow{font-size:26px;color:var(--border);font-weight:900;}
+.yy-badge{text-align:center;}
 
-/* מטריצת חום תקופה × שכבה */
-.hm-wrap{overflow-x:auto;}
-.hm{border-collapse:separate;border-spacing:4px;width:100%;}
-.hm th{font-size:11px;font-weight:700;color:var(--muted);padding:4px 8px;text-align:center;white-space:nowrap;}
-.hm th.hm-g{text-align:right;width:52px;}
-.hm td{padding:0;}
-.hm-cell{border-radius:9px;padding:9px 6px;text-align:center;border:2px solid transparent;
-  transition:border-color .12s;min-width:76px;}
-.hm-val{font-size:16px;font-weight:900;line-height:1.1;}
-.hm-d{font-size:10px;font-weight:700;margin-top:3px;}
-.hm-empty{color:var(--muted);font-size:13px;font-weight:700;}
-.hm-cell.hm-cur{border-color:var(--accent);}
-.hm-cell.hm-hi{border-color:var(--primary);}
-.hm-lgnd{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;}
+/* שורת השוואה — שני מוטות אופקיים, ערך בקצה */
+.cmp-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-lbl{width:118px;flex-shrink:0;font-size:13px;font-weight:700;color:var(--text);}
+.cmp-lbl small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px;}
+.cmp-bars{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;position:relative;}
+.cmp-track{display:flex;align-items:center;gap:7px;}
+.cmp-bar{height:17px;border-radius:0 4px 4px 0;min-width:2px;transition:width .3s;}
+.cmp-bar.old{background:var(--primary-l);}
+.cmp-bar.new{background:var(--primary);}
+.cmp-val{font-size:12.5px;font-weight:900;white-space:nowrap;}
+.cmp-val.old{color:var(--muted);}
+.cmp-val.new{color:var(--primary-d);}
+.cmp-d{width:96px;flex-shrink:0;text-align:center;}
+/* סימן הרפרנס הארצי — קו אנכי דק על אזור המוטות */
+.cmp-nat{position:absolute;top:-2px;bottom:-2px;width:0;border-right:2px dashed #9aa0a6;}
+.cmp-nat span{position:absolute;top:-15px;right:4px;font-size:10px;font-weight:700;
+  color:#5f6368;white-space:nowrap;}
+.cmp-note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;}
+
+/* מספר הפוטנציאל — הקהל הקרוב ביותר */
+.pot-box{display:flex;align-items:center;gap:18px;background:var(--accent-l);
+  border-right:3px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:18px;}
+.pot-num{font-size:38px;font-weight:900;color:#a04a10;line-height:1;flex-shrink:0;}
+.pot-txt{font-size:13px;color:var(--text);line-height:1.6;}
 
 /* ─── SINGLE-GENDER SCHOOL CARDS ─── */
 .sg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -538,8 +552,8 @@ body{
       <span>עתיד טק</span>
     </div>
     <div class="sb-item" data-view="trends">
-      <span class="sb-ico">📉</span>
-      <span>מגמות לאורך תקופות</span>
+      <span class="sb-ico">📈</span>
+      <span>השוואה שנתית</span>
     </div>
 
     <div class="sb-section" style="margin-top:14px;">בקרוב</div>
@@ -1000,133 +1014,93 @@ body{
     </div>
   </section>
 
-  <!-- VIEW 8: TRENDS OVER SAMPLING PERIODS -->
+  <!-- VIEW 8: השוואה שנתית — שתי דגימות סוף שנה -->
   <section class="view" id="view-trends">
     <div class="page-head">
       <div>
-        <h1 class="page-title">מגמות לאורך תקופות דגימה</h1>
-        <p class="page-sub" id="trSub">המדד העירוני והמדדים שמסבירים אותו, לאורך כל הדגימות שבגיליון</p>
+        <h1 class="page-title" id="yyTitle">השוואה שנתית</h1>
+        <p class="page-sub" id="yySub">—</p>
       </div>
       <div class="page-meta">
-        <div class="meta-pill"><strong id="trMetaN">—</strong> דגימות <i class="ti" data-tip="כל טאב בגיליון הוא תקופת דגימה. כולן נטענות יחד בכל רענון — התצוגה הזו לא מבצעת בקשת רשת נוספת.">i</i></div>
-        <div class="meta-pill"><strong id="trMetaSpan">—</strong> <i class="ti" data-tip="הטווח הכרונולוגי שמוצג: מהדגימה המוקדמת ביותר ועד המאוחרת ביותר שנטענו בהצלחה.">i</i></div>
+        <div class="meta-pill"><strong id="yyMetaN">—</strong> בתי ספר בהשוואה <i class="ti" data-tip="בתי ספר שיש להם נתונים בשתי הדגימות. בית ספר שקיים רק באחת מהן מופיע בטבלה בנפרד וללא ערך שינוי.">i</i></div>
+        <div class="meta-pill"><strong>שתי דגימות סוף שנה</strong> <i class="ti" data-tip="התצוגה משווה את שתי דגימות סוף-השנה האחרונות ואינה מושפעת מבורר התקופה שבסיידבר. דגימות תחילת-שנה אינן נכללות — הן מודדות את אותה שכבה בתוך אותה שנה.">i</i></div>
       </div>
     </div>
 
-    <!-- אזהרת בסיס השוואה — נבנית רק כשמערך בתי הספר השתנה -->
-    <div id="trBasisWarn"></div>
-
-    <!-- מצב ריק: פחות משתי דגימות -->
-    <div id="trEmpty" style="display:none;">
+    <!-- מצב ריק -->
+    <div id="yyEmpty" style="display:none;">
       <div class="card">
         <div class="insight">
           <div class="insight-t">אין מספיק דגימות להשוואה</div>
-          <div class="insight-b" id="trEmptyB">—</div>
+          <div class="insight-b" id="yyEmptyB">—</div>
         </div>
       </div>
     </div>
 
-    <div id="trBody">
-      <!-- KPIs עם דלתא -->
-      <div class="kpi-grid" id="trKpis"></div>
-
-      <!-- הגרף המרכזי -->
+    <div id="yyBody">
+      <!-- 1 — מדד הטק -->
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">המדד העירוני לאורך הדגימות</div>
-            <div class="card-sub" id="trMainSub">—</div>
-          </div>
-          <div class="tg-seg">
-            <button id="tgCal" class="on" onclick="setTrendAxis('cal')">ציר קלנדרי</button>
-            <button id="tgCoh" onclick="setTrendAxis('coh')">מעקב מחזורי</button>
+            <div class="card-title">מדד הטק העירוני</div>
+            <div class="card-sub">זכאות למדד טק כאחוז מכלל תלמידי השכבה. המספר הגדול הוא המשוקלל של י׳–יב׳; מתחתיו כל שכבה בנפרד.</div>
           </div>
         </div>
-        <div class="chart-box tall"><canvas id="trendMain"></canvas></div>
-        <div class="insight" id="trMainIns">
+        <div class="yy-head" id="yyHead"></div>
+        <div id="yyGrades"></div>
+        <div class="insight" id="yyMeaning">
           <div class="insight-t">—</div>
           <div class="insight-b">—</div>
         </div>
       </div>
 
-      <!-- מטריצת חום -->
+      <!-- 2 — מקצועות הבסיס -->
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">מטריצת המדד — שכבה × דגימה</div>
-            <div class="card-sub">כל התמונה במספרים. ריחוף על תא מדליק את כל התאים של אותו מחזור — זהו האלכסון שמראה מה קרה לאותם תלמידים.</div>
+            <div class="card-title">מקצועות הבסיס</div>
+            <div class="card-sub">לומדי המקצוע כאחוז מכלל תלמידי י׳–יב׳. אלה המקצועות שמרכיבים את מדד הטק.</div>
           </div>
         </div>
-        <div class="hm-wrap" id="trHeat"></div>
-        <div class="hm-lgnd" id="trHeatLgnd">—</div>
+        <div id="yySubjects"></div>
+        <div id="yyPotential"></div>
+        <div class="cmp-note" id="yyNatNote"></div>
       </div>
 
-      <!-- תנועת בתי הספר -->
+      <!-- 3 — בתי ספר -->
       <div class="card">
         <div class="card-head">
           <div>
             <div class="card-title">תנועת בתי הספר</div>
-            <div class="card-sub" id="trSlopeSub">—</div>
+            <div class="card-sub" id="yySchoolSub">—</div>
           </div>
         </div>
-        <div class="chart-box tall"><canvas id="trendSlope"></canvas></div>
-        <div style="overflow-x:auto;margin-top:18px;">
+        <div style="overflow-x:auto;">
           <table class="tbl">
             <thead>
               <tr>
                 <th style="cursor:default;">בית ספר</th>
-                <th style="cursor:default;text-align:center;" id="trThFirst">דגימה ראשונה</th>
-                <th style="cursor:default;text-align:center;" id="trThLast">דגימה אחרונה</th>
+                <th style="cursor:default;text-align:center;" id="yyThOld">—</th>
+                <th style="cursor:default;text-align:center;" id="yyThNew">—</th>
                 <th style="cursor:default;text-align:center;">שינוי <i class="ti" data-tip="ההפרש בנקודות אחוז. מחושב רק על השכבות שקיימות לבית הספר בשתי הדגימות — אחרת שכבה שנוספה הייתה נראית כמו זינוק.">i</i></th>
                 <th style="cursor:default;text-align:center;">שכבות בהשוואה</th>
               </tr>
             </thead>
-            <tbody id="trSchoolTbody"></tbody>
+            <tbody id="yySchoolTbody"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- מדדים תומכים -->
+      <!-- 4 — תובנות -->
       <div class="card">
         <div class="card-head">
           <div>
-            <div class="card-title">מדדים תומכים לאורך הדגימות</div>
-            <div class="card-sub">הנתונים שמסבירים את המדד — מאיפה הצמיחה מגיעה, ומה צפוי להגיע אחריה</div>
+            <div class="card-title">תובנות מרכזיות</div>
+            <div class="card-sub">מסקנות אוטומטיות מהשוואת שתי הדגימות. מחושבות מהמספרים בלבד.</div>
           </div>
         </div>
-        <div class="three-col">
-          <div>
-            <div class="card-sub" style="padding-right:0;margin-bottom:6px;">מספרים מוחלטים — י׳–יב׳ <i class="ti" data-tip="אחוז יכול לעלות גם כשמספר לומדי הטק יורד, אם המחזור התכווץ יותר. זה הגרף שמגלה את זה.">i</i></div>
-            <div class="chart-box mini"><canvas id="trAbs"></canvas></div>
-          </div>
-          <div>
-            <div class="card-sub" style="padding-right:0;margin-bottom:6px;">מדעי המחשב מול פיזיקה <i class="ti" data-tip="% מתוך תלמידי י׳–יב׳. מראה מאיזה מקצוע מגיעה הצמיחה במדד.">i</i></div>
-            <div class="chart-box mini"><canvas id="trSubj"></canvas></div>
-          </div>
-          <div>
-            <div class="card-sub" style="padding-right:0;margin-bottom:6px;">מתמטיקה 5 יח׳ — י׳ <i class="ti" data-tip="מדד מקדים. עלייה במתמטיקה 5 בשכבה י׳ אמורה להופיע כעלייה בטק בדגימות הבאות.">i</i></div>
-            <div class="chart-box mini"><canvas id="trMa5"></canvas></div>
-          </div>
-          <div>
-            <div class="card-sub" style="padding-right:0;margin-bottom:6px;">עתיד טק — שכבה ט׳ <i class="ti" data-tip="קבוצת החיזוק בחט״ב. המדד המקדים המוקדם ביותר שיש — מה שקורה כאן יגיע לי׳ בעוד שנה.">i</i></div>
-            <div class="chart-box mini"><canvas id="trFt"></canvas></div>
-          </div>
-          <div>
-            <div class="card-sub" style="padding-right:0;margin-bottom:6px;">ייצוג בנות בקרב לומדי הטק <i class="ti" data-tip="% בנות מתוך זכאי מדד הטק בשכבות י׳–יב׳, מול הממוצע הארצי.">i</i></div>
-            <div class="chart-box mini"><canvas id="trGirls"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- תובנות אוטומטיות -->
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">מה הנתונים אומרים</div>
-            <div class="card-sub">מסקנות אוטומטיות מהשוואת הדגימות. מחושבות מהמספרים בלבד.</div>
-          </div>
-        </div>
-        <div id="trInsights"></div>
+        <div id="yyInsights"></div>
+        <div class="cmp-note" id="yyBasisNote"></div>
       </div>
     </div>
 
@@ -1183,7 +1157,25 @@ Chart.register(ChartDataLabels);
 // ════════════════════════════════════════════════════════════════
 let SCHOOLS = [];
 let FULL = [];
-let NATIONAL = 11.6;
+// ── נתונים ארציים — החריג היחיד לכלל "הכל מהגיליון" (§12 במפרט) ──
+// אינם קיימים בגיליון העירוני. מקור רשמי מפורסם, לא נתון מומצא.
+// דורש עדכון ידני פעם בשנה כשמשרד החינוך מפרסם.
+// מקור: משרד החינוך · מצגת "זכאות לבגרות טק" · י׳ סיוון תשפ"ו, 26.05.2026.
+// ⚠ ההגדרה הארצית: 5 יח"ל מתמטיקה + 5 יח"ל אנגלית + 5 יח"ל פיזיקה ו/או מדמ"ח.
+//   ייתכן שאינה זהה לשורת "זכאות למדד טק" שבגיליון — ראה §12.3. עד לאימות,
+//   הנתון הארצי מוצג כרפרנס בלבד ולא כהשוואה ישירה.
+const NAT = {
+  years:[2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+  tech: [ 9.9, 10.1, 10.3, 11.0, 11.2, 10.9, 10.8, 11.6],   // בגרות הייטק
+  ma5:  [15.5, 15.4, 15.6, 16.6, 17.3, 16.2, 16.0, 17.1],   // מתמטיקה 5 יח"ל
+  ph:   [10.4, 10.8, 11.1, 11.6, 11.6, 11.5, 11.1, 11.9],   // פיזיקה 5 יח"ל
+  cs:   [ 7.7,  7.6,  7.9,  8.3,  8.8,  8.3,  8.6,  8.9],   // מדעי המחשב 5 יח"ל
+  src:  'משרד החינוך, מאי 2026'
+};
+const _last = a => a[a.length-1];
+const NAT_LAST = { tech:_last(NAT.tech), ma5:_last(NAT.ma5), ph:_last(NAT.ph), cs:_last(NAT.cs) };
+
+let NATIONAL = NAT_LAST.tech;          // 11.6 — נגזר, לא מספר נפרד
 let NATIONAL_GIRLS = 36.3;
 let DATA_LABEL = '';
 
@@ -2752,637 +2744,329 @@ function renderFutureTech(){
 }
 
 // ══════════════════════════════════════════════════════════════
-// VIEW 8: TRENDS — מגמות לאורך תקופות דגימה
+// VIEW 8: השוואה שנתית — שתי דגימות סוף שנה
 // ════════════════════════════════════════════════════════════════
-// כל החישובים כאן עוברים דרך withPeriod (ראה שכבת הנתונים), שמחליף
-// זמנית את SCHOOLS/FULL/MATZEVET ומריץ את פונקציות החישוב הקיימות.
-// כך המספר שמופיע כאן לתקופה X זהה בהגדרה למספר שבסקירה העירונית
-// כשבוחרים את תקופה X — אין שתי אמיתות ואין מתמטיקה מקבילה שיכולה לסטות.
+// שאלה אחת בלבד: מה השתנה בין סוף השנה שעברה לסוף השנה הזו.
+// כל החישובים עוברים דרך withPeriod, כך שהמספרים כאן זהים בהגדרה
+// לאלה שבסקירה העירונית כשבוחרים את אותה תקופה.
+// התמונה הארצית וההשוואה לערים אחרות — תצוגות ייעודיות בהמשך (מפרט §12).
 
-let TREND_AXIS = 'cal';                      // 'cal' = ציר קלנדרי · 'coh' = מעקב מחזורי
+// ─── עזרי חישוב על תקופה נתונה ──────────────────────────────────
+// כולם עוברים דרך withPeriod ומריצים את הפונקציות הקיימות, ולכן
+// מחזירים בדיוק את מה שהתצוגות האחרות מציגות לאותה תקופה.
 
-const TR_GRADE_COL = ['#c3b0da','#a488c9','#8560b4','#1a73e8','#f47b20','#34a853'];
-const TR_COHORT_COL = ['#6a3e9c','#f47b20','#1a73e8','#34a853','#e84235','#9334a8','#00897b','#b06000'];
-
-function setTrendAxis(m){
-  if(TREND_AXIS===m) return;
-  TREND_AXIS = m;
-  document.getElementById('tgCal').classList.toggle('on', m==='cal');
-  document.getElementById('tgCoh').classList.toggle('on', m==='coh');
-  renderTrends();
-}
-
-// ─── מדד עירוני לשכבה כלשהי (ז׳–יב׳) בתקופה כלשהי ───────────────
-// null כשאין נתונים לשכבה — 0 בגרף מגמה נראה כמו קריסה אמיתית
+// מדד עירוני לשכבה כלשהי (gi על ALL_GRADES: ז׳=0 … יב׳=5).
+// null כשאין נתונים — 0 בהשוואה נראה כמו קריסה אמיתית.
 function trPct(key, gi){
   return withPeriod(key, ()=>{
     const tot = cityStudentsAll(gi); if(!tot) return null;
-    let tech=0; SCHOOLS.forEach(s=>{ const r=rowAll(s,gi); if(r) tech+=r[4]; });
-    return tech/tot*100;
-  });
-}
-function trPctAlt(key, gi){                  // אותו מונה, על שורת המצבת
-  return withPeriod(key, ()=>{
-    const a = cityDenomAlt(ALL_GRADES[gi]); if(!a) return null;
-    let tech=0; SCHOOLS.forEach(s=>{ const r=rowAll(s,gi); if(r) tech+=r[4]; });
-    return tech/a*100;
+    let tech = 0; SCHOOLS.forEach(s=>{ const r = rowAll(s, gi); if(r) tech += r[4]; });
+    return tech / tot * 100;
   });
 }
 function trOverall(key, filter){ return withPeriod(key, ()=> cityOverallPct(), filter); }
-function trDropPct(key){
-  return withPeriod(key, ()=>{ const a=cityPct(0); return a? (a-cityPct(2))/a*100 : null; });
-}
-function trTechAbs(key){                     // מונה מוחלט י׳–יב׳
-  return withPeriod(key, ()=> GRADES.reduce((s,_,i)=> s+cityTotal(i), 0));
-}
-function trStudAbs(key){                     // מכנה מוחלט י׳–יב׳
-  return withPeriod(key, ()=> GRADES.reduce((s,_,i)=> s+cityStudents(i), 0));
-}
-function trSubjPct(key, idx){                // מקצוע כ-% מכלל תלמידי י׳–יב׳
+
+// מקצוע כאחוז מכלל תלמידי י׳–יב׳ (idx: 1=מדמ"ח, 2=פיזיקה, 3=מתמטיקה 5)
+function trSubjPct(key, idx){
   return withPeriod(key, ()=>{
-    let sub=0, tot=0;
-    GRADES.forEach((_,i)=>{ sub += SCHOOLS.reduce((s,x)=> s+subjVal(x,i,idx),0); tot += cityStudents(i); });
-    return tot? sub/tot*100 : null;
+    let sub = 0, tot = 0;
+    GRADES.forEach((_, i)=>{ sub += SCHOOLS.reduce((s,x)=> s + subjVal(x,i,idx), 0); tot += cityStudents(i); });
+    return tot ? sub / tot * 100 : null;
   });
 }
+function trTechAbs(key){ return withPeriod(key, ()=> GRADES.reduce((s,_,i)=> s + cityTotal(i), 0)); }
+function trStudAbs(key){ return withPeriod(key, ()=> GRADES.reduce((s,_,i)=> s + cityStudents(i), 0)); }
 
-// ─── בסיס ההשוואה: מי נכנס ומי יצא בין דגימות ───────────────────
-function basisInfo(){
-  const ps = periodsSorted();
-  const sets = ps.map(p=> new Set(p.schools.map(s=> s.name)));
-  let common = null;
-  sets.forEach(st=>{ common = common===null ? new Set(st) : new Set([...common].filter(n=> st.has(n))); });
-  const changes = [];
-  for(let i=1;i<ps.length;i++){
-    const added = [...sets[i]].filter(n=> !sets[i-1].has(n));
-    const gone  = [...sets[i-1]].filter(n=> !sets[i].has(n));
-    if(added.length || gone.length) changes.push({ label: ps[i].label, added, gone });
-  }
-  return { periods: ps, common: common || new Set(), changes, allSame: changes.length===0 };
+// גלולת דלתא. invert=true למדד שירידה בו היא בשורה טובה.
+function trDeltaChip(d, invert, suffix){
+  if(d == null || !isFinite(d)) return '<span class="kpi-delta same">אין השוואה</span>';
+  if(Math.abs(d) < 0.05) return `<span class="kpi-delta same">ללא שינוי${suffix||''}</span>`;
+  const txt = (d>=0?'+':'−') + Math.abs(d).toFixed(1) + ' נק׳' + (suffix||'');
+  return `<span class="kpi-delta ${(invert ? d<0 : d>0) ? 'up' : 'dn'}">${txt}</span>`;
 }
 
-// ─── גלולת דלתא ─────────────────────────────────────────────────
-// invert=true למדד שירידה בו היא בשורה טובה (נשירה)
-function trDeltaChip(d, invert, suffix){
-  if(d==null || !isFinite(d)) return '<span class="kpi-delta same">אין דגימה קודמת</span>';
-  const txt = (d>=0?'+':'−')+Math.abs(d).toFixed(1)+' נק׳'+(suffix||'');
-  if(Math.abs(d) < 0.05) return `<span class="kpi-delta same">ללא שינוי${suffix||''}</span>`;
-  const good = invert ? d<0 : d>0;
-  return `<span class="kpi-delta ${good?'up':'dn'}">${txt}</span>`;
+// ─── בחירת שתי הדגימות ──────────────────────────────────────────
+// סוף שנה בלבד. דגימת תחילת-שנה מודדת את אותה שכבה בתוך אותה שנה
+// ולכן אינה השוואה שנתית. נגזר מהנתונים — יישאר נכון כשיתווספו טאבים.
+function yyPeriods(){
+  const all = periodsSorted();
+  const ends = all.filter(p=> p.half === 2);
+  if(ends.length >= 2) return { pair: ends.slice(-2), exact: true };
+  if(all.length >= 2)  return { pair: all.slice(-2),  exact: false };
+  return { pair: all, exact: false };
+}
+
+// ─── שורת השוואה: שני מוטות אופקיים, ערך בקצה ───────────────────
+// nat = ערך ארצי לרפרנס (או null). scale = הערך שממנו מנרמלים את הרוחב.
+function cmpRow(label, sub, oldV, newV, scale, nat, invert){
+  const w = v => Math.max(1.5, Math.min(100, (v / scale) * 100));
+  const d = (oldV != null && newV != null) ? newV - oldV : null;
+  const natMark = (nat != null && scale > 0)
+    ? `<div class="cmp-nat" style="right:${w(nat).toFixed(1)}%;"><span>ארצי ${nat.toFixed(1)}%</span></div>` : '';
+  const bar = (v, cls) => v == null
+    ? `<div class="cmp-track"><div class="cmp-bar ${cls}" style="width:0"></div><div class="cmp-val ${cls}">—</div></div>`
+    : `<div class="cmp-track"><div class="cmp-bar ${cls}" style="width:${w(v).toFixed(1)}%"></div><div class="cmp-val ${cls}">${v.toFixed(1)}%</div></div>`;
+  return `
+    <div class="cmp-row">
+      <div class="cmp-lbl">${label}${sub? `<small>${sub}</small>` : ''}</div>
+      <div class="cmp-bars">${natMark}${bar(newV,'new')}${bar(oldV,'old')}</div>
+      <div class="cmp-d">${trDeltaChip(d, !!invert)}</div>
+    </div>`;
 }
 
 // ════════════════════════════════════════════════════════════════
 function renderTrends(){
-  ['trendMain','trendSlope','trAbs','trSubj','trMa5','trFt','trGirls'].forEach(destroyChart);
+  const { pair, exact } = yyPeriods();
+  const body  = document.getElementById('yyBody');
+  const empty = document.getElementById('yyEmpty');
 
-  const ps    = periodsSorted();
-  const body  = document.getElementById('trBody');
-  const empty = document.getElementById('trEmpty');
-
-  document.getElementById('trMetaN').textContent = ps.length;
-  document.getElementById('trMetaSpan').textContent =
-    ps.length ? ('מ' + ps[0].label + ' עד ' + ps[ps.length-1].label) : '—';
-
-  if(ps.length < 2){
+  if(pair.length < 2){
     body.style.display = 'none';
     empty.style.display = 'block';
-    document.getElementById('trBasisWarn').innerHTML = '';
-    document.getElementById('trEmptyB').innerHTML =
-      ps.length === 1
-        ? `נטענה דגימה אחת בלבד (<strong>${ps[0].label}</strong>). השוואה לאורך זמן דורשת לפחות שתי תקופות. הוסף טאב נוסף בגיליון דרך <strong>⚙ מקור הנתונים</strong>, או בדוק בקונסול אילו טאבים נכשלו בטעינה.`
-        : 'לא נטענה אף תקופה. בדוק את מקור הנתונים.';
+    document.getElementById('yySub').textContent = '—';
+    document.getElementById('yyMetaN').textContent = '—';
+    document.getElementById('yyEmptyB').innerHTML = pair.length === 1
+      ? `נטענה דגימה אחת בלבד (<strong>${pair[0].label}</strong>). השוואה שנתית דורשת שתי דגימות. הוסף טאב נוסף בגיליון דרך <strong>⚙ מקור הנתונים</strong>.`
+      : 'לא נטענה אף תקופה. בדוק את מקור הנתונים.';
     return;
   }
   body.style.display = '';
   empty.style.display = 'none';
 
-  const basis = basisInfo();
-  renderTrendBasis(basis);
-  renderTrendKpis(ps);
-  renderTrendMain(ps, basis);
-  renderTrendHeat(ps);
-  renderTrendSchools(ps);
-  renderTrendSupport(ps);
-  document.getElementById('trInsights').innerHTML = buildTrendInsights(ps, basis);
+  const A = pair[0], B = pair[1];             // A = הישנה, B = החדשה
+  document.getElementById('yyTitle').textContent = 'השוואה שנתית';
+  document.getElementById('yySub').innerHTML =
+    `<strong>${A.label}</strong> מול <strong>${B.label}</strong>` +
+    (exact ? '' : ' <span class="alt-num">(אין שתי דגימות סוף-שנה — מוצגות שתי הדגימות האחרונות)</span>');
+
+  renderYYIndex(A, B);
+  renderYYSubjects(A, B);
+  renderYYSchools(A, B);
+  renderYYInsights(A, B);
 }
 
-// ─── אזהרת בסיס ─────────────────────────────────────────────────
-function renderTrendBasis(basis){
-  const box = document.getElementById('trBasisWarn');
-  if(basis.allSame){ box.innerHTML = ''; return; }
-  const lines = basis.changes.map(c=>{
-    const bits = [];
-    if(c.added.length) bits.push(`נוספו <strong>${c.added.join(', ')}</strong>`);
-    if(c.gone.length)  bits.push(`נעלמו <strong>${c.gone.join(', ')}</strong>`);
-    return `ב-${c.label} ${bits.join(' · ')}`;
-  }).join('<br>');
-  box.innerHTML = `
-    <div class="insight warn" style="margin-top:0;margin-bottom:20px;">
-      <div class="insight-t">⚠ מערך בתי הספר השתנה בין הדגימות</div>
-      <div class="insight-b">${lines}<br>
-        לפי §3.5 המדד העירוני מחושב על כל בית ספר שיש לו נתונים באותה שכבה — ולכן חלק מהשינוי במדד
-        נובע משינוי הבסיס ולא ממה שקרה בשטח. בגרף נוסף <strong>קו מקווקו "בסיס קבוע"</strong>,
-        שמחשב את המדד רק על ${basis.common.size} בתי הספר שקיימים בכל הדגימות. הפער בין הקווים הוא בדיוק אפקט הבסיס.</div>
-    </div>`;
-}
+// ─── 1. מדד הטק ─────────────────────────────────────────────────
+function renderYYIndex(A, B){
+  const oa = trOverall(A.key), ob = trOverall(B.key);
+  const d  = (oa != null && ob != null) ? ob - oa : null;
 
-// ─── שורת KPI ───────────────────────────────────────────────────
-function renderTrendKpis(ps){
-  const idx  = ps.findIndex(p=> p.key===CURRENT_PERIOD);
-  const cur  = idx >= 0 ? ps[idx] : ps[ps.length-1];
-  const prev = (idx > 0) ? ps[idx-1] : null;
+  document.getElementById('yyHead').innerHTML = `
+    <div class="yy-side">
+      <div class="yy-per">${A.label}</div>
+      <div class="yy-num old">${oa == null ? '—' : oa.toFixed(1)+'%'}</div>
+    </div>
+    <div class="yy-arrow">←</div>
+    <div class="yy-side">
+      <div class="yy-per">${B.label}</div>
+      <div class="yy-num new">${ob == null ? '—' : ob.toFixed(1)+'%'}</div>
+    </div>
+    <div class="yy-badge">${trDeltaChip(d, false)}</div>`;
 
-  document.getElementById('trSub').textContent =
-    'המדד העירוני והמדדים שמסבירים אותו, לאורך כל הדגימות · הכרטיסים משווים את ' +
-    cur.label + (prev ? ' מול ' + prev.label : ' — הדגימה הראשונה');
-
-  const cards = [];
-  ['י','יא','יב'].forEach((gName, i)=>{
-    const gi = i + 3;                                   // ALL_GRADES: י׳=3
-    const v  = trPct(cur.key, gi);
-    const pv = prev ? trPct(prev.key, gi) : null;
-    const alt = trPctAlt(cur.key, gi);
-    cards.push(`
-      <div class="kpi ${i===0?'pri':i===1?'acc':'good'}">
-        <div class="kpi-lbl">מדד טק שכבת ${gName}׳ <i class="ti" data-tip="לומדי טק בשכבה חלקי סך תלמידי השכבה, בדגימה הנבחרת. הדלתא היא ההפרש בנקודות אחוז מהדגימה הקודמת.">i</i></div>
-        <div class="kpi-val">${v==null?'—':v.toFixed(1)+'%'}${alt==null?'':altSpan(alt)}</div>
-        <div class="kpi-sub">${trDeltaChip((v!=null&&pv!=null)? v-pv : null, false)}</div>
-      </div>`);
+  // שכבה בנפרד. הסולם משותף לשלוש השורות כדי שההשוואה ביניהן תהיה כנה.
+  const vals = [];
+  ['י','יא','יב'].forEach((g, i)=>{
+    vals.push({ g, gi: i + 3, o: trPct(A.key, i+3), n: trPct(B.key, i+3) });
   });
+  const scale = Math.max(...vals.flatMap(v=> [v.o, v.n]).filter(v=> v != null), NAT_LAST.tech, 1) * 1.12;
 
-  const dv  = trDropPct(cur.key);
-  const dpv = prev ? trDropPct(prev.key) : null;
-  cards.push(`
-    <div class="kpi warn">
-      <div class="kpi-lbl">נשירה י׳→יב׳ <i class="ti" data-tip="שיעור הירידה במדד הטק בין שכבה י׳ לשכבה יב׳ באותה דגימה. ירידה בערך הזה היא שיפור — ולכן היא צבועה בירוק.">i</i></div>
-      <div class="kpi-val">${dv==null?'—':'▼ '+dv.toFixed(1)+'%'}</div>
-      <div class="kpi-sub">${trDeltaChip((dv!=null&&dpv!=null)? dv-dpv : null, true)}</div>
-    </div>`);
+  document.getElementById('yyGrades').innerHTML = vals.map(v=>
+    // רפרנס ארצי רק על יב׳ — המדד הארצי מודד בוגרים, ואין לו מקבילה בי׳/יא׳
+    cmpRow('שכבה ' + v.g + '׳', null, v.o, v.n, scale, v.g === 'יב' ? NAT_LAST.tech : null, false)
+  ).join('');
 
-  document.getElementById('trKpis').innerHTML = cards.join('');
-}
-
-// ─── הגרף המרכזי ────────────────────────────────────────────────
-function renderTrendMain(ps, basis){
-  const labels = ps.map(p=> p.label);
-  const ds = [];
-  let sub = '', insT = '', insB = '';
-
-  if(TREND_AXIS === 'cal'){
-    // ציר קלנדרי — אותה שכבה לאורך הדגימות (מחזורים שונים)
-    ALL_GRADES.forEach((g, gi)=>{
-      ds.push({
-        label: g+'׳',
-        data: ps.map(p=> trPct(p.key, gi)),
-        borderColor: TR_GRADE_COL[gi], backgroundColor: TR_GRADE_COL[gi]+'14',
-        borderWidth: 3, tension: 0.25, pointRadius: 5, pointBorderColor:'#fff', pointBorderWidth: 2,
-        fill: false, spanGaps: false, hidden: gi < 3,
-        datalabels: { display: false }
-      });
-    });
-    const alt = ps.map(p=> ALL_GRADES.map((_,gi)=> trPctAlt(p.key, gi)));
-    ds.push({
-      label: 'עירוני משוקלל י׳–יב׳',
-      data: ps.map(p=> trOverall(p.key)),
-      borderColor: COL.primaryD, backgroundColor: 'rgba(74,41,114,0.08)',
-      borderWidth: 5, tension: 0.25, pointRadius: 8, pointStyle: 'rectRot',
-      pointBorderColor: '#fff', pointBorderWidth: 3, fill: true, spanGaps: false,
-      datalabels: { anchor:'end', align:'top', offset: 6, color: COL.primaryD,
-        font: {family:'Heebo', size:14, weight:'900'},
-        formatter: v => v==null? '' : v.toFixed(1)+'%' }
-    });
-    if(!basis.allSame){
-      ds.push({
-        label: 'בסיס קבוע ('+basis.common.size+' בתי ספר)',
-        data: ps.map(p=> trOverall(p.key, s=> basis.common.has(s.name))),
-        borderColor: COL.primary, borderWidth: 3, borderDash: [7,4], tension: 0.25,
-        pointRadius: 0, fill: false, spanGaps: false, datalabels: { display: false }
-      });
+  // "מה זה אומר" — נגזר מהמספרים, לא טקסט קבוע
+  const p10 = vals[0], p12 = vals[2];
+  const d10 = (p10.o != null && p10.n != null) ? p10.n - p10.o : null;
+  const d12 = (p12.o != null && p12.n != null) ? p12.n - p12.o : null;
+  let t = 'מה זה אומר', b = 'אין מספיק נתונים להשוואה בין השכבות.';
+  if(d10 != null && d12 != null){
+    if(d10 > 0.3 && d12 < -0.3){
+      t = 'הכניסה גדלה, הבוגרים הצטמצמו';
+      b = `שכבה י׳ עלתה ב-<strong>${d10.toFixed(1)} נק׳</strong> ושכבה יב׳ ירדה ב-<strong>${Math.abs(d12).toFixed(1)} נק׳</strong>. יותר תלמידים נכנסים למסלול, אבל המחזור שסיים השנה קטן מזה שסיים אשתקד. <strong>המספר המשוקלל מסתיר את זה</strong> — הוא עולה בזכות השכבות הצעירות. הפער יגיע לשכבת הבוגרים בשנים הבאות רק אם ישמרו על הנכנסים.`;
+    } else if(d10 > 0.3 && d12 > 0.3){
+      t = 'עלייה בכל אורך המסלול';
+      b = `גם הכניסה וגם הסיום עלו — י׳ ב-<strong>${d10.toFixed(1)} נק׳</strong> ו-יב׳ ב-<strong>${d12.toFixed(1)} נק׳</strong>. זו התמונה הבריאה: המסלול גדל וגם שומר על מי שנכנס אליו.`;
+    } else if(d10 < -0.3 && d12 < -0.3){
+      t = 'ירידה בכל אורך המסלול';
+      b = `גם י׳ וגם יב׳ ירדו (<strong>${d10.toFixed(1)}</strong> ו-<strong>${d12.toFixed(1)} נק׳</strong>). זו לא תנודה בשכבה אחת אלא ירידה רוחבית — שווה לבדוק אם משהו השתנה בהיצע המגמות או ברישום.`;
+    } else if(d10 < -0.3 && d12 > 0.3){
+      t = 'הבוגרים עלו, הכניסה ירדה';
+      b = `שכבה יב׳ עלתה ב-<strong>${d12.toFixed(1)} נק׳</strong> אבל י׳ ירדה ב-<strong>${Math.abs(d10).toFixed(1)} נק׳</strong>. התוצאה השנה טובה, אבל <strong>הצינור מצטמצם</strong> — זה יופיע בשכבת הבוגרים בעוד שנתיים.`;
+    } else {
+      t = 'תמונה יציבה';
+      b = `השינויים בשלוש השכבות קטנים מ-0.3 נקודות אחוז לכל כיוון. המדד העירוני עומד במקום.`;
     }
-    ds.push(refLine('ארצי '+NATIONAL+'%', NATIONAL, '#5f6368', ps.length));
-
-    sub = 'כל קו הוא שכבה, לאורך הדגימות. שים לב: י׳ בתשפ״ה ו-י׳ בתשפ״ו הם <strong>מחזורים שונים</strong> — ' +
-          'זו השוואה של העיר לעצמה, לא מעקב אחרי אותם תלמידים. ז׳–ט׳ מוסתרים כברירת מחדל (שם המדד הוא רישום לקבוצת עמ״ט) — לחץ על הלגנדה כדי להציג.';
-
-    const a = trOverall(ps[0].key), b = trOverall(ps[ps.length-1].key);
-    const d = (a!=null && b!=null) ? b-a : null;
-    insT = 'לאן זזה העיר';
-    insB = d==null ? 'אין מספיק נתונים לחישוב המגמה.'
-      : `המדד העירוני המשוקלל (י׳–יב׳) עבר מ-<strong>${a.toFixed(1)}%</strong> ב-${ps[0].label} ל-<strong>${b.toFixed(1)}%</strong> ב-${ps[ps.length-1].label} — <strong style="color:${d>=0?'#137333':'#c5221f'}">${d>=0?'+':'−'}${Math.abs(d).toFixed(1)} נקודות אחוז</strong>.`;
-
-    ds._altLookup = alt;
-  } else {
-    // מעקב מחזורי — האלכסון. אותם תלמידים, שכבה עולה בכל שנה
-    const years = new Set();
-    ps.forEach(p=> ALL_GRADES.forEach((_,gi)=> years.add(cohortOf(p, gi))));
-    const cohorts = [...years].sort((a,b)=> a-b);
-    let ci = 0;
-    cohorts.forEach(c=>{
-      const gis  = ps.map(p=> 5 - (c - p.year));
-      const data = gis.map((gi,i)=> (gi>=0 && gi<=5) ? trPct(ps[i].key, gi) : null);
-      if(data.filter(v=> v!=null).length < 2) return;   // נקודה בודדת אינה מגמה
-      const col = TR_COHORT_COL[ci % TR_COHORT_COL.length]; ci++;
-      // תווית רק בקצה הקו — 6 מחזורים × 3 דגימות = 18 תוויות שנערמות זו על זו
-      let end = -1; data.forEach((v,i)=>{ if(v!=null) end = i; });
-      ds.push({
-        label: 'מחזור '+hebYearName(c),
-        data, _gis: gis,
-        borderColor: col, backgroundColor: col+'14',
-        borderWidth: 4, tension: 0.25, pointRadius: 7, pointStyle: 'rectRot',
-        pointBorderColor: '#fff', pointBorderWidth: 2, fill: false, spanGaps: false,
-        datalabels: {
-          display: ctx => ctx.dataIndex === end,
-          anchor:'end', align:'left', offset: 8, color: col,
-          font: {family:'Heebo', size:11, weight:'900'},
-          formatter: (v, ctx) => {
-            const gi = ctx.dataset._gis[ctx.dataIndex];
-            return (gi>=0 && gi<=5 ? ALL_GRADES[gi]+'׳ ' : '') + v.toFixed(1)+'%';
-          }
-        }
-      });
-    });
-
-    sub = 'כל קו הוא <strong>מחזור אחד</strong> — אותם תלמידים, ששכבתם עולה בכל שנת לימודים. ' +
-          'התווית שליד כל נקודה היא השכבה שבה המחזור נמצא באותה דגימה. שתי דגימות של אותה שנה (תחילה/סוף) הן אותה שכבה — שם הקו מודד יציבות תוך-שנתית ולא מעבר שכבה.';
-
-    insT = 'למה זה חשוב';
-    insB = 'ה"נשירה" שבסקירה העירונית היא <strong>פסאודו-נשירה</strong>: י׳, יא׳ ו-יב׳ של אותה דגימה הם שלושה מחזורים שונים שנמדדו באותו רגע. הקווים כאן הם נשירה אמיתית — ירידה לאורך קו פירושה שתלמידים שהיו במדד עזבו אותו.' +
-      (ds.length ? '' : ' <strong>כרגע אין מחזור עם שתי נקודות מדידה או יותר</strong> — הטווח שנטען קצר מדי. כל טאב שיתווסף לגיליון יאריך את הקווים אוטומטית.');
   }
-
-  const altLookup = ds._altLookup;
-  const cohMode = TREND_AXIS === 'coh';
-
-  charts.trendMain = new Chart(document.getElementById('trendMain'), {
-    type: 'line',
-    data: { labels, datasets: ds },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 30, right: 46, left: 46 } },   // מקום לתוויות בקצוות
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position:'top', align:'end',
-          labels: { font: HF, color:'#5f6368', boxWidth: 14, padding: 10, usePointStyle: false } },
-        tooltip: { mode:'index', intersect:false, callbacks: {
-          label: ctx => {
-            if(ctx.parsed.y == null) return null;
-            let s = ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
-            if(cohMode && ctx.dataset._gis){
-              const gi = ctx.dataset._gis[ctx.dataIndex];
-              if(gi >= 0 && gi <= 5) s = ctx.dataset.label + ' · שכבה ' + ALL_GRADES[gi] + '׳: ' + ctx.parsed.y.toFixed(1) + '%';
-            } else if(altLookup){
-              const gi = ALL_GRADES.indexOf(ctx.dataset.label.replace('׳',''));
-              const a = gi >= 0 ? altLookup[ctx.dataIndex][gi] : null;
-              if(a != null) s += '  (מצבת ' + a.toFixed(1) + '%)';
-            }
-            return s;
-          }
-        } }
-      },
-      scales: {
-        x: { ticks: { font: hf2(), color:'#5f6368' }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { callback: v=> v+'%', font: HF, color:'#5f6368' }, grid: { color: GC } }
-      }
-    }
-  });
-
-  document.getElementById('trMainSub').innerHTML = sub;
-  const ins = document.getElementById('trMainIns');
-  ins.querySelector('.insight-t').textContent = insT;
-  ins.querySelector('.insight-b').innerHTML = insB;
+  const ins = document.getElementById('yyMeaning');
+  ins.querySelector('.insight-t').textContent = t;
+  ins.querySelector('.insight-b').innerHTML = b;
 }
 
-// ─── מטריצת חום ─────────────────────────────────────────────────
-function renderTrendHeat(ps){
-  const vals = ALL_GRADES.map((_,gi)=> ps.map(p=> trPct(p.key, gi)));
-  const flat = vals.flat().filter(v=> v!=null);
-  const lo = flat.length? Math.min(...flat) : 0;
-  const hi = flat.length? Math.max(...flat) : 1;
-  const alpha = v => 0.07 + (hi>lo ? (v-lo)/(hi-lo) : 0.5) * 0.72;
+// ─── 2. מקצועות הבסיס ───────────────────────────────────────────
+function renderYYSubjects(A, B){
+  // בלי רפרנס ארצי כאן. הנתון העירוני הוא לומדי המקצוע מתוך כלל תלמידי י׳–יב׳,
+  // והארצי הוא זכאי המקצוע מתוך שנתון אחד — מונה שונה ומכנה שונה. סימון שניהם
+  // על אותו מוט היה מציג את חולון כמובילה בפער עצום שאינו קיים.
+  const rows = [
+    { lbl:'מתמטיקה 5 יח׳', idx:3 },
+    { lbl:'פיזיקה 5 יח׳',  idx:2 },
+    { lbl:'מדעי המחשב 5 יח׳', idx:1 }
+  ].map(r=> Object.assign(r, { o: trSubjPct(A.key, r.idx), n: trSubjPct(B.key, r.idx) }));
 
-  let html = '<table class="hm"><thead><tr><th class="hm-g"></th>' +
-    ps.map(p=> `<th>${p.label}</th>`).join('') + '</tr></thead><tbody>';
+  const scale = Math.max(...rows.flatMap(r=> [r.o, r.n]).filter(v=> v != null), 1) * 1.12;
+  document.getElementById('yySubjects').innerHTML =
+    rows.map(r=> cmpRow(r.lbl, 'מתוך כלל תלמידי י׳–יב׳', r.o, r.n, scale, null, false)).join('');
 
-  ALL_GRADES.forEach((g, gi)=>{
-    html += `<tr><th class="hm-g">${g}׳</th>`;
-    ps.forEach((p, i)=>{
-      const v = vals[gi][i];
-      const coh = cohortOf(p, gi);
-      const isCur = p.key === CURRENT_PERIOD;
-      if(v == null){
-        html += `<td><div class="hm-cell ${isCur?'hm-cur':''}" data-cohort="${coh}" style="background:#f5f3f8;"><div class="hm-empty">—</div></div></td>`;
-        return;
-      }
-      const prev = i > 0 ? vals[gi][i-1] : null;
-      const d = prev != null ? v - prev : null;
-      const dHtml = d == null ? '<div class="hm-d" style="color:#9aa0a6;">—</div>'
-        : Math.abs(d) < 0.05 ? '<div class="hm-d" style="color:#9aa0a6;">ללא שינוי</div>'
-        : `<div class="hm-d" style="color:${d>0?'#137333':'#c5221f'};">${d>0?'▲':'▼'} ${Math.abs(d).toFixed(1)}</div>`;
-      const a = alpha(v);
-      html += `<td><div class="hm-cell ${isCur?'hm-cur':''}" data-cohort="${coh}"
-        title="${g}׳ · ${p.label} · מחזור ${hebYearName(coh)}"
-        style="background:rgba(106,62,156,${a.toFixed(3)});">
-        <div class="hm-val" style="color:${a>0.45?'#fff':'var(--text)'};">${v.toFixed(1)}%</div>${dHtml}</div></td>`;
-    });
-    html += '</tr>';
+  // ── הפוטנציאל: מתמטיקה 5 ביב׳ שאינם במדד הטק ──
+  // זה בדיוק המספר שדו"ח המצוינות מדגיש (101 בחולון בתשפ"ד) — כאן חי מהגיליון.
+  const pot = withPeriod(B.key, ()=>{
+    let ma5 = 0, ht = 0;
+    SCHOOLS.forEach(s=>{ const r = s.grades['יב']; if(r){ ma5 += r[3]; ht += r[4]; } });
+    return { ma5, ht, gap: ma5 - ht };
   });
-  html += '</tbody></table>';
+  const box = document.getElementById('yyPotential');
+  // ht > ma5 פירושו שהמדד אינו מוכל במתמטיקה 5 — אז החישוב הזה חסר משמעות
+  box.innerHTML = (pot && pot.gap > 0 && pot.ma5 > 0) ? `
+    <div class="pot-box">
+      <div class="pot-num">${pot.gap.toLocaleString('he-IL')}</div>
+      <div class="pot-txt">תלמידי <strong>מתמטיקה 5 יח׳ בשכבת יב׳</strong> שאינם נספרים במדד הטק
+        (${pot.ma5.toLocaleString('he-IL')} לומדי מתמטיקה 5 מול ${pot.ht.toLocaleString('he-IL')} במדד).
+        אלה התלמידים שכבר עברו את המחסום הקשה ביותר — <strong>קהל היעד הקרוב ביותר להגדלת המדד</strong>
+        הוא בתוכם, דרך פיזיקה או מדעי המחשב.</div>
+    </div>` : '';
 
-  const box = document.getElementById('trHeat');
-  box.innerHTML = html;
-
-  // האזנה אחת על המיכל (assignment, לא addEventListener — נמנע הצטברות בין רינדורים)
-  box.onmouseover = e => {
-    const cell = e.target.closest('.hm-cell'); if(!cell) return;
-    const c = cell.dataset.cohort;
-    box.querySelectorAll('.hm-cell').forEach(x=> x.classList.toggle('hm-hi', x.dataset.cohort === c));
-  };
-  box.onmouseout = e => {
-    if(e.relatedTarget && box.contains(e.relatedTarget)) return;
-    box.querySelectorAll('.hm-cell').forEach(x=> x.classList.remove('hm-hi'));
-  };
-
-  document.getElementById('trHeatLgnd').innerHTML =
-    `הרקע מדורג לפי גובה המדד (בהיר = נמוך, סגול מלא = גבוה) על פני כל התאים שבטבלה. המספר הקטן הוא השינוי בנקודות אחוז מהדגימה שמימין.
-     מסגרת כתומה = הדגימה הנבחרת בסיידבר. <strong>ריחוף על תא מדליק את אלכסון המחזור</strong> — כל התאים של אותם תלמידים לאורך הזמן.
-     תא ריק פירושו שאין נתונים לשכבה בדגימה, לא שהמדד אפס.`;
+  document.getElementById('yyNatNote').innerHTML =
+    `הקו המקווקו שליד שכבה יב׳ הוא הממוצע <strong>הארצי לשנת ${NAT.years[NAT.years.length-1]}</strong> ` +
+    `(${NAT_LAST.tech}% · ${NAT.src}), ומוצג כרפרנס בלבד. הוא מופיע רק שם: המדד הארצי מודד בוגרים, ` +
+    `ולשכבות י׳–יא׳ אין לו מקבילה. <strong>גם למקצועות לא</strong> — הנתון העירוני כאן הוא לומדי המקצוע ` +
+    `מתוך כלל תלמידי י׳–יב׳, בעוד שהארצי הוא זכאי המקצוע מתוך שנתון אחד. ` +
+    `בנוסף, ההגדרה הארצית דורשת גם 5 יח״ל אנגלית וייתכן שאינה זהה לשורת <strong>זכאות למדד טק</strong> ` +
+    `שבגיליון (§12.3 במפרט). התמונה הארצית המלאה וההשוואה לערים אחרות יוצגו בתצוגות נפרדות.`;
 }
 
-// ─── תנועת בתי הספר ─────────────────────────────────────────────
-function renderTrendSchools(ps){
-  const first = ps[0], last = ps[ps.length-1];
-  document.getElementById('trThFirst').textContent = first.label;
-  document.getElementById('trThLast').textContent  = last.label;
-
-  const byName = p => { const m = {}; p.schools.forEach(s=> m[s.name] = s); return m; };
-  const A = byName(first), B = byName(last);
-  const names = [...new Set([...Object.keys(A), ...Object.keys(B)])];
-
+// ─── 3. בתי ספר ─────────────────────────────────────────────────
+// בית ספר מושווה לעצמו, ורק על השכבות שקיימות לו בשתי הדגימות —
+// אחרת שכבה שנוספה נראית כמו זינוק.
+function yySchoolRows(A, B){
+  const mapOf = p => { const m = {}; p.schools.forEach(s=> m[s.name] = s); return m; };
+  const MA = mapOf(A), MB = mapOf(B);
   const rows = [];
-  names.forEach(n=>{
-    const a = A[n], b = B[n];
-    if(!a || !b){ rows.push({ name:n, none:'אין נתוני השוואה — קיים רק ב'+(a? first.label : last.label) }); return; }
-    // רק שכבות שקיימות בשתי הדגימות — אחרת שכבה שנוספה נראית כמו זינוק
+  [...new Set([...Object.keys(MA), ...Object.keys(MB)])].forEach(n=>{
+    const a = MA[n], b = MB[n];
+    if(!a || !b){ rows.push({ name:n, none:'קיים רק ב' + (a ? A.label : B.label) }); return; }
     const common = GRADES.filter(g=> a.grades[g] && b.grades[g]);
-    if(!common.length){ rows.push({ name:n, none:'אין שכבות י׳–יב׳ משותפות לשתי הדגימות' }); return; }
-    const pct = s => {
-      let t=0, d=0;
-      common.forEach(g=>{ const r=s.grades[g]; t+=r[4]; d+=r[0]; });
-      return d? t/d*100 : null;
-    };
+    if(!common.length){ rows.push({ name:n, none:'אין שכבות י׳–יב׳ משותפות' }); return; }
+    const pct = s =>{ let t=0, d=0; common.forEach(g=>{ const r=s.grades[g]; t+=r[4]; d+=r[0]; }); return d? t/d*100 : null; };
     const pa = pct(a), pb = pct(b);
-    if(pa==null || pb==null){ rows.push({ name:n, none:'אין מכנה תקין באחת הדגימות' }); return; }
+    if(pa == null || pb == null){ rows.push({ name:n, none:'אין מכנה תקין' }); return; }
     rows.push({ name:n, a:pa, b:pb, d:pb-pa, grades:common, note:(b.note||'') });
   });
+  return { cmp: rows.filter(r=> !r.none).sort((x,y)=> y.d - x.d), nope: rows.filter(r=> r.none) };
+}
 
-  const cmp = rows.filter(r=> !r.none).sort((x,y)=> y.d - x.d);
-  const nope = rows.filter(r=> r.none);
+function renderYYSchools(A, B){
+  const { cmp, nope } = yySchoolRows(A, B);
+  document.getElementById('yyMetaN').textContent = cmp.length;
+  document.getElementById('yyThOld').textContent = A.label;
+  document.getElementById('yyThNew').textContent = B.label;
 
-  document.getElementById('trSlopeSub').innerHTML =
-    `כל בית ספר מול עצמו בין <strong>${first.label}</strong> ל-<strong>${last.label}</strong> · ` +
-    `${cmp.length} בתי ספר ברי-השוואה${nope.length? ` · ${nope.length} ללא בסיס השוואה` : ''}. ` +
-    `ההשוואה מחושבת רק על השכבות שקיימות לבית הספר בשתי הדגימות.`;
+  const up = cmp.filter(r=> r.d > 1).length;
+  const dn = cmp.filter(r=> r.d < -1).length;
+  const fl = cmp.length - up - dn;
+  document.getElementById('yySchoolSub').innerHTML =
+    `כל בית ספר מול עצמו · <strong style="color:#137333;">${up} עלו</strong> · ` +
+    `<strong style="color:#c5221f;">${dn} ירדו</strong> · <strong>${fl} ללא שינוי</strong> (±1 נק׳)` +
+    (nope.length ? ` · ${nope.length} ללא בסיס השוואה` : '');
 
-  // תוויות רק לשלושת העולים ולשלושת היורדים — 14 שמות בקצה הגרף זה רעש
-  const tag = new Set([...cmp.slice(0,3), ...cmp.slice(-3)].map(r=> r.name));
-
-  charts.trendSlope = new Chart(document.getElementById('trendSlope'), {
-    type: 'line',
-    data: {
-      labels: [first.label, last.label],
-      datasets: cmp.map(r=>{
-        const col = r.d >= 1 ? COL.good : r.d <= -1 ? COL.bad : COL.accent;
-        return {
-          label: r.name, data: [r.a, r.b],
-          borderColor: col, backgroundColor: col,
-          borderWidth: 2.5, pointRadius: 5, pointBorderColor:'#fff', pointBorderWidth: 1.5,
-          fill: false, tension: 0,
-          datalabels: {
-            display: ctx => ctx.dataIndex === 1 && tag.has(ctx.dataset.label),
-            anchor:'end', align:'right', offset: 6, color: col,
-            font: {family:'Heebo', size: 11, weight:'700'},
-            formatter: (v, ctx) => ctx.dataset.label + ' ' + v.toFixed(1) + '%'
-          }
-        };
-      })
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 24, right: 130, left: 20 } },
-      plugins: {
-        legend: { display: false },
-        tooltip: { mode:'nearest', intersect: true, callbacks: {
-          label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%'
-        } }
-      },
-      scales: {
-        x: { ticks: { font: hf2(), color:'#5f6368' }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { callback: v=> v+'%', font: HF, color:'#5f6368' }, grid: { color: GC } }
-      }
-    }
-  });
-
-  const cell = r => {
+  const cell = r =>{
     const col = Math.abs(r.d) < 0.05 ? '#5f6368' : r.d > 0 ? '#137333' : '#c5221f';
     const arw = Math.abs(r.d) < 0.05 ? '' : (r.d > 0 ? '▲ ' : '▼ ');
     return `<span style="font-weight:900;color:${col};">${arw}${r.d>=0?'+':'−'}${Math.abs(r.d).toFixed(1)}</span>`;
   };
-  document.getElementById('trSchoolTbody').innerHTML =
+  document.getElementById('yySchoolTbody').innerHTML =
     cmp.map(r=> `
       <tr>
         <td class="nm">${r.name}${r.note? `<span style="font-size:10px;font-weight:700;background:var(--accent-l);color:#a04a10;padding:2px 7px;border-radius:7px;margin-right:6px;">${r.note}</span>`:''}</td>
-        <td style="text-align:center;">${r.a.toFixed(1)}%</td>
-        <td style="text-align:center;">${r.b.toFixed(1)}%</td>
+        <td style="text-align:center;color:var(--muted);">${r.a.toFixed(1)}%</td>
+        <td style="text-align:center;font-weight:700;">${r.b.toFixed(1)}%</td>
         <td style="text-align:center;">${cell(r)}</td>
         <td style="text-align:center;color:var(--muted);font-size:12px;">${r.grades.map(g=> g+'׳').join(', ')}</td>
       </tr>`).join('') +
     nope.map(r=> `
       <tr>
         <td class="nm" style="opacity:.6;">${r.name}</td>
-        <td colspan="4" style="text-align:center;color:var(--muted);font-size:12px;">${r.none}</td>
+        <td colspan="4" style="text-align:center;color:var(--muted);font-size:12px;">אין נתוני השוואה — ${r.none}</td>
       </tr>`).join('');
 }
 
-// ─── מדדים תומכים ───────────────────────────────────────────────
-function renderTrendSupport(ps){
-  const labels = ps.map(p=> p.label);
-  const mini = (extraY) => ({
-    responsive: true, maintainAspectRatio: false,
-    layout: { padding: { top: 24, right: 14, left: 14 } },
-    interaction: { mode:'index', intersect:false },
-    plugins: {
-      legend: { position:'top', align:'end', labels: { font: {family:'Heebo',size:11}, color:'#5f6368', boxWidth: 12, padding: 8 } },
-      tooltip: { mode:'index', intersect:false }
-    },
-    scales: Object.assign({
-      x: { ticks: { font: {family:'Heebo',size:11,weight:'700'}, color:'#5f6368' }, grid: { display: false } },
-      y: { beginAtZero: true, ticks: { callback: v=> v+'%', font: {family:'Heebo',size:11}, color:'#5f6368' }, grid: { color: GC } }
-    }, extraY || {})
-  });
-  const line = (label, data, col, opts) => Object.assign({
-    label, data, borderColor: col, backgroundColor: col+'14',
-    borderWidth: 3, tension: 0.25, pointRadius: 5, pointBorderColor:'#fff', pointBorderWidth: 2,
-    fill: false, spanGaps: false,
-    datalabels: { display: ctx=> ctx.dataset.data[ctx.dataIndex]!=null, anchor:'end', align:'top', offset: 4,
-      color: col, font: {family:'Heebo',size:11,weight:'900'}, formatter: v=> v.toFixed(1)+'%' }
-  }, opts || {});
-
-  // 1 — מספרים מוחלטים. שני צירים: מונה ומכנה בסדרי גודל שונים
-  charts.trAbs = new Chart(document.getElementById('trAbs'), {
-    type:'line',
-    data:{ labels, datasets:[
-      line('לומדי טק י׳–יב׳', ps.map(p=> trTechAbs(p.key)), COL.primary, { yAxisID:'y',
-        datalabels:{ anchor:'end', align:'top', offset:4, color: COL.primary,
-          font:{family:'Heebo',size:11,weight:'900'}, formatter: v=> v==null?'':v.toLocaleString('he-IL') } }),
-      line('סך תלמידי י׳–יב׳', ps.map(p=> trStudAbs(p.key)), '#9aa0a6', { yAxisID:'y1',
-        borderDash:[6,4], pointRadius:4,
-        datalabels:{ anchor:'end', align:'bottom', offset:4, color:'#5f6368',
-          font:{family:'Heebo',size:10,weight:'700'}, formatter: v=> v==null?'':v.toLocaleString('he-IL') } })
-    ]},
-    options: mini({
-      y:  { beginAtZero:false, position:'left',  ticks:{ font:{family:'Heebo',size:11}, color: COL.primary }, grid:{ color: GC } },
-      y1: { beginAtZero:false, position:'right', ticks:{ font:{family:'Heebo',size:11}, color:'#5f6368' }, grid:{ drawOnChartArea:false } }
-    })
-  });
-
-  // 2 — מדמ"ח מול פיזיקה
-  charts.trSubj = new Chart(document.getElementById('trSubj'), {
-    type:'line',
-    data:{ labels, datasets:[
-      line('מדעי המחשב', ps.map(p=> trSubjPct(p.key, 1)), COL.cs),
-      line('פיזיקה',     ps.map(p=> trSubjPct(p.key, 2)), COL.ph)
-    ]},
-    options: mini()
-  });
-
-  // 3 — מתמטיקה 5 יח׳ בשכבה י׳ (מדד מקדים)
-  charts.trMa5 = new Chart(document.getElementById('trMa5'), {
-    type:'line',
-    data:{ labels, datasets:[
-      line('מתמטיקה 5 יח׳ — י׳', ps.map(p=> withPeriod(p.key, ()=> citySubjPctAtGrade(3, 3))), COL.ma)
-    ]},
-    options: mini()
-  });
-
-  // 4 — עתיד טק ט׳
-  charts.trFt = new Chart(document.getElementById('trFt'), {
-    type:'line',
-    data:{ labels, datasets:[
-      line('עתיד טק — ט׳', ps.map(p=> withPeriod(p.key, ()=> citySubjPctAtGrade(2, 10))), COL.accent)
-    ]},
-    options: mini()
-  });
-
-  // 5 — ייצוג בנות
-  charts.trGirls = new Chart(document.getElementById('trGirls'), {
-    type:'line',
-    data:{ labels, datasets:[
-      line('% בנות בקרב לומדי הטק', ps.map(p=> withPeriod(p.key, ()=> cityGirlsPctOfTech())), '#ad1457'),
-      refLine('ארצי '+NATIONAL_GIRLS+'%', NATIONAL_GIRLS, '#9aa0a6', ps.length)
-    ]},
-    options: mini()
-  });
-}
-
-// ─── תובנות אוטומטיות ───────────────────────────────────────────
-function buildTrendInsights(ps, basis){
+// ─── 4. תובנות — עד ארבע ────────────────────────────────────────
+function renderYYInsights(A, B){
   const ins = [];
-  const f = ps[0], l = ps[ps.length-1];
-  const oa = trOverall(f.key), ob = trOverall(l.key);
-  const od = (oa!=null && ob!=null) ? ob-oa : null;
+  const oa = trOverall(A.key), ob = trOverall(B.key);
+  const od = (oa != null && ob != null) ? ob - oa : null;
 
-  // 1 — הכיוון הכללי
+  // 1 — הכיוון
   if(od != null){
     ins.push({
       kind: od >= 0 ? 'good' : 'warn', icon: od >= 0 ? '📈' : '📉',
-      title: od >= 0 ? 'המדד העירוני עלה' : 'המדד העירוני ירד',
-      body: `בין ${f.label} ל-${l.label} עבר המדד המשוקלל (י׳–יב׳) מ-<strong>${oa.toFixed(1)}%</strong> ל-<strong>${ob.toFixed(1)}%</strong> — שינוי של <strong>${od>=0?'+':'−'}${Math.abs(od).toFixed(1)} נקודות אחוז</strong> על פני ${ps.length} דגימות.`
+      title: Math.abs(od) < 0.3 ? 'המדד העירוני כמעט לא זז' : (od > 0 ? 'המדד העירוני עלה' : 'המדד העירוני ירד'),
+      body: `המדד המשוקלל (י׳–יב׳) עבר מ-<strong>${oa.toFixed(1)}%</strong> ל-<strong>${ob.toFixed(1)}%</strong> — <strong>${od>=0?'+':'−'}${Math.abs(od).toFixed(1)} נקודות אחוז</strong> בין ${A.label} ל-${B.label}.`
     });
   }
 
-  // 2 — האם המונה המוחלט זז באותו כיוון? הדגל הכי חשוב בתצוגה
-  const ta = trTechAbs(f.key), tb = trTechAbs(l.key);
-  const sa = trStudAbs(f.key), sb = trStudAbs(l.key);
-  if(ta!=null && tb!=null && sa!=null && sb!=null && od!=null){
-    const techUp = tb > ta, denomDown = sb < sa;
+  // 2 — הפער בין הכניסה לסיום. הכי חשוב אחרי הכיוון.
+  const a10 = trPct(A.key,3), b10 = trPct(B.key,3);
+  const a12 = trPct(A.key,5), b12 = trPct(B.key,5);
+  if([a10,b10,a12,b12].every(v=> v != null)){
+    const d10 = b10-a10, d12 = b12-a12;
+    const diverge = (d10 > 0.3 && d12 < -0.3) || (d10 < -0.3 && d12 > 0.3);
+    ins.push({
+      kind: diverge ? 'warn' : 'neutral', icon: diverge ? '⚠' : '🎯',
+      title: diverge ? 'הכניסה והסיום נעים לכיוונים הפוכים' : 'הכניסה והסיום נעים יחד',
+      body: `שכבה י׳: <strong>${a10.toFixed(1)}% → ${b10.toFixed(1)}%</strong> (${d10>=0?'+':'−'}${Math.abs(d10).toFixed(1)} נק׳). ` +
+            `שכבה יב׳: <strong>${a12.toFixed(1)}% → ${b12.toFixed(1)}%</strong> (${d12>=0?'+':'−'}${Math.abs(d12).toFixed(1)} נק׳). ` +
+            (diverge
+              ? `<strong>המשוקלל לבדו מטעה כאן</strong> — הוא מסכם שכבות שנעות בכיוונים הפוכים. שווה להציג בוועדה את שתי השכבות בנפרד.`
+              : `שתי השכבות זזות באותו כיוון, כך שהמדד המשוקלל מייצג את התמונה נאמנה.`)
+    });
+  }
+
+  // 3 — אחוזים מול מספרים מוחלטים
+  const ta = trTechAbs(A.key), tb = trTechAbs(B.key);
+  const sa = trStudAbs(A.key), sb = trStudAbs(B.key);
+  if([ta,tb,sa,sb].every(v=> v != null) && od != null){
+    const techUp = tb > ta;
     const mismatch = (od > 0 && !techUp) || (od < 0 && techUp);
     ins.push({
-      kind: mismatch ? 'warn' : 'neutral', icon: mismatch ? '⚠' : '🔢',
+      kind: mismatch ? 'warn' : 'neutral', icon: '🔢',
       title: mismatch ? 'האחוז והמספר המוחלט לא מספרים אותו סיפור' : 'המספרים המוחלטים מאחורי האחוז',
-      body: `לומדי הטק בי׳–יב׳: <strong>${ta.toLocaleString('he-IL')}</strong> → <strong>${tb.toLocaleString('he-IL')}</strong>. סך התלמידים: <strong>${sa.toLocaleString('he-IL')}</strong> → <strong>${sb.toLocaleString('he-IL')}</strong>.` +
-        (mismatch
-          ? ` <strong>שים לב:</strong> המדד ${od>0?'עלה':'ירד'} אבל מספר לומדי הטק ${techUp?'עלה':'ירד'} — כלומר חלק מהשינוי באחוז נובע מ${denomDown?'התכווצות':'גידול'} המחזור ולא מ${od>0?'צמיחה':'ירידה'} אמיתית בטק. זה המספר שצריך להציג לצד האחוז.`
-          : ` שני הכיוונים עקביים — השינוי באחוז משקף שינוי אמיתי במספר הלומדים, לא רק תזוזה במכנה.`)
+      body: `לומדי טק בי׳–יב׳: <strong>${ta.toLocaleString('he-IL')} → ${tb.toLocaleString('he-IL')}</strong>. ` +
+            `סך התלמידים: <strong>${sa.toLocaleString('he-IL')} → ${sb.toLocaleString('he-IL')}</strong>. ` +
+            (mismatch
+              ? `<strong>שים לב:</strong> המדד ${od>0?'עלה':'ירד'} אבל מספר לומדי הטק ${techUp?'עלה':'ירד'} — חלק מהשינוי באחוז נובע משינוי בגודל המחזור ולא מהמסלול עצמו.`
+              : `שני הכיוונים עקביים — השינוי באחוז משקף שינוי אמיתי במספר הלומדים.`)
     });
   }
 
-  // 3 — השכבה שזזה הכי הרבה
-  let best = null;
-  ALL_GRADES.forEach((g, gi)=>{
-    const a = trPct(f.key, gi), b = trPct(l.key, gi);
-    if(a==null || b==null) return;
-    const d = b-a;
-    if(!best || Math.abs(d) > Math.abs(best.d)) best = { g, d, a, b };
-  });
-  if(best && Math.abs(best.d) >= 0.05){
-    const jun = JUN3.indexOf(best.g) >= 0;
+  // 4 — בתי ספר
+  const { cmp } = yySchoolRows(A, B);
+  if(cmp.length){
+    const up = cmp.filter(r=> r.d > 1), dn = cmp.filter(r=> r.d < -1);
+    const top = cmp[0], bot = cmp[cmp.length-1];
     ins.push({
-      kind: best.d >= 0 ? 'good' : 'warn', icon: '🎯',
-      title: `השכבה שזזה הכי הרבה: ${best.g}׳`,
-      body: `שכבה ${best.g}׳ ${best.d>=0?'עלתה':'ירדה'} מ-<strong>${best.a.toFixed(1)}%</strong> ל-<strong>${best.b.toFixed(1)}%</strong> — <strong>${best.d>=0?'+':'−'}${Math.abs(best.d).toFixed(1)} נק׳</strong>, התזוזה הגדולה ביותר מבין ז׳–יב׳. ` +
-        (jun
-          ? `<strong>שים לב:</strong> בחט״ב המדד הוא רישום לקבוצת עמ״ט ולא בחירת מקצוע — זה מדד מקדים לשכבות י׳–יב׳, לא זכאות בפועל.`
-          : (best.d>=0 ? 'שווה לבדוק מה נעשה שם ולשכפל.' : 'זו הנקודה שדורשת הסבר לפני שהיא מתגלגלת לשכבות הבאות.'))
+      kind: up.length > dn.length ? 'good' : up.length < dn.length ? 'warn' : 'neutral', icon: '🏫',
+      title: 'התנועה בין בתי הספר',
+      body: `מתוך ${cmp.length} בתי ספר ברי-השוואה, <strong>${up.length}</strong> עלו ביותר מנקודת אחוז ו-<strong>${dn.length}</strong> ירדו. ` +
+            `העלייה הגדולה ביותר: <strong>${top.name}</strong> (${top.d>=0?'+':'−'}${Math.abs(top.d).toFixed(1)} נק׳). ` +
+            `הירידה הגדולה ביותר: <strong>${bot.name}</strong> (${bot.d>=0?'+':'−'}${Math.abs(bot.d).toFixed(1)} נק׳). ` +
+            (up.length > dn.length
+              ? `המגמה החיובית רחבה ואינה נשענת על בית ספר בודד.`
+              : up.length < dn.length ? `הירידה רחבה — זו אינה תופעה מקומית של בית ספר אחד.`
+              : `התמונה מעורבת — הממוצע העירוני מסתיר תנועות הפוכות.`)
     });
   }
 
-  // 4 — תנועת בתי הספר
-  const A = {}, B = {};
-  f.schools.forEach(s=> A[s.name]=s); l.schools.forEach(s=> B[s.name]=s);
-  let up=0, dn=0, flat=0;
-  Object.keys(B).forEach(n=>{
-    const a=A[n], b=B[n]; if(!a) return;
-    const common = GRADES.filter(g=> a.grades[g] && b.grades[g]); if(!common.length) return;
-    const pct = s=>{ let t=0,d=0; common.forEach(g=>{ const r=s.grades[g]; t+=r[4]; d+=r[0]; }); return d? t/d*100 : null; };
-    const pa=pct(a), pb=pct(b); if(pa==null||pb==null) return;
-    const d = pb-pa;
-    if(d > 1) up++; else if(d < -1) dn++; else flat++;
-  });
-  if(up+dn+flat > 0){
-    ins.push({
-      kind: up > dn ? 'good' : up < dn ? 'warn' : 'neutral', icon: '🏫',
-      title: 'איך התפלגה התנועה בין בתי הספר',
-      body: `מתוך ${up+dn+flat} בתי ספר ברי-השוואה: <strong>${up}</strong> עלו ביותר מנקודת אחוז, <strong>${dn}</strong> ירדו ביותר מנקודת אחוז, ו-<strong>${flat}</strong> נשארו במקום (±1 נק׳). ${up>dn?'המגמה החיובית רחבה, לא נשענת על בית ספר בודד.':up<dn?'הירידה רחבה — זו לא תופעה מקומית של בית ספר אחד.':'התמונה מעורבת — הממוצע העירוני מסתיר תנועות הפוכות.'}`
-    });
-  }
-
-  // 5 — נשירה
-  const da = trDropPct(f.key), db = trDropPct(l.key);
-  if(da!=null && db!=null){
-    const dd = db-da;
-    ins.push({
-      kind: dd <= 0 ? 'good' : 'warn', icon: '💧',
-      title: dd <= 0 ? 'הנשירה מצטמצמת' : 'הנשירה מתרחבת',
-      body: `הנשירה י׳→יב׳ עברה מ-<strong>${da.toFixed(1)}%</strong> ל-<strong>${db.toFixed(1)}%</strong> (<strong>${dd>=0?'+':'−'}${Math.abs(dd).toFixed(1)} נק׳</strong>). ` +
-        `זכור שזו נשירה בין שלושה מחזורים שנמדדו באותו רגע — למעקב אחרי אותם תלמידים עבור למצב <strong>מעקב מחזורי</strong> בגרף למעלה.`
-    });
-  }
-
-  // 6 — בסיס ההשוואה
-  if(!basis.allSame){
-    const fixA = trOverall(f.key, s=> basis.common.has(s.name));
-    const fixB = trOverall(l.key, s=> basis.common.has(s.name));
-    const fixD = (fixA!=null && fixB!=null) ? fixB-fixA : null;
-    ins.push({
-      kind:'warn', icon:'⚖',
-      title:'כמה מהשינוי הוא באמת שינוי',
-      body: fixD==null ? 'מערך בתי הספר השתנה בין הדגימות — ראה האזהרה בראש העמוד.'
-        : `על כל בתי הספר השינוי הוא <strong>${od>=0?'+':'−'}${Math.abs(od).toFixed(1)} נק׳</strong>. על ${basis.common.size} בתי הספר שקיימים בכל הדגימות — <strong>${fixD>=0?'+':'−'}${Math.abs(fixD).toFixed(1)} נק׳</strong>. ` +
-          `הפער בין השניים, <strong>${Math.abs(od-fixD).toFixed(1)} נק׳</strong>, הוא אפקט הבסיס ולא שינוי בשטח. זה המספר שכדאי להקדים בוועדת ההיגוי.`
-    });
-  }
-
-  return ins.map(i=> `
+  document.getElementById('yyInsights').innerHTML = ins.slice(0,4).map(i=> `
     <div class="qi qi-${i.kind}">
       <div class="qi-ico">${i.icon}</div>
       <div class="qi-body">
@@ -3390,6 +3074,15 @@ function buildTrendInsights(ps, basis){
         <div class="qi-text">${i.body}</div>
       </div>
     </div>`).join('');
+
+  // הערת בסיס — רק אם מערך בתי הספר באמת השתנה בין שתי הדגימות
+  const nameSet = p => new Set(p.schools.map(s=> s.name));
+  const SA = nameSet(A), SB = nameSet(B);
+  const added = [...SB].filter(n=> !SA.has(n)), gone = [...SA].filter(n=> !SB.has(n));
+  document.getElementById('yyBasisNote').innerHTML = (added.length || gone.length)
+    ? `⚠ מערך בתי הספר השתנה בין הדגימות${added.length? ` — נוספו <strong>${added.join(', ')}</strong>`:''}${gone.length? ` — נעלמו <strong>${gone.join(', ')}</strong>`:''}. ` +
+      `לפי §3.5 המדד העירוני מחושב על כל בית ספר שיש לו נתונים בשכבה, ולכן חלק מהשינוי במדד נובע משינוי הבסיס ולא מהשטח.`
+    : '';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3420,7 +3113,7 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v16';
+const BUILD = 'v17';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -3725,26 +3418,6 @@ function withPeriod(key, fn, filter){
 // סדר כרונולוגי מפורש — לא הסתמכות על סדר המפתחות ב-ALLDATA
 function periodsSorted(){
   return Object.keys(ALLDATA).map(k=> ALLDATA[k]).sort((a,b)=> (a.year-b.year)||(a.half-b.half));
-}
-
-// מחזור = שנת סיום יב׳. gi הוא אינדקס ב-ALL_GRADES (ז׳=0 … יב׳=5).
-// ט׳ בתשפ״ה(2025) → 2028, וגם י׳ בתשפ״ו(2026) → 2028: אותם תלמידים.
-// שתי דגימות של אותה שנה נותנות אותו ערך — נכון, זו אותה שכבה.
-function cohortOf(period, gi){ return period.year + (5 - gi); }
-
-// היפוך hebYear: 2028 → 'תשפ"ח'
-const GEM = [[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],[60,'ס'],[50,'נ'],
-             [40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],[6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
-function hebYearName(gYear){
-  let v = gYear + 3760;
-  if(v >= 5000) v -= 5000;
-  if(v <= 0) return String(gYear);
-  let out = '';
-  GEM.forEach(p=>{ if(p[0] < 100) return; while(v >= p[0]){ out += p[1]; v -= p[0]; } });
-  if(v === 15) out += 'טו';                      // לא להרכיב שם הוי״ה
-  else if(v === 16) out += 'טז';
-  else GEM.forEach(p=>{ if(p[0] >= 100) return; while(v >= p[0]){ out += p[1]; v -= p[0]; } });
-  return out.length > 1 ? out.slice(0,-1)+'"'+out.slice(-1) : out;
 }
 
 function buildPeriodSelect(keys){
