@@ -250,16 +250,38 @@ async function browserRun() {
   console.log('\n── תצוגות ──');
   const views = await page.$$eval('.sb-item[data-view]', els =>
     els.map(e => ({ id: e.dataset.view, label: e.innerText.replace(/\s+/g, ' ').trim() })));
-  // מספר התצוגות נגזר מהדף ולא צרוב כאן — אחרת הבדיקה מתיישנת בכל תצוגה
-  // חדשה. מה שכן נבדק: לכל section.view יש פריט סיידבר שמוביל אליו.
-  const sections = await page.$$eval('section.view', els => els.length);
-  if (views.length !== sections)
-    fail(`${sections} section.view בדף אבל ${views.length} פריטי סיידבר — תצוגה בלי כניסה מהתפריט?`);
-  else pass(`${views.length} תצוגות בסיידבר, ${sections} section.view`);
+  // תצוגות המשך (העמקה, טבלת הרשויות) אינן בתפריט בכוונה — נכנסים אליהן
+  // מתוך עמוד ההורה. המפה נקראת מהדף עצמו כדי שלא תתיישן כאן.
+  const parents = await page.evaluate(() =>
+    (typeof PARENT_OF !== 'undefined') ? PARENT_OF : {});
+  const kids = Object.keys(parents).map(id => ({ id, parent: parents[id], child: true }));
 
-  for (const v of views) {
+  // מספר התצוגות נגזר מהדף ולא צרוב כאן — אחרת הבדיקה מתיישנת בכל תצוגה
+  // חדשה. מה שכן נבדק: לכל section.view יש דרך להגיע — מהתפריט או מההורה.
+  const sections = await page.$$eval('section.view', els => els.length);
+  if (views.length + kids.length !== sections)
+    fail(`${sections} section.view בדף אבל ${views.length} פריטי סיידבר ו-${kids.length} תצוגות המשך — תצוגה בלי כניסה?`);
+  else pass(`${views.length} בסיידבר + ${kids.length} תצוגות המשך = ${sections} section.view`);
+
+  for (const v of [...views, ...kids]) {
     const before = noise.length;
-    await page.click(`.sb-item[data-view="${v.id}"]`);
+    if (v.child) {
+      // הכניסה נבדקת דרך הרכיב האמיתי שבעמוד ההורה, לא ב-switchView ישיר —
+      // כך "אין פריט בתפריט" לא הופך בשקט ל"אין דרך להגיע".
+      await page.click(`.sb-item[data-view="${v.parent}"]`);
+      await page.waitForTimeout(150);
+      const hit = await page.evaluate(({ id, parent }) => {
+        const re = new RegExp(`switchView\\(['"]${id}['"]\\)|goTo${id}`, 'i');
+        const el = [...document.querySelectorAll(`#view-${parent} [onclick]`)]
+          .find(e => re.test(e.getAttribute('onclick')));
+        if (!el) return false;
+        el.click();
+        return true;
+      }, { id: v.id, parent: v.parent });
+      if (!hit) { fail(`${v.id}: אין כניסה מתוך #view-${v.parent}`); continue; }
+    } else {
+      await page.click(`.sb-item[data-view="${v.id}"]`);
+    }
     await page.waitForTimeout(150);
     const info = await page.evaluate(id => {
       const el = document.getElementById('view-' + id);

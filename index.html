@@ -79,13 +79,35 @@ body{
 }
 .sb-ico{font-size:16px;width:20px;text-align:center;}
 
-.sb-foot{padding:18px 24px;border-top:1px solid rgba(255,255,255,0.08);
-  font-size:11px;color:rgba(255,255,255,0.5);line-height:1.6;}
+/* ─── אקורדיאון התפריט ─── */
+.sb-head{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;
+  letter-spacing:0.5px;padding:9px 24px 7px;font-weight:700;
+  user-select:none;transition:color .15s;
+}
+.sb-head:hover{color:rgba(255,255,255,0.8);}
+.sb-group + .sb-group{margin-top:7px;}
+.sb-cv{font-size:11px;line-height:1;transition:transform .18s;}
+.sb-group.closed .sb-cv{transform:rotate(90deg);}
+/* max-height ולא display:none — כדי שהסגירה תהיה מונפשת ולא קפיצה */
+.sb-list{max-height:340px;overflow:hidden;transition:max-height .22s ease;}
+.sb-group.closed .sb-list{max-height:0;}
+/* קבוצה סגורה שמכילה את התצוגה הפעילה — נקודה כתומה על הכותרת,
+   אחרת "איפה אני" נעלם יחד עם הרשימה */
+.sb-group.closed.has-active .sb-head::after{
+  content:'';width:5px;height:5px;border-radius:50%;background:var(--accent);
+}
 
 /* ─── MAIN ─── */
 .main{flex:1;padding:32px 40px 48px;max-width:1400px;}
 
 .page-head{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;}
+/* קישור חזרה — רק בתצוגות ההמשך, שאין להן פריט בתפריט */
+.page-back{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;
+  color:var(--primary);background:var(--primary-l);border:0;border-radius:8px;
+  padding:6px 12px;margin-bottom:12px;cursor:pointer;font-family:'Heebo',sans-serif;}
+.page-back:hover{background:#e2d0f3;}
 .page-title{font-size:24px;font-weight:900;color:var(--text);line-height:1.2;}
 .page-sub{font-size:14px;color:var(--muted);margin-top:6px;}
 .page-meta{display:flex;gap:10px;}
@@ -598,7 +620,8 @@ body{
 
 /* ─── שכבת נתונים חיים (תוספת, לא משנה כללים קיימים) ─── */
 .sb-live{padding:14px 24px;border-top:1px solid rgba(255,255,255,0.08);}
-.sb-live .sb-section{padding:0 0 7px;}
+.sb-live .sb-section{padding:0;}
+.sb-live-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:7px;}
 .sb-select{
   width:100%;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;
   color:#fff;background:rgba(255,255,255,0.08);
@@ -642,12 +665,13 @@ body{
 }
 .err-box code{background:#f1eef6;color:var(--primary-d);padding:2px 7px;border-radius:5px;direction:ltr;display:inline-block;}
 
+/* גלגל שיניים בלבד — הכפתור המלולי שהיה בתחתית הוסר כדי לפנות מקום */
 .sb-cog{
-  display:block;margin-top:10px;font-family:'Heebo',sans-serif;font-size:11px;font-weight:700;
-  color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.07);
-  border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:6px 10px;cursor:pointer;width:100%;
+  font-family:'Heebo',sans-serif;font-size:13px;line-height:1;
+  color:rgba(255,255,255,0.5);background:transparent;
+  border:0;border-radius:6px;padding:3px 5px;cursor:pointer;transition:color .15s,background .15s;
 }
-.sb-cog:hover{color:#fff;background:rgba(255,255,255,0.13);}
+.sb-cog:hover{color:#fff;background:rgba(255,255,255,0.12);}
 .src-modal{position:fixed;inset:0;z-index:950;background:rgba(31,21,48,.55);display:none;align-items:center;justify-content:center;padding:24px;}
 .src-card{background:var(--card);border-radius:16px;padding:26px 28px;max-width:540px;width:100%;box-shadow:0 12px 40px rgba(42,26,77,.28);}
 .src-card h3{font-size:17px;font-weight:900;color:var(--primary-d);margin-bottom:12px;}
@@ -678,67 +702,64 @@ body{
     <div class="sb-sub">חולון 2026</div>
   </div>
 
+  <!-- ─── תפריט אקורדיאון ───────────────────────────────────────────
+       שלוש קבוצות נושא, כל אחת נפתחת ונסגרת. שתי תצוגות **אינן** כאן
+       בכוונה: "העמקה לפי בית ספר" נפתחת מתוך עמוד בתי הספר (לחיצה על
+       כרטיס), ו"טבלת הרשויות" מתוך חולון–ארצי. הן תצוגות המשך של הורה
+       ולא יעדים עצמאיים, ובתפריט הן רק האריכו רשימה שכבר הייתה ארוכה.
+       `switchView` מדליק במקומן את פריט ההורה (`PARENT_OF`). -->
   <nav class="sb-nav">
-    <div class="sb-section">תצוגות</div>
-    <div class="sb-item active" data-view="overview">
-      <span class="sb-ico">📊</span>
-      <span>סקירה עירונית</span>
-    </div>
-    <div class="sb-item" data-view="trends">
-      <span class="sb-ico">📈</span>
-      <span>השוואה שנתית</span>
-    </div>
-    <div class="sb-item" data-view="subjects">
-      <span class="sb-ico">📚</span>
-      <span>מקצועות לאורך השכבות</span>
-    </div>
-    <div class="sb-item" data-view="schools">
-      <span class="sb-ico">🏫</span>
-      <span>השוואת בתי ספר</span>
-    </div>
-    <div class="sb-item" data-view="deepdive">
-      <span class="sb-ico">🔍</span>
-      <span>העמקה לפי בית ספר</span>
-    </div>
-    <div class="sb-item" data-view="insights">
-      <span class="sb-ico">💡</span>
-      <span>תובנות פרקטיות</span>
-    </div>
-    <div class="sb-item" data-view="gender">
-      <span class="sb-ico">👥</span>
-      <span>פילוח מגדרי</span>
-    </div>
-    <div class="sb-item" data-view="futuretech">
-      <span class="sb-ico">🚦</span>
-      <span>עתיד טק</span>
-    </div>
-    <div class="sb-item" data-view="national">
-      <span class="sb-ico">🏙️</span>
-      <span>חולון מול ערים אחרות</span>
-    </div>
-    <div class="sb-item" data-view="cities">
-      <span class="sb-ico">📋</span>
-      <span>טבלת הרשויות</span>
+    <div class="sb-group" data-group="city">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>תמונה עירונית</span></div>
+      <div class="sb-list">
+        <div class="sb-item active" data-view="overview">
+          <span class="sb-ico">📊</span><span>סקירה עירונית</span>
+        </div>
+        <div class="sb-item" data-view="national">
+          <span class="sb-ico">🏙️</span><span>חולון–ארצי</span>
+        </div>
+        <div class="sb-item" data-view="trends">
+          <span class="sb-ico">📈</span><span>התפתחות המדד</span>
+        </div>
+      </div>
     </div>
 
-    <div class="sb-section" style="margin-top:14px;">בקרוב</div>
-    <div class="sb-item" style="opacity:0.4;cursor:not-allowed;">
-      <span class="sb-ico">📈</span>
-      <span>תחזית רב-שנתית</span>
+    <div class="sb-group" data-group="cuts">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>פילוחים</span></div>
+      <div class="sb-list">
+        <div class="sb-item" data-view="subjects">
+          <span class="sb-ico">📚</span><span>מקצועות</span>
+        </div>
+        <div class="sb-item" data-view="gender">
+          <span class="sb-ico">👥</span><span>מגדר</span>
+        </div>
+        <div class="sb-item" data-view="schools">
+          <span class="sb-ico">🏫</span><span>בתי ספר</span>
+        </div>
+        <div class="sb-item" data-view="futuretech">
+          <span class="sb-ico">🚦</span><span>עתיד-טק</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-group" data-group="out">
+      <div class="sb-head"><span class="sb-cv">▾</span><span>מסקנות</span></div>
+      <div class="sb-list">
+        <div class="sb-item" data-view="insights">
+          <span class="sb-ico">💡</span><span>תובנות ומסקנות</span>
+        </div>
+      </div>
     </div>
   </nav>
 
   <div class="sb-live">
-    <div class="sb-section">תקופת דגימה</div>
+    <div class="sb-live-head">
+      <div class="sb-section">תקופת דגימה</div>
+      <button id="btnSource" class="sb-cog" title="מקור הנתונים">⚙</button>
+    </div>
     <select class="sb-select" id="periodSelect"></select>
     <button class="sb-refresh" id="btnRefresh"><span class="ic">↻</span><span>רענן נתונים</span></button>
     <div class="sb-stamp" id="dataStamp">—</div>
-  </div>
-
-  <div class="sb-foot">
-    מקור: <span id="dataLabel">—</span><br>
-    גיליון גוגל מפורסם · נטען חי
-    <button id="btnSource" class="sb-cog">⚙ מקור הנתונים</button>
   </div>
 </aside>
 
@@ -937,6 +958,7 @@ body{
   <section class="view" id="view-deepdive">
     <div class="page-head">
       <div>
+        <button class="page-back" onclick="switchView('schools')">→ חזרה לבתי ספר</button>
         <h1 class="page-title">העמקה לפי בית ספר</h1>
         <p class="page-sub">בחר בית ספר לצפייה בפילוח מלא</p>
       </div>
@@ -1372,6 +1394,7 @@ body{
   <section class="view" id="view-cities">
     <div class="page-head">
       <div>
+        <button class="page-back" onclick="switchView('national')">→ חזרה לחולון–ארצי</button>
         <h1 class="page-title">טבלת הרשויות</h1>
         <p class="page-sub" id="cvSub">—</p>
       </div>
@@ -4432,12 +4455,24 @@ function renderCities(){
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
+// תצוגות המשך: אין להן פריט תפריט משלהן, ולכן הן מדליקות את ההורה.
+const PARENT_OF = { deepdive:'schools', cities:'national' };
+
 function switchView(viewId){
   CURRENT_VIEW=viewId;
   document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=> i.classList.remove('active'));
   document.getElementById('view-'+viewId).classList.add('active');
-  document.querySelector(`.sb-item[data-view="${viewId}"]`).classList.add('active');
+  const item = document.querySelector(`.sb-item[data-view="${PARENT_OF[viewId] || viewId}"]`);
+  if(item){
+    item.classList.add('active');
+    // קבוצה סגורה שהתצוגה הפעילה בתוכה מסומנת בנקודה, ולא נפתחת בכוח —
+    // פתיחה אוטומטית מבטלת את הכיווץ שהמשתמש בחר
+    document.querySelectorAll('.sb-group').forEach(g=> g.classList.remove('has-active'));
+    const grp = item.closest('.sb-group');
+    if(grp) grp.classList.add('has-active');
+  }
+  window.scrollTo(0, 0);
   if(viewId==='overview') renderOverview();
   if(viewId==='subjects') renderSubjects();
   if(viewId==='schools')  renderSchools();
@@ -4453,12 +4488,34 @@ document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
 });
 
+// ── אקורדיאון התפריט ────────────────────────────────────────────
+// מצב הקבוצות נשמר מקומית: מי שסגר קבוצה לא רוצה למצוא אותה פתוחה
+// בטעינה הבאה. כישלון ב-localStorage אינו שובר כלום — נופלים לברירת המחדל.
+const NAV_KEY = 'holon_nav_closed';
+function navClosed(){
+  try{ return JSON.parse(localStorage.getItem(NAV_KEY)) || []; }catch(_){ return []; }
+}
+function navSave(){
+  const closed = [...document.querySelectorAll('.sb-group.closed')].map(g=> g.dataset.group);
+  try{ localStorage.setItem(NAV_KEY, JSON.stringify(closed)); }catch(_){}
+}
+(function initNav(){
+  const closed = navClosed();
+  document.querySelectorAll('.sb-group').forEach(g=>{
+    if(closed.includes(g.dataset.group)) g.classList.add('closed');
+    g.querySelector('.sb-head').addEventListener('click', ()=>{
+      g.classList.toggle('closed');
+      navSave();
+    });
+  });
+})();
+
 // ════════════════════════════════════════════════════════════════
 // שכבת נתונים חיה — גיליון גוגל מפורסם
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v40';
+const BUILD = 'v43';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -4734,7 +4791,6 @@ function applyPeriod(key){
   MATZEVET   = d.matzevet;
   DATA_LABEL = d.label;
   stamp();
-  document.getElementById('dataLabel').textContent=d.label;
   document.getElementById('periodSelect').value=key;
 
   const sel=document.getElementById('schoolSelect'), prev=sel? sel.value:null;
