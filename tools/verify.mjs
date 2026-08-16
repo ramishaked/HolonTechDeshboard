@@ -36,6 +36,32 @@ const problems = [];
 const fail = m => { problems.push(m); console.error('  ✗ ' + m); };
 const pass = m => console.log('  ✓ ' + m);
 
+const LIVE = process.argv.includes('--live');
+
+// ── מצב --live: הגיליון האמיתי, דרך curl ─────────────────────────
+// למה curl ולא fetch ולא הדפדפן: בסביבת ההרצה רק תעבורה שעוברת דרך
+// HTTPS_PROXY יוצאת החוצה. `fetch` של Node ו-Chromium (גם עם proxy
+// מוגדר) נחסמים — נמדד. לכן ה-CSV נשלף כאן ומוזרק לדף ביירוט,
+// בדיוק כמו הפיקסצ׳ר. הדפדפן עצמו לא נוגע ברשת בשום מצב.
+const _liveCache = new Map();
+function liveCsv(gid) {
+  if (_liveCache.has(gid)) return _liveCache.get(gid);
+  const html = fs.readFileSync(PAGE, 'utf8');
+  const m = html.match(/const PUB\s*=\s*'([^']+)'\s*\+\s*\n?\s*'([^']+)'/);
+  const pub = m ? m[1] + m[2] : null;
+  if (!pub) { fail('לא הצלחתי לחלץ את PUB מ-index.html'); return null; }
+  const url = `${pub}?output=csv&single=true${gid ? '&gid=' + gid : ''}`;
+  try {
+    const out = execFileSync('curl', ['-sS', '-L', '--max-time', '40', url], { maxBuffer: 32e6 }).toString();
+    if (/^\s*<(!DOCTYPE|html)/i.test(out)) { fail(`gid ${gid}: התקבל HTML במקום CSV`); return null; }
+    _liveCache.set(gid, out);
+    return out;
+  } catch (e) {
+    fail(`gid ${gid}: שליפה חיה נכשלה — ${String(e.message).split('\n')[0]}`);
+    return null;
+  }
+}
+
 // ── מפת פונקציות — נגזרת מהקובץ, לא כתובה ביד ────────────────────
 // מפה סטטית ב-CLAUDE.md התיישנה תוך שעה (תצוגה נוספה, שלוש nt* הוסרו),
 // והייתה מגנט להתנגשויות בין סשנים מקבילים. הגזירה כאן לא יכולה להתיישן.
@@ -170,15 +196,22 @@ async function browserRun() {
   await page.route('**/cdnjs.cloudflare.com/**', r =>
     r.fulfill({ status: 200, contentType: 'text/javascript; charset=utf-8', body: stub }));
 
-  // הגיליון חסום כאן — מגישים CSV סינתטי לפי ה-gid שבבקשה
+  // הגיליון — הדפדפן לא מגיע אליו בשום מקרה (ראה liveCsv), ולכן ה-CSV
+  // תמיד מוגש דרך היירוט. במצב רגיל הוא סינתטי; ב---live הוא האמיתי.
   const served = new Set();
-  await page.route('**/docs.google.com/**', r => {
+  await page.route('**/docs.google.com/**', async r => {
     const gid = new URL(r.request().url()).searchParams.get('gid') || '';
-    const p = PERIODS.find(x => x.gid === gid);
-    if (!p) return r.fulfill({ status: 404, body: 'no fixture for gid ' + gid });
+    let body;
+    if (LIVE) {
+      body = liveCsv(gid);
+      if (body == null) return r.fulfill({ status: 502, body: 'live fetch failed for gid ' + gid });
+    } else {
+      if (!PERIODS.find(x => x.gid === gid)) return r.fulfill({ status: 404, body: 'no fixture for gid ' + gid });
+      body = csvFor(gid);
+    }
     served.add(gid);
     r.fulfill({ status: 200, contentType: 'text/csv; charset=utf-8',
-                headers: { 'access-control-allow-origin': '*' }, body: csvFor(gid) });
+                headers: { 'access-control-allow-origin': '*' }, body });
   });
 
   console.log('\n── טעינה ──');
@@ -206,7 +239,8 @@ async function browserRun() {
     return;
   }
 
-  if (served.size === PERIODS.length) pass(`נטענו ${served.size} תקופות מהפיקסצ׳ר`);
+  if (LIVE) pass(`נטענו ${served.size} תקופות מהגיליון האמיתי`);
+  else if (served.size === PERIODS.length) pass(`נטענו ${served.size} תקופות מהפיקסצ׳ר`);
   else fail(`נטענו ${served.size} תקופות מתוך ${PERIODS.length}`);
 
   const stamp = await page.textContent('#dataStamp');
@@ -248,8 +282,7 @@ async function browserRun() {
   const charts = await page.evaluate(() => (window.__CHARTS_BUILT__ || []).length);
   if (charts > 0) pass(`${charts} גרפים נבנו`); else fail('אף גרף לא נבנה');
 
-  // ── 5. הצלבת מספרים מול חישוב עצמאי ────────────────────────────
-  console.log('\n── מספרים (מול חישוב עצמאי מהפיקסצ׳ר) ──');
+  // ── 5. מספרים ──────────────────────────────────────────────────
   await page.click('.sb-item[data-view="overview"]');
   await page.waitForTimeout(150);
 
@@ -259,36 +292,55 @@ async function browserRun() {
     return { schools: t('metaSchools'), tech: t('metaTotal'),
              p10: t('kPct10'), p11: t('kPct11'), p12: t('k12Pct'), drop: t('kDrop') };
   });
-  const exp = expectedFor(DEFAULT_GID);
 
-  const cmp = (label, actual, expected, tol = 0.05) => {
-    const a = num(actual);
-    if (Number.isNaN(a)) return fail(`${label}: לא נמצא מספר במסך ("${actual}")`);
-    if (Math.abs(a - expected) > tol) fail(`${label}: במסך ${a}, ציפינו ל-${expected.toFixed(2)}`);
-    else pass(`${label} = ${a}`);
-  };
-  cmp('מספר בתי ספר', got.schools, exp.schools, 0);
-  cmp('סך תלמידי טק', got.tech, exp.techTotal, 0);
-  cmp('מדד י׳', got.p10, exp.p10);
-  cmp('מדד יא׳', got.p11, exp.p11);
-  cmp('מדד יב׳', got.p12, exp.p12);
-  cmp('נשירה י׳→יב׳', got.drop, exp.drop);
+  if (LIVE) {
+    // אין מול מה להשוות אוטומטית — הערכים ב-§8 נמדדו בתאריך מסוים
+    // והגיליון חי. מדפיסים אותם להצלבה ידנית מול §8, וזה כל התפקיד.
+    const per = await page.evaluate(
+      '(function(){var o={};Object.keys(ALLDATA).forEach(function(k){o[ALLDATA[k].label]=ALLDATA[k].schools.length});' +
+      ' return {periods:o, current:ALLDATA[CURRENT_PERIOD].label};})()');
+    console.log('\n── מספרים חיים מהגיליון — להצלבה מול §8 ──');
+    console.log(`  תקופה מוצגת   ${per.current}`);
+    Object.entries(per.periods).forEach(([l, n]) => console.log(`    ${l} — ${n} בתי ספר`));
+    console.log(`  מספר בתי ספר  ${got.schools}`);
+    console.log(`  סך תלמידי טק  ${got.tech}`);
+    console.log(`  מדד י׳        ${got.p10.replace(/\s+/g, ' ')}`);
+    console.log(`  מדד יא׳       ${got.p11.replace(/\s+/g, ' ')}`);
+    console.log(`  מדד יב׳       ${got.p12.replace(/\s+/g, ' ')}`);
+    console.log(`  נשירה י׳→יב׳  ${got.drop.replace(/\s+/g, ' ')}`);
+    console.log('\n  ⚠ אלה נתוני אמת. §8 נמדד בתאריך מסוים — הפרש אינו בהכרח באג.');
+  } else {
+    console.log('\n── מספרים (מול חישוב עצמאי מהפיקסצ׳ר) ──');
+    const exp = expectedFor(DEFAULT_GID);
+    const cmp = (label, actual, expected, tol = 0.05) => {
+      const a = num(actual);
+      if (Number.isNaN(a)) return fail(`${label}: לא נמצא מספר במסך ("${actual}")`);
+      if (Math.abs(a - expected) > tol) fail(`${label}: במסך ${a}, ציפינו ל-${expected.toFixed(2)}`);
+      else pass(`${label} = ${a}`);
+    };
+    cmp('מספר בתי ספר', got.schools, exp.schools, 0);
+    cmp('סך תלמידי טק', got.tech, exp.techTotal, 0);
+    cmp('מדד י׳', got.p10, exp.p10);
+    cmp('מדד יא׳', got.p11, exp.p11);
+    cmp('מדד יב׳', got.p12, exp.p12);
+    cmp('נשירה י׳→יב׳', got.drop, exp.drop);
 
-  // §3.1 — שורת 'סה"כ עיר' בפיקסצ׳ר מכילה 99999 בכוונה.
-  // אם המספר הזה הגיע למסך, הדשבורד קורא את שורת הסיכום במקום לחשב.
-  const leaked = await page.evaluate(() => document.body.innerText.includes('99999'));
-  if (leaked) fail('§3.1 נשבר — הערך 99999 משורת "סה"כ עיר" הופיע במסך');
-  else pass('§3.1 — שורת "סה״כ עיר" לא דלפה למסך');
+    // §3.1 — שורת 'סה"כ עיר' בפיקסצ׳ר מכילה 99999 בכוונה.
+    // אם המספר הזה הגיע למסך, הדשבורד קורא את שורת הסיכום במקום לחשב.
+    const leaked = await page.evaluate(() => document.body.innerText.includes('99999'));
+    if (leaked) fail('§3.1 נשבר — הערך 99999 משורת "סה"כ עיר" הופיע במסך');
+    else pass('§3.1 — שורת "סה״כ עיר" לא דלפה למסך');
 
-  // amat: בגמא ט׳ פיזיקה=מדמ״ח=זכאות → קו אחד, לא שלושה.
-  // SCHOOLS מוצהר ב-let, כלומר יושב ב-global lexical scope ולא על window.
-  const state = await page.evaluate(
-    '({ gid: ALLDATA[CURRENT_PERIOD].gid,' +
-    '   amat: ALLDATA[CURRENT_PERIOD].schools.find(s=>s.name==="חטיבת גמא").grades["ט"][8] })');
-  if (state.gid === DEFAULT_GID) pass('הדף נפתח על התקופה האחרונה');
-  else fail(`הדף נפתח על gid ${state.gid}, ציפינו ל-${DEFAULT_GID} (התקופה האחרונה)`);
-  if (state.amat === 1) pass('amat זוהה בחטיבת גמא, שכבה ט׳');
-  else fail(`amat לא זוהה (קיבלנו ${state.amat}) — הכלל בפרסר השתנה?`);
+    // amat: בגמא ט׳ פיזיקה=מדמ״ח=זכאות → קו אחד, לא שלושה.
+    // SCHOOLS מוצהר ב-let, כלומר יושב ב-global lexical scope ולא על window.
+    const state = await page.evaluate(
+      '({ gid: ALLDATA[CURRENT_PERIOD].gid,' +
+      '   amat: ALLDATA[CURRENT_PERIOD].schools.find(s=>s.name==="חטיבת גמא").grades["ט"][8] })');
+    if (state.gid === DEFAULT_GID) pass('הדף נפתח על התקופה האחרונה');
+    else fail(`הדף נפתח על gid ${state.gid}, ציפינו ל-${DEFAULT_GID} (התקופה האחרונה)`);
+    if (state.amat === 1) pass('amat זוהה בחטיבת גמא, שכבה ט׳');
+    else fail(`amat לא זוהה (קיבלנו ${state.amat}) — הכלל בפרסר השתנה?`);
+  }
 
   if (strays.size) fail('תלות חיצונית לא מוכרת: ' + [...strays].join(', '));
   else pass('אין תלויות חיצוניות מעבר לגיליון, cdnjs והגופן');
