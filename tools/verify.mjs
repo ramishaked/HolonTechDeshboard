@@ -368,20 +368,73 @@ async function browserRun() {
              p10: t('kPct10'), p11: t('kPct11'), p12: t('k12Pct'), drop: t('kDrop') };
   });
 
-  // ── כרטיס "איך מגיעים ליעד" (תצוגה 11) ─────────────────────────
-  // נקרא **מה-DOM ולא מהנוסחה** — הבדיקה היא שהמספרים הגיעו למסך, לא
-  // שהחישוב חוזר על עצמו. ארבעה אריחים, ואם אחד נופל ל-`—` זו רגרסיה.
+  // ── תצוגה 11: האקורדיאון והמסקנות ──────────────────────────────
+  // הבלוקים מתקפלים, ו**הכותרת הסגורה נושאת את המסקנה** — ולכן `.card-sub`
+  // ריק הוא רגרסיה שקטה: המסך ייראה תקין ופשוט לא יאמר כלום.
+  // `querySelectorAll` עובד גם על `<details>` סגור, ואין צורך לפתוח.
+  const acc = await page.evaluate(
+    '(function(){return [].slice.call(document.querySelectorAll("#exBody details.card")).map(function(d){' +
+    ' var t=d.querySelector(".card-title"), s=d.querySelector(".card-sub");' +
+    ' return {blk:d.dataset.blk||"", open:d.open,' +
+    '         title:t?t.textContent.trim():"", lede:s?s.textContent.trim():""};});})()');
+  if (acc.length < 6) fail(`תצוגה 11: ${acc.length} בלוקים מתקפלים במקום 6`);
+  else {
+    const mute = acc.filter(a => !a.lede);
+    const anon = acc.filter(a => !a.blk);
+    if (mute.length) fail(`תצוגה 11: כותרת סגורה בלי מסקנה — ${mute.map(a => a.title).join(', ')}`);
+    else if (anon.length) fail(`תצוגה 11: בלוק בלי data-blk — המצב לא יישמר`);
+    else if (acc.some(a => a.open)) fail(`תצוגה 11: בלוק נפתח בברירת מחדל — ${acc.filter(a=>a.open).map(a=>a.title).join(', ')}`);
+    else pass(`תצוגה 11 — ${acc.length} בלוקים מתקפלים, כולם סגורים ועם מסקנה בכותרת`);
+  }
+
+  // כרטיס "איך מגיעים ליעד" — נקרא **מה-DOM ולא מהנוסחה**: הבדיקה היא
+  // שהמספרים הגיעו למסך, לא שהחישוב חוזר על עצמו.
   const focus = await page.evaluate(
-    '(function(){var hs=[].slice.call(document.querySelectorAll("#exBody .ex-h"));' +
-    ' var h=hs.filter(function(x){return x.textContent.indexOf("איך מגיעים")>=0;})[0];' +
-    ' if(!h||!h.nextElementSibling) return null;' +
-    ' return [].slice.call(h.nextElementSibling.querySelectorAll(".st-card")).map(function(c){' +
+    '(function(){var ds=[].slice.call(document.querySelectorAll("#exBody details.card"));' +
+    ' var d=ds.filter(function(x){var t=x.querySelector(".card-title");' +
+    '   return t&&t.textContent.indexOf("איך מגיעים")>=0;})[0];' +
+    ' if(!d) return null;' +
+    ' return [].slice.call(d.querySelectorAll(".st-card")).map(function(c){' +
     '   return c.querySelector(".st-lbl").textContent.trim()+" = "+c.querySelector(".st-num").textContent.trim();});})()');
   if (!focus) fail('תצוגה 11: כרטיס "איך מגיעים ליעד" לא נבנה');
   else if (focus.length !== 4) fail(`תצוגה 11: ${focus.length} אריחים בכרטיס היעד במקום 4`);
   else if (focus.some(t => /=\s*(—|0|NaN|undefined)$/.test(t)))
     fail(`תצוגה 11: אריח ריק בכרטיס היעד — ${focus.join(' | ')}`);
   else pass('תצוגה 11 — כרטיס "איך מגיעים ליעד", 4 אריחים מלאים');
+
+  // מצב האקורדיאון חייב לשרוד רינדור מחדש. `renderExec` בונה מחדש את כל
+  // `#exBody`, ולכן עד v61 שני הבלוקים המתקפלים התקפלו בחזרה בכל מעבר
+  // תצוגה — באג שקט שרק אינטראקציה תופסת.
+  if (acc.length >= 6) {
+    // הכפתור יושב בתוך `#view-exec`, שמוסתר כשהתצוגה אינה הפעילה —
+    // צריך להדליק אותה לפני הלחיצה, ולהחזיר את המצב בסוף.
+    await page.click('.sb-item[data-view="exec"]');
+    await page.waitForTimeout(120);
+    await page.click('#exAll');
+    await page.waitForTimeout(60);
+    const opened = await page.evaluate(
+      '(function(){var d=document.querySelectorAll("#exBody details.card");' +
+      ' return {n:d.length, open:[].slice.call(d).filter(function(x){return x.open;}).length,' +
+      '         saved:(JSON.parse(localStorage.getItem("holon_exec_open"))||[]).length,' +
+      '         btn:(document.getElementById("exAll")||{}).textContent};})()');
+    if (opened.open !== opened.n) fail(`תצוגה 11: "פתח הכל" פתח ${opened.open} מתוך ${opened.n}`);
+    else if (opened.saved !== opened.n) fail(`תצוגה 11: נשמרו ${opened.saved} פתוחים מתוך ${opened.n}`);
+    else if (!/כווץ/.test(opened.btn || '')) fail(`תצוגה 11: הכפתור לא התהפך ל"כווץ הכל" (${opened.btn})`);
+    else {
+      // מעבר החוצה וחזרה — הרינדור נבנה מאפס, והמצב חייב לחזור מ-localStorage
+      await page.click('.sb-item[data-view="overview"]');
+      await page.waitForTimeout(80);
+      await page.click('.sb-item[data-view="exec"]');
+      await page.waitForTimeout(120);
+      const back = await page.evaluate(
+        '(function(){var d=document.querySelectorAll("#exBody details.card");' +
+        ' return [].slice.call(d).filter(function(x){return x.open;}).length;})()');
+      if (back !== opened.n) fail(`תצוגה 11: אחרי רינדור מחדש נשארו ${back} פתוחים מתוך ${opened.n}`);
+      else pass('תצוגה 11 — "פתח הכל" עובד והמצב שורד רינדור מחדש');
+    }
+    await page.click('.sb-item[data-view="overview"]');   // להחזיר את המצב
+    await page.waitForTimeout(80);
+  }
 
   if (LIVE) {
     // אין מול מה להשוות אוטומטית — הערכים ב-§8 נמדדו בתאריך מסוים
@@ -399,6 +452,12 @@ async function browserRun() {
     console.log(`  מדד יב׳       ${got.p12.replace(/\s+/g, ' ')}`);
     console.log(`  נשירה י׳→יב׳  ${got.drop.replace(/\s+/g, ' ')}`);
     if (focus) { console.log('  איך מגיעים ליעד:'); focus.forEach(t => console.log(`    ${t}`)); }
+    // המסך הסגור הוא התקציר עצמו — ולכן שש שורות המסקנה הן הפלט שצריך
+    // להצליב, לא פחות מהמדדים שמעליהן.
+    if (acc.length) {
+      console.log('  התקציר במצב סגור:');
+      acc.forEach(a => console.log(`    ${a.title} — ${a.lede}`));
+    }
     console.log('\n  ⚠ אלה נתוני אמת. §8 נמדד בתאריך מסוים — הפרש אינו בהכרח באג.');
   } else {
     console.log('\n── מספרים (מול חישוב עצמאי מהפיקסצ׳ר) ──');

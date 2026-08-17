@@ -569,12 +569,30 @@ body{
   transition:transform .18s;flex-shrink:0;}
 #view-exec details[open].card > summary .ex-cv{transform:rotate(-90deg);}
 #view-exec details.card > .ex-in{padding:0 24px 22px;}
+/* בתוך בלוק מתקפל הכרטיסים הפנימיים הופכים לשקעים. `.st-card` ו-`.ins-card`
+   נושאים בדיוק את השילוב של `.card` (רקע card + מסגרת + radius + צל), ובלי
+   הכלל הזה עטיפתם ב-`details.card` יוצרת מסגרת כפולה על רקע זהה — בדיוק
+   הבעיה שההערה שמתחת תיארה כשהבלוקים עוד ישבו מחוץ לכרטיס.
+   הגוון הימני של `.ins-card` נשאר: הוא נושא משמעות (דחיפות/אדמיניסטרטיבי),
+   וכך גם ה-`::before` הצבעוני של `.st-card` שמבדיל בין c1/c2/c3. */
+#view-exec .ex-in .st-card,
+#view-exec .ex-in .ins-card{background:var(--bg);box-shadow:none;}
+#view-exec .ex-in .ins-card:last-child,
+#view-exec .ex-in .st-grid:last-child{margin-bottom:0;}
+/* "פתח הכל" — גלולת מטא לוחצת. חייבת להישאר גלויה בכל מצב: בלוק סגור
+   אינו מודפס, וזו הדרך היחידה להוציא את התקציר לנייר. */
+#view-exec .ex-all{font-family:inherit;cursor:pointer;font-weight:700;
+  color:var(--primary);}
+#view-exec .ex-all:hover{background:var(--primary-l);}
 /* חסם אדמיניסטרטיבי — כחול מידע, כדי שלא ייקרא כממצא פדגוגי */
 #view-exec .ins-card.admin{border-right-color:var(--info);}
 #view-exec .ins-card.admin .ins-num{color:var(--info);}
 #view-exec .ins-card.admin .ins-tag{background:#e8f0fe;color:#1967d2;}
-/* כותרת קבוצה בין בלוקים — אין `.card` סביבה, אחרת כרטיסי החסמים
-   היו כרטיסים בתוך כרטיס */
+/* כותרת קבוצה בין בלוקים. **לא בשימוש מ-v61** — הבלוקים עברו לאקורדיאון
+   והכותרת ירדה לתוך ה-`summary`. הכלל נשאר כי הוא זול, ומחיקתו תפיל כל
+   בלוק עתידי שייבנה בדפוס הישן. הנימוק ההיסטורי: `.ex-h` נבנתה בלי
+   `.card` סביבה כדי שכרטיסי החסמים לא יהיו כרטיס בתוך כרטיס — הבעיה
+   שהכלל שלמעלה פותר עכשיו בשיטוח. */
 #view-exec .ex-h{font-size:16px;font-weight:900;color:var(--text);
   margin:22px 0 12px;padding-right:11px;border-right:3px solid var(--primary);}
 /* מחיר הממצא בתלמידים — צמוד לכותרת, כי הוא סיבת הדירוג */
@@ -5012,7 +5030,7 @@ function execCtx(){
   const cost12  = onAlt ? cityPct(2) - cityPctAlt(2) : null;
   const heads12 = onAlt ? den12 - cityStudents(2) : null;
 
-  return { me, rank, done, defend, tgtPct, den12, onAlt, den, cur12, live12,
+  return { me, rank, done, defend, tgtPct, onAlt, den, cur12, live12,
            need, gap, cost12, heads12 };
 }
 
@@ -5037,27 +5055,114 @@ function renderExec(){
     return;
   }
 
-  document.getElementById('exSub').textContent =
-    'השורה התחתונה, מה עובד, מה חוסם, היעד — ואיך מגיעים אליו' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
+  // תת-הכותרת הייתה תוכן עניינים ("השורה התחתונה, מה עובד, מה חוסם…") —
+  // מיותר כשכל בלוק נושא את המסקנה שלו בכותרת. נשארת תווית התקופה.
+  document.getElementById('exSub').textContent = DATA_LABEL || '';
   document.getElementById('exMeta').innerHTML =
     `<div class="meta-pill">מקום <strong>#${c.rank}</strong> מתוך ${CITIES.length}</div>` +
-    (c.tgtPct != null ? `<div class="meta-pill">יעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '');
+    (c.tgtPct != null ? `<div class="meta-pill">יעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '') +
+    `<button class="meta-pill ex-all" id="exAll" type="button"></button>`;
 
   box.innerHTML = execBottomLine(c) + execPositives(c) + execBlockers(c) +
                   execGoal(c) + execFocus(c) + execSubjects(c) + execSchools(c);
+  execPaintAll();
+}
+
+// ── מצב האקורדיאון ──────────────────────────────────────────────
+// המאזינים נרשמים **פעם אחת** ובדלגציה: `renderExec` מוחקת את כל
+// `#exBody.innerHTML`, ולכן מאזין על `<details>` בודד לא היה שורד
+// מעבר תצוגה או החלפת תקופה.
+function execPaintAll(){
+  const btn = document.getElementById('exAll');
+  if(!btn) return;
+  const all = [...document.querySelectorAll('#exBody details.card')];
+  const allOpen = all.length > 0 && all.every(d=> d.open);
+  btn.textContent = allOpen ? 'כווץ הכל' : 'פתח הכל';
+  btn.dataset.act = allOpen ? 'close' : 'open';
+}
+document.addEventListener('click', e=>{
+  const btn = e.target.closest && e.target.closest('#exAll');
+  if(!btn) return;
+  const open = btn.dataset.act === 'open';
+  document.querySelectorAll('#exBody details.card').forEach(d=> d.open = open);
+  execSaveOpen();
+  execPaintAll();
+});
+// `toggle` אינו עולה בבועה, ולכן נתפס בשלב ה-capture.
+document.addEventListener('toggle', e=>{
+  if(!(e.target instanceof HTMLDetailsElement)) return;
+  if(!e.target.closest('#exBody')) return;
+  execSaveOpen();
+  execPaintAll();
+}, true);
+
+// ── האקורדיאון של התקציר ────────────────────────────────────────
+// התצוגה גדלה ל-18 יחידות תוכן וחדלה להיות תקציר. כל בלוק מתקפל,
+// ו**הכותרת הסגורה נושאת את המסקנה** — ולכן המסך הסגור הוא עדיין
+// תשובה מלאה. `execBottomLine` לבדו נשאר חשוף (בקשת המשתמש).
+//
+// ⚠ **המסקנה בכותרת חייבת להיות נגזרת.** משפט קבוע שם גרוע פי כמה
+// מאשר בגוף הבלוק: במצב סגור הוא כל מה שנקרא. אין להחזיר לשם מחרוזת.
+//
+// ⚠ `renderExec` בונה מחדש את כל `#exBody.innerHTML` בכל מעבר תצוגה
+// ובכל שינוי תקופה, ולכן מאזין על אלמנט בודד היה נמחק. המצב מוזרק
+// כ-`open` בזמן הבנייה, וה-`toggle` נתפס בדלגציה על `#exBody`.
+const EXEC_KEY = 'holon_exec_open';
+// נשמרים **הפתוחים** ולא הסגורים (בניגוד לסיידבר): ברירת המחדל הריקה
+// היא "הכל סגור", וכל בלוק שיתווסף בעתיד ייוולד סגור מעצמו.
+function execOpen(){
+  try{ return JSON.parse(localStorage.getItem(EXEC_KEY)) || []; }catch(_){ return []; }
+}
+function execSaveOpen(){
+  const open = [...document.querySelectorAll('#exBody details.card[open]')].map(d=> d.dataset.blk);
+  try{ localStorage.setItem(EXEC_KEY, JSON.stringify(open)); }catch(_){}
+}
+// בונה בלוק מתקפל בדפוס הקיים של `execSubjects`/`execSchools` — אותו
+// `summary`, אותו `.ex-cv`, אותו `.ex-in`. בלי CSS חדש.
+function execCard(id, title, lede, body){
+  return `
+  <details class="card" data-blk="${id}"${execOpen().indexOf(id) >= 0 ? ' open' : ''}>
+    <summary><span class="ex-cv">◂</span><div>
+      <div class="card-title">${title}</div>
+      <div class="card-sub">${lede}</div>
+    </div></summary>
+    <div class="ex-in">${body}</div>
+  </details>`;
+}
+
+// ── עזרי ניסוח נגזר ─────────────────────────────────────────────
+// **מילת כיוון לעולם אינה צרובה.** זו קבוצת הבאגים של §9.1: משפט קבוע
+// יושב ליד מספר חי, והוא נכון עד ליום שבו הסימן מתהפך. `dirWord` מחזירה
+// את המילה מתוך הערך עצמו, ו-`signed` את הערך המוחלט לצדה — כך
+// "3.7 נק׳ מעל" הופך מעצמו ל-"1.4 נק׳ מתחת" ולא ל-"‎-1.4 נק׳ מעל".
+const dirWord = (v, up, down, same) =>
+  Math.abs(v) < 0.05 ? (same != null ? same : down) : (v > 0 ? up : down);
+const signed = v => Math.abs(v).toFixed(1);
+
+// דירוג התלמידות **בלי `CITY_ASTERISK`** — 67.9% בבית שמש אינו הישג אלא
+// תוצר מגזרי, וממוצע או דירוג שכולל אותו משקר. חולץ לכאן כי שני בלוקים
+// זקוקים לו (`execBottomLine` ו-`execPositives`); שכפול היה מפצל את
+// ההחרגה לשתי גרסאות שיתפצלו בשקט.
+function girlsRank(){
+  const rows = CITIES.filter(x=> !CITY_ASTERISK[x.name])
+                     .slice().sort((a,b)=> b.girls - a.girls);
+  return { rows, rank: rows.findIndex(x=> x.name === CITY_ME) + 1 };
 }
 
 // ── 1 · השורה התחתונה ───────────────────────────────────────────
 // הסדר: **המספר הפורמלי שפורסם קודם, והמעובד אחריו.** מול ראש עיר
 // נקודת המוצא היא מה שמשרד החינוך פרסם, ולא מה שאנחנו גזרנו מהגיליון.
+// ⚠ **הבלוק הזה אינו מתקפל** (בקשת המשתמש) — ארבעת המספרים נשארים
+// חשופים, ושאר התצוגה נסגרת מתחתיהם.
 function execBottomLine(c){
-  const dn  = c.live12 - NATIONAL;
-  // דירוג התלמידות מחושב בלי `CITY_ASTERISK` — 67.9% בבית שמש אינו
-  // הישג אלא תוצר מגזרי, וממוצע או דירוג שכולל אותו משקר.
-  const gRows = CITIES.filter(x=> !CITY_ASTERISK[x.name])
-                      .slice().sort((a,b)=> b.girls - a.girls);
-  const gRank = gRows.findIndex(x=> x.name === CITY_ME) + 1;
+  const { rank:gRank, rows:gRows } = girlsRank();
   const gLive = cityGirlsPctOfTech();
+  // §9.1 פריט 0-1: "מעל הארצי" היה צרוב, ובלי ענף סימן הוא היה מדפיס
+  // "‎-1.4 נק׳ מעל הארצי" ביום שחולון תרד. שוויון מקבל ניסוח משלו —
+  // "0.0 נק׳ מעל" אינו משפט.
+  const vsNat  = c.me.tech - NATIONAL;
+  const natSay = Math.abs(vsNat) < 0.05 ? 'בדיוק כמו הממוצע הארצי'
+    : `${signed(vsNat)} נק׳ ${vsNat > 0 ? 'מעל הארצי' : 'מתחת לארצי'}`;
   // קבוצות הייחוס — אשכול חברתי-כלכלי והיקף אוכלוסייה. נגזרות בזמן
   // ריצה ב-`ntGroups()`, בדיוק כמו בתצוגת חולון–ארצי.
   const gr    = ntGroups();
@@ -5077,7 +5182,7 @@ function execBottomLine(c){
     { cls:'c1', lbl:`המדד הרשמי — משרד החינוך ${CITY_YEAR}`,
       num: ntPc(c.me.tech),
       sub: `זהו המספר שפורסם ושבו חולון נמדדת מול שאר הרשויות. ` +
-           `<strong>${(c.me.tech - NATIONAL).toFixed(1)} נק׳ מעל הארצי</strong> (${NATIONAL}%).<br>` +
+           `<strong>${natSay}</strong> (${NATIONAL}%).<br>` +
            `<span class="alt-num">מהגיליון, שכבת יב׳ ${DATA_LABEL||''}: <strong>${ntPc(c.live12)}</strong> — ` +
            `${num(c.cur12)} זכאים מתוך ${num(c.den)}` +
            (c.onAlt? ', באותו מכנה מצבת' : '. אין שורת מצבת בתקופה זו — סכום שורות בתי הספר') + `</span>` },
@@ -5092,12 +5197,23 @@ function execBottomLine(c){
         ? `<strong>חולון כבר בחמישייה.</strong> נתוני ${CITY_YEAR}.`
         : `כדי להיכנס לחמישייה צריך לעבור את <strong>${c.defend.name}</strong> — ${ntPc(c.tgtPct)}. ` +
           `הפער: <strong>${(c.tgtPct - c.me.tech).toFixed(1)} נק׳</strong> מהמספר הרשמי.` },
-    { cls:'c1', lbl:'ייצוג תלמידות בקרב לומדי הטק',
+    // §9.1 פריט 0-3: "זה ההישג הבולט" היה מותנה ב-`gRank ?` בלבד — כלומר
+    // "חולון נמצאה ברשימה", לא "חולון גבוהה" — ונאמר גם למקום אחרון.
+    // עכשיו נגזר מהשליש שבו היא יושבת. **הסקופ מסומן:** המספר הגדול הוא
+    // י׳–יב׳ מהגיליון החי, ואילו הדירוג ו-`me.girls` הם `CITY_DATA` רשמי
+    // ליב׳ — שלושה סקופים באריח אחד, ועד v60 אף אחד מהם לא סומן.
+    { cls:'c1', lbl:'ייצוג תלמידות בקרב לומדי הטק · י׳–יב׳',
       num: ntPc(gLive),
       sub: gRank
-        ? `בנתוני ${CITY_YEAR} חולון <strong>#${gRank}</strong> מתוך ${gRows.length} בייצוג תלמידות ` +
-          `(${ntPc(c.me.girls)}). <strong>זה ההישג הבולט של העיר</strong>, והוא לא בא על חשבון המדד.`
-        : `נתוני הגיליון לתקופה הנוכחית.` }
+        ? `<span class="alt-num">מהגיליון, י׳–יב׳ ${DATA_LABEL||''}.</span> ` +
+          `בנתוני ${CITY_YEAR} חולון <strong>#${gRank}</strong> מתוך ${gRows.length} בייצוג תלמידות ` +
+          `בשכבת יב׳ (${ntPc(c.me.girls)})` +
+          (gRank <= Math.ceil(gRows.length/3)
+            ? `. <strong>זה ההישג הבולט של העיר</strong>, והוא לא בא על חשבון המדד.`
+            : gRank <= Math.ceil(gRows.length*2/3)
+              ? ` — במחצית העליונה, ולא על חשבון המדד.`
+              : `. <strong>זו נקודת חולשה</strong>, ולא הישג.`)
+        : `נתוני הגיליון לתקופה הנוכחית, שכבות י׳–יב׳.` }
   ];
 
   return `<div class="st-grid">` + tiles.map(t=>`
@@ -5147,10 +5263,17 @@ function execPositives(c){
     const nat = (typeof NATIONAL_GIRLS !== 'undefined') ? NATIONAL_GIRLS : null;
     // הרמה היא ההישג; המגמה השנתית עשויה להיות בכיוון ההפוך, ואז
     // הכרטיס אומר זאת במפורש. "מה עובד" אינו רישיון להסתיר דלתא.
-    items.push({ k:'good', i:'♀', t:`ייצוג התלמידות — ${ntPc(gNow)} מלומדי הטק`,
+    // §9.1 פריט 0-4: "נק׳ מעל" ו-"בין המובילות" היו שניהם צרובים, והשני
+    // בלי שום מדידת דירוג — שלוש שורות מתחת כבר היה טיפול סימן תקין.
+    // הדירוג מגיע מ-`girlsRank()` המשותף, כדי שההחרגה לא תתפצל.
+    const gr4 = girlsRank();
+    items.push({ k:'good', i:'♀', t:`ייצוג התלמידות — ${ntPc(gNow)} מלומדי הטק (י׳–יב׳)`,
       b: (nat != null
-            ? `מול <strong>${nat}%</strong> ארצית — <strong>${(gNow-nat).toFixed(1)} נק׳ מעל</strong>. ` +
-              `בנתוני ${CITY_YEAR} חולון בין המובילות מבין ${CITIES.length} הגדולות. `
+            ? `מול <strong>${nat}%</strong> ארצית — <strong>${signed(gNow-nat)} נק׳ ` +
+              `${dirWord(gNow-nat, 'מעל', 'מתחת')}</strong>. ` +
+              (gr4.rank
+                ? `בנתוני ${CITY_YEAR} חולון <strong>#${gr4.rank}</strong> מתוך ${gr4.rows.length} הגדולות. `
+                : '')
             : '') +
          (gd != null
             ? `<span class="alt-num">המגמה השנה: ${ntPc(ga)} ← ${ntPc(gb)} ` +
@@ -5200,20 +5323,27 @@ function execPositives(c){
       items.push({ k:'good', i:'∑', t:`מתמטיקה 5 יח״ל בשכבת יב׳ — ${num(a.ma5N)} ← ${num(b.ma5N)}`,
         b: `<strong>+${num(add)} תלמידים</strong> בין ${A.label} ל-${B.label}. ` +
            `מתמטיקה 5 היא תנאי הסף למדד הטק, ולכן זהו הבסיס שממנו יכול לגדול המונה.<br>` +
-           `<span class="alt-num">לצד זה: מספר לומדי מתמטיקה 5 שאינם זכאי מדד טק גדל מ-${num(gapA)} ל-${num(gapB)} — ` +
-           `הגידול טרם תורגם למקצוע מדעי.</span>` });
+           // ⚠ השער למעלה בודק את כיוון **המתמטיקה**, לא את כיוון הפער.
+           // "גדל" היה צרוב, ומעל שני מספרים יורדים הוא שיקר.
+           `<span class="alt-num">לצד זה: מספר לומדי מתמטיקה 5 שאינם זכאי מדד טק ` +
+           `${dirWord(gapB-gapA, 'גדל', 'ירד', 'לא זז')} מ-${num(gapA)} ל-${num(gapB)}` +
+           (gapB > gapA ? ' — הגידול טרם תורגם למקצוע מדעי.' : '.') + `</span>` });
     }
   }
 
   if(!items.length) return '';
-  return `<div class="ex-h">מה עובד</div>` + items.map(x=>`
+  // המסקנה בכותרת הסגורה: כמה ממצאים, ומה הראשון שבהם. `items[0].t` הוא
+  // כבר כותרת מנוסחת ונגזרת — אין כאן משפט חדש.
+  const lede = items.length === 1 ? items[0].t
+             : `${items.length} ממצאים — ${items[0].t}`;
+  return execCard('pos', 'מה עובד', lede, items.map(x=>`
     <div class="qi qi-${x.k}">
       <div class="qi-ico">${x.i}</div>
       <div class="qi-body">
         <div class="qi-title">${x.t}</div>
         <div class="qi-text">${x.b}</div>
       </div>
-    </div>`).join('');
+    </div>`).join(''));
 }
 
 // ── 3 · החסמים ──────────────────────────────────────────────────
@@ -5268,20 +5398,29 @@ function execBlockers(c){
     </div>` : '';
 
   if(!found.length && !admin) return '';
-  return `<div class="ex-h">החסמים העיקריים</div>${cards}${admin}`;
+  // המסקנה בכותרת: החסם היקר ביותר ומחירו בתלמידים — כלומר בדיוק סיבת
+  // הדירוג. בלי גלאים (רק פער המצבת) המסקנה נלקחת משם.
+  const lede = found.length
+    ? `${found[0].d.title(found[0].ev)} — ${num(found[0].cost)} תלמידים` +
+      (found.length > 1 ? ` · ועוד ${found.length - 1}` : '')
+    : `המצבת הקובעת — פער של ${c.cost12.toFixed(1)} נק׳`;
+  return execCard('blk', 'החסמים העיקריים', lede, cards + admin);
 }
 
 // ── 3 · היעד ואבני הדרך ─────────────────────────────────────────
 function execGoal(c){
-  if(c.done) return `
-    <div class="card"><div class="card-head"><div>
-      <div class="card-title">היעד — הושג</div>
-      <div class="card-sub">חולון במקום #${c.rank} מבין ${CITIES.length} הרשויות הגדולות.</div>
-    </div></div>
+  if(c.done) return execCard('goal', 'היעד — הושג',
+    `חולון במקום #${c.rank} מבין ${CITIES.length} הרשויות הגדולות`, `
     <div class="insight"><div class="insight-t">מה עכשיו</div>
       <div class="insight-b">היעד שהוגדר — כניסה לחמישייה — הושג. כדאי לקבוע סף חדש
-        מול המובילה (${CITIES[0].name}, ${ntPc(CITIES[0].tech)}) ולעדכן את התצוגה.</div></div>
-    </div>`;
+        מול המובילה (${CITIES[0].name}, ${ntPc(CITIES[0].tech)}) ולעדכן את התצוגה.</div></div>`);
+
+  // ⚠ `tgtPct` הוא רשמי מ-`CITY_DATA` (${CITY_YEAR}) ו-`live12` הוא הגיליון החי —
+  // **שתי שנים שונות, ואין מה שמבטיח ש-`tgtPct` גדול יותר.** ברגע שהגיליון
+  // עובר את הסף, "קפיצה" הופכת לירידה ואבני הדרך יורדות תחת הכותרת "היעד".
+  // `c.gap` כבר 0 שם (`Math.max` ב-`execCtx`), ולכן הפריסה חסרת משמעות.
+  const dPts  = c.tgtPct - c.live12;
+  const ahead = dPts <= 0.05;
 
   const scale = Math.max(...CITIES.slice(0, RANK_TGT).map(x=> x.tech), c.me.tech) * 1.14;
   const top   = CITIES.slice(0, RANK_TGT)
@@ -5292,8 +5431,8 @@ function execGoal(c){
   // אבני דרך — פריסה לינארית של הפער על פני האופק. השנים נגזרות
   // מהתקופה המוצגת ולא צרובות.
   const baseY = (ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year) || 0;
-  const step  = (c.tgtPct - c.live12) / EXEC_SPAN;
-  const miles = Array.from({length:EXEC_SPAN}, (_,i)=>{
+  const step  = dPts / EXEC_SPAN;
+  const miles = ahead ? '' : Array.from({length:EXEC_SPAN}, (_,i)=>{
     const pct = c.live12 + step*(i+1);
     const cnt = Math.ceil(pct/100 * c.den);
     const w   = Math.max(1.5, Math.min(100, pct/(c.tgtPct*1.14)*100));
@@ -5309,15 +5448,22 @@ function execGoal(c){
       </div>`;
   }).join('');
 
-  return `
-  <div class="card">
-    <div class="card-head"><div>
-      <div class="card-title">היעד — כניסה לחמישייה מבין ${CITIES.length} הגדולות</div>
-      <div class="card-sub"><strong>קפיצה מ-${ntPc(c.live12)} ל-${ntPc(c.tgtPct)} תוך ${EXEC_SPAN} שנים —
-        ${(c.tgtPct - c.live12).toFixed(1)} נקודות, ${num(c.gap)} זכאים נוספים בשכבת יב׳.</strong><br>
-        הסף נגזר מהדירוג עצמו: מקום ${RANK_TGT} מוחזק היום בידי
-        ${c.defend.name} עם ${ntPc(c.tgtPct)}. נתוני ${CITY_YEAR}.</div>
-    </div></div>
+  const lede = ahead
+    ? `הגיליון החי כבר מעל הסף — ${ntPc(c.live12)} מול ${ntPc(c.tgtPct)}. הדירוג הרשמי מ-${CITY_YEAR} טרם עודכן`
+    : `${ntPc(c.tgtPct)} תוך ${EXEC_SPAN} שנים — ${num(c.gap)} בוגרים נוספים, ` +
+      `כ-${num(Math.ceil(c.gap/EXEC_SPAN))} בשנה`;
+
+  return execCard('goal', `היעד — כניסה לחמישייה מבין ${CITIES.length} הגדולות`, lede, `
+    <div class="card-sub" style="padding-right:0;margin-bottom:18px;">
+      <strong>${ahead
+        ? `הגיליון החי עומד על ${ntPc(c.live12)}, ${signed(dPts)} נק׳ מעל הסף של ${c.defend.name} (${ntPc(c.tgtPct)}).`
+        : `קפיצה מ-${ntPc(c.live12)} ל-${ntPc(c.tgtPct)} תוך ${EXEC_SPAN} שנים —
+           ${signed(dPts)} נקודות, ${num(c.gap)} זכאים נוספים בשכבת יב׳.`}</strong><br>
+      הסף נגזר מהדירוג עצמו: מקום ${RANK_TGT} מוחזק היום בידי
+      ${c.defend.name} עם ${ntPc(c.tgtPct)}. נתוני ${CITY_YEAR}.
+      ${ahead? `<br><strong>הדירוג עדיין מציג את חולון במקום #${c.rank}</strong> — הוא מחושב על
+        המספר הרשמי, שמתעדכן פעם בשנה. אבני הדרך אינן מוצגות: אין פער לפרוס.` : ''}
+    </div>
     ${top}
     <div class="ex-gapline">···</div>
     ${mine}
@@ -5329,12 +5475,13 @@ function execGoal(c){
         זהו כל הפער, ופירוקו למקצועות בבלוק שמתחת.
       </div>
     </div>
-    <div class="card-title" style="margin-top:22px;">אבני דרך — ${EXEC_SPAN} שנים</div>
-    ${miles}
-    <div class="cmp-note">הפריסה לינארית: ${((c.tgtPct-c.live12)/EXEC_SPAN).toFixed(1)} נק׳ בשנה,
-      כ-${num(Math.ceil(c.gap/EXEC_SPAN))} זכאים נוספים בכל שנה. נקודת המוצא היא המדד החי
-      (${ntPc(c.live12)}) ולא המספר הרשמי של ${CITY_YEAR} — הם נמדדים באותו מכנה אך בשנים שונות.</div>
-  </div>`;
+    ${ahead? '' : `
+      <div class="card-title" style="margin-top:22px;">אבני דרך — ${EXEC_SPAN} שנים</div>
+      ${miles}
+      <div class="cmp-note">הפריסה לינארית: ${(dPts/EXEC_SPAN).toFixed(1)} נק׳ בשנה,
+        כ-${num(Math.ceil(c.gap/EXEC_SPAN))} זכאים נוספים בכל שנה. נקודת המוצא היא המדד החי
+        (${ntPc(c.live12)}) ולא המספר הרשמי של ${CITY_YEAR} — הם נמדדים באותו מכנה אך בשנים שונות.</div>`}
+  `);
 }
 
 // ── 3.5 · איך מגיעים ליעד ───────────────────────────────────────
@@ -5389,16 +5536,27 @@ function execFocus(c){
           `כ-<strong>${num(Math.ceil(c.gap/EXEC_SPAN))} בשנה</strong> לאורך ${EXEC_SPAN} שנים.` },
     { cls:'c1', lbl:'תלמידי י׳ שכבר עם מתמטיקה 5 ובלי המדד',
       num:num(pool),
-      sub:`<strong>פי ${(pool/c.gap).toFixed(1)} מהפער.</strong> הם עברו את המחסום הקשה ביותר ` +
+      // ⚠ "פי X מהפער" הניח `pool > gap`. כשהמאגר קטן מהפער התזה של
+      // הכרטיס נופלת — והמסך צריך לומר זאת, לא להדפיס "פי 0.6".
+      sub:(pool >= c.gap
+            ? `<strong>פי ${(pool/c.gap).toFixed(1)} מהפער.</strong> `
+            : `<strong>קטן מהפער (${num(c.gap)}) — המרת המאגר כולו אינה מספיקה, ` +
+              `וצריך להרחיב גם את הבסיס.</strong> `) +
+          `הם עברו את המחסום הקשה ביותר ` +
           `ומגיעים ליב׳ ${grad? 'ב' + grad : 'בתוך האופק'} — כלומר בתוך התוכנית. ` +
           `<span class="alt-num">${num(ma5)} לומדי מתמטיקה 5 מול ${num(ht)} במדד, שכבת י׳ ${DATA_LABEL||''}` +
           (Math.max(0, ma5 - ht) !== pool
             ? ` · החיסור העירוני נותן ${num(Math.max(0, ma5 - ht))} — בית ספר שבו הזכאות גדולה ממתמטיקה 5 מתקזז בו ואינו גורע מהמאגר`
             : '') + `</span>` },
-    { cls:'c2', lbl:`${hot.length} בתי ספר מחזיקים את רוב המאגר`,
+    // ⚠ "רוב" היה צרוב מול `hotPct` שאינו מגודר. כשהמאגר פרוס על הרבה
+    // בתי ספר, ארבעה אינם "רוב" — והכותרת נגזרת מהאחוז בפועל.
+    { cls:'c2', lbl:`${hot.length} בתי ספר מחזיקים ${hotPct >= 50? 'את רוב המאגר' : 'את החלק הגדול'}`,
       num:`${hotPct.toFixed(0)}%`,
       sub:`${hot.map(x=> `<strong>${x.name}</strong> ${num(x.p)}`).join(' · ')} — ` +
-          `${num(hotSum)} מתוך ${num(pool)}. <strong>כאן יושב הקשב.</strong>` },
+          `${num(hotSum)} מתוך ${num(pool)}. ` +
+          (hotPct >= 50
+            ? `<strong>כאן יושב הקשב.</strong>`
+            : `<strong>המאגר פרוס — ${hot.length} מוקדים אינם מכסים את רובו.</strong>`) },
     { cls:'c1', lbl:'חסר להם מקצוע מדעי, לא מתמטיקה',
       num:`${per10} מתוך 10`,
       sub:`מבין מי שחסר לו רכיב אחד בלבד: <strong>${num(P.phcs)} חסרים פיזיקה או מדעי המחשב</strong>, ` +
@@ -5406,8 +5564,14 @@ function execFocus(c){
           `<span class="alt-num">${P.src} — נתוני ${P.year}, ולא שנת הגיליון</span>` }
   ];
 
-  return `
-    <div class="ex-h">איך מגיעים ליעד</div>
+  // "החסם במדעים" שייך לכותרת של כרטיס המקצועות שמתחת — שתי כותרות
+  // סגורות סמוכות שאומרות אותו דבר הן בדיוק הרעש שהאקורדיאון בא להסיר.
+  const lede = `${num(c.gap)} מתוך מאגר ${num(pool)} בשכבת י׳ · ` +
+    `${hot.length} בתי ספר מחזיקים ${hotPct.toFixed(0)}%`;
+
+  // ⚠ `share` היה ללא חסם, ומאגר קטן מהפער היה מדפיס "להמיר 79 מתוך 40 — 198%".
+  // כשהמאגר אינו מספיק המשפט אומר את זה במקום להציג אחוז בלתי אפשרי.
+  const body = `
     <div class="st-grid">` + tiles.map(t=>`
       <div class="st-card ${t.cls}">
         <div class="st-lbl">${t.lbl}</div>
@@ -5415,12 +5579,19 @@ function execFocus(c){
         <div class="st-sub">${t.sub}</div>
       </div>`).join('') + `</div>
     <div class="insight"><div class="insight-t">בשורה אחת</div>
-      <div class="insight-b">
-        הפער <strong>אינו</strong> דורש לגייס תלמידים חדשים למתמטיקה. הוא דורש להמיר
-        <strong>${num(c.gap)} מתוך ${num(pool)}</strong> — ${share.toFixed(0)}% ממי שכבר עם מתמטיקה 5
-        בשכבת י׳ — ורובם מרוכזים ${hot.length===1? 'בבית ספר אחד' : 'ב-'+hot.length+' בתי ספר'}.
-        ההמרה היא מקצוע מדעי אחד: פיזיקה או מדעי המחשב.
+      <div class="insight-b">` +
+      (pool >= c.gap
+        ? `הפער <strong>אינו</strong> דורש לגייס תלמידים חדשים למתמטיקה. הוא דורש להמיר
+           <strong>${num(c.gap)} מתוך ${num(pool)}</strong> — ${share.toFixed(0)}% ממי שכבר עם
+           מתמטיקה 5 בשכבת י׳ — ו${hotPct >= 50? 'רובם' : 'החלק הגדול שבהם'} מרוכזים
+           ${hot.length===1? 'בבית ספר אחד' : 'ב-'+hot.length+' בתי ספר'}.
+           ההמרה היא מקצוע מדעי אחד: פיזיקה או מדעי המחשב.`
+        : `המאגר בשכבת י׳ — <strong>${num(pool)}</strong> — <strong>קטן מהפער ${num(c.gap)}</strong>.
+           גם המרה מלאה שלו אינה סוגרת אותו, ולכן נדרשת גם הרחבת הבסיס:
+           יותר לומדי מתמטיקה 5 בשכבות שמתחת.`) + `
       </div></div>`;
+
+  return execCard('focus', 'איך מגיעים ליעד', lede, body);
 }
 
 // ── 4 · תוכנית הגידול לפי מקצוע ─────────────────────────────────
@@ -5461,13 +5632,13 @@ function execSubjects(c){
   // השורה הזו היא שהופכת את מאגר הפוטנציאל לחסם עליון.
   const enBad = en5 < c.cur12;
 
-  return `
-  <details class="card">
-    <summary><span class="ex-cv">◂</span><div>
-      <div class="card-title">תוכנית הגידול לפי מקצוע</div>
-      <div class="card-sub">כמה תלמידים ואיזה אחוז גידול, בכל אחד משלושת המקצועות.</div>
-    </div></summary>
-    <div class="ex-in">
+  // המסקנה בכותרת: התוספת הנדרשת בשני המדעים — כלומר מה שהטבלה אומרת
+  // בשורה התחתונה שלה, בלי לפתוח אותה.
+  const lede = `החסם במדעים — פיזיקה +${num(Math.max(0, phN-ph))} · ` +
+               `מדמ״ח +${num(Math.max(0, csN-cs))}` +
+               (enBad ? ' · ⚠ שורת אנגלית אינה מוזנת' : '');
+
+  return execCard('subj', 'תוכנית הגידול לפי מקצוע', lede, `
       <table class="tbl">
         <thead><tr><th>מקצוע</th><th>היום · יב׳</th><th>נדרש ${(ALLDATA[CURRENT_PERIOD]&&ALLDATA[CURRENT_PERIOD].year)? hebYearName(ALLDATA[CURRENT_PERIOD].year+EXEC_SPAN) : 'ביעד'}</th>
           <th>תוספת</th><th>גידול</th><th>לשנה</th></tr></thead>
@@ -5482,16 +5653,16 @@ function execSubjects(c){
         </tbody>
       </table>
 
-      <div class="insight"><div class="insight-t">שני מסלולים — ולא לחבר ביניהם</div>
+      <!-- הבלוק "שני מסלולים" קוצץ ב-v61: מאגר הפוטנציאל, שיעור ההמרה
+           והמוקדים נאמרים כבר בכרטיס "איך מגיעים ליעד" שמעל. מה שנשאר
+           הוא הדבר היחיד שאינו מופיע בשום מקום אחר — שהמסלולים אינם
+           מתחברים בחיבור, ולכן אסור לסכום את השורות שבטבלה. -->
+      <div class="insight"><div class="insight-t">לא לסכום את השורות</div>
         <div class="insight-b">
-          <strong>א׳ · המרת הפוטנציאל.</strong> ${num(pool)} תלמידי יב׳ כבר עם 5 יח״ל מתמטיקה
-          ובלי זכאות. סגירת הפער דורשת להמיר <strong>${pool? (c.gap/pool*100).toFixed(0)+'%' : '—'}</strong> מהם —
-          כלומר להוסיף להם פיזיקה או מדעי המחשב. זה המסלול המהיר, והוא פועל על מחזור שכבר בבית הספר.<br>
-          <strong>ב׳ · הרחבת הבסיס.</strong> מתוך לומדי מתמטיקה 5 מגיעים לזכאות
-          <strong>${ratio? (ratio*100).toFixed(1)+'%' : '—'}</strong>. בקצב הזה נדרשים
-          <strong>${ma5N? num(ma5N) : '—'}</strong> לומדי מתמטיקה 5 בשכבה — גיוס שמתחיל היום ב-ט׳ ו-י׳.<br>
           תוספת בפיזיקה או במדמ״ח מייצרת זכאות <strong>רק</strong> אצל מי שכבר עם מתמטיקה 5
-          ואנגלית 5, ולכן שני המסלולים אינם מתחברים בחיבור.
+          ואנגלית 5. שורת המתמטיקה היא <strong>הרחבת הבסיס</strong> (בקצב ההמרה הנצפה,
+          ${ratio? (ratio*100).toFixed(1)+'%' : '—'}) ושורות המדעים הן <strong>המרת מי שכבר שם</strong> —
+          שני מסלולים שאינם מתחברים בחיבור.
         </div></div>
 
       <div class="cmp-note">
@@ -5507,9 +5678,7 @@ function execSubjects(c){
         ${enBad? `<br><strong>⚠ שורת אנגלית 5 יח״ל אינה מוזנת בגיליון</strong> — ${num(en5)} לומדים מול
         ${num(c.cur12)} זכאים, כלומר יותר זכאים מלומדים. ההגדרה כוללת אנגלית (§12.3), ולכן
         מאגר ${num(pool)} התלמידים הוא <strong>חסם עליון ולא מספר מדויק</strong>: חלק מהם חסרים אנגלית ולא מדע.` : ''}
-      </div>
-    </div>
-  </details>`;
+      </div>`);
 }
 
 // ── 5 · מי תורם כמה ─────────────────────────────────────────────
@@ -5539,13 +5708,20 @@ function execSchools(c){
   const sum   = rows.reduce((a,r)=> a + r.add, 0);
   const above = rows.filter(r=> r.add === 0).length;
 
-  return `
-  <details class="card">
-    <summary><span class="ex-cv">◂</span><div>
-      <div class="card-title">מי תורם כמה — לפי בית ספר</div>
-      <div class="card-sub">כמה זכאי יב׳ נוספים דרושים בכל בית ספר כדי שיעמוד ביעד העירוני.</div>
-    </div></summary>
-    <div class="ex-in">
+  // המסקנה בכותרת מציגה את **שתי הקריאות** של הטבלה — הפער הגדול ביותר
+  // ביב׳, והמאגר הגדול ביותר בי׳ — כי הן אינן מסכימות בכוונה.
+  const topAdd  = rows[0].add ? rows[0] : null;
+  const topPool = rows.filter(r=> r.pool10)
+                      .sort((a,b)=> b.pool10 - a.pool10)[0] || null;
+  // כששתי הקריאות מצביעות על אותו בית ספר — זו עובדה בפני עצמה ולא
+  // סיבה להדפיס את השם פעמיים.
+  const lede = (topAdd && topPool && topAdd.name === topPool.name)
+    ? `${topAdd.name} מוביל בשתי הקריאות — ${num(topAdd.add)}+ ביב׳, ${num(topPool.pool10)} במאגר י׳`
+    : [ topAdd  ? `הפער הגדול: ${topAdd.name} +${num(topAdd.add)}` : 'כל בתי הספר ביעד',
+        topPool ? `המאגר הגדול בי׳: ${topPool.name} ${num(topPool.pool10)}` : ''
+      ].filter(Boolean).join(' · ');
+
+  return execCard('sch', 'מי תורם כמה — לפי בית ספר', lede, `
       <table class="tbl">
         <thead><tr><th>בית ספר</th><th>תלמידי יב׳</th><th>זכאים היום</th>
           <th>% טק</th><th>נדרש ביעד</th><th>תוספת</th><th>מאגר י׳</th></tr></thead>
@@ -5570,17 +5746,18 @@ function execSchools(c){
         <strong>המכנה כאן פנימי, לא מצבת.</strong> לבתי ספר אין שורת מצבת, ולכן היעד תורגם
         למכנה שלהם: ${ntPc(c.tgtPct)} במצבת ≙ <strong>${ntPc(tgtIn)}</strong> בשורות בתי הספר,
         לפי אותו יחס שמוצג בכרטיס "המצבת הקובעת" למעלה ובכרטיס המכנה בתצוגת חולון–ארצי.<br>
-        <strong>הסכום ${num(sum)} גדול מ-${num(c.gap)} שבכרטיס היעד</strong>, כי
-        ${above? nSchools(above)+' כבר מעל היעד ותורמים 0' : 'אף בית ספר אינו מעל היעד'} —
-        עודף מעל היעד אינו מקזז חוסר במקום אחר. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת.<br>
+        <strong>הסכום ${num(sum)} ${dirWord(sum - c.gap, 'גדול מ', 'קטן מ', 'שווה ל')}-${num(c.gap)}
+        שבכרטיס היעד</strong>${sum > c.gap
+          ? `, כי ${above? nSchools(above)+' כבר מעל היעד ותורמים 0' : 'אף בית ספר אינו מעל היעד'} —
+             עודף מעל היעד אינו מקזז חוסר במקום אחר`
+          : ''}. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת:
+        הסכום הוא מכנה פנימי לפי בית ספר, והפער הוא המצבת העירונית.<br>
         <strong>שתי קריאות לטבלה.</strong> <em>תוספת</em> היא כמה חסר <strong>ביב׳ היום</strong>,
         והמיון לפיה. <em>מאגר י׳</em> הוא כמה תלמידי י׳ כבר עם מתמטיקה 5 ובלי המדד —
         המחזור שמגיע ליב׳ בתוך אופק התוכנית, וזה החתך שכרטיס "איך מגיעים ליעד" ממיין לפיו.
         <strong>הן אינן מסכימות:</strong> בית ספר יכול לקבל ✓ ביב׳ ולהחזיק מאגר גדול בי׳.
         לחיצה על שורה פותחת את ההעמקה לאותו בית ספר.
-      </div>
-    </div>
-  </details>`;
+      </div>`);
 }
 
 // NAVIGATION
@@ -5669,7 +5846,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v60';
+const BUILD = 'v61';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
