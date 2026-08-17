@@ -1045,6 +1045,7 @@ body{
       <div class="chart-box tall">
         <canvas id="subjectsChart"></canvas>
       </div>
+      <div id="sjAxis" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">—</div>
       <div class="insight warn" id="insightSubjects">
         <div class="insight-t">איפה המגמה הכי חדה?</div>
         <div class="insight-b">המגמה תוצג לאחר טעינת הנתונים</div>
@@ -1263,17 +1264,18 @@ body{
       </div>
     </div>
 
-    <!-- Journey across grades -->
+    <!-- Cross-section across grades -->
     <div class="card">
       <div class="card-head">
         <div>
-          <div class="card-title">מסע התלמידות לאורך השכבות (י׳–יב׳)</div>
-          <div class="card-sub">% תלמידות בקרב לומדי כל מקצוע, בכל שכבה. ככל שהקו עולה — שיעור התלמידות גדל. כלל בתי הספר בעיר (כולל חד-מגדריים).</div>
+          <div class="card-title">ייצוג תלמידות בשלוש השכבות (י׳–יב׳)</div>
+          <div class="card-sub">% תלמידות בקרב לומדי כל מקצוע, בכל שכבה. שלושה מחזורים שנמדדו באותה דגימה — לא מעקב אחרי מחזור אחד לאורך שלוש שנים. כלל בתי הספר בעיר (כולל חד-מגדריים).</div>
         </div>
       </div>
       <div class="chart-box tall">
         <canvas id="genderJourney"></canvas>
       </div>
+      <div class="insight" id="gjRead"></div>
       <div id="gjAxis" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">—</div>
     </div>
 
@@ -2036,6 +2038,23 @@ let charts = {};
 function hf2(){return {family:'Heebo',size:13,weight:'700'};}
 function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
 
+// ציר Y נגזר מהנתונים, עם שנתות עגולות. מחזיר {lo,hi,step}.
+// הצורך: כששתי סדרות רחוקות זו מזו (מתמטיקה ~880 מול מדמ"ח ~270), ציר שמתחיל
+// באפס דוחס את הנמוכה לרצועה שבה השינוי בין השכבות אינו נראה. `lo` נחתך לאפס
+// כשהוא יוצא שלילי או קרוב לאפס, ולכן **הקורא חייב לבדוק `lo>0`** לפני שהוא
+// מודיע שהציר קטוע — על נתונים אחרים הוא לא יהיה.
+function niceAxis(vals, maxTicks){
+  const v = vals.filter(x=> x!=null && isFinite(x));
+  if(!v.length) return {lo:0, hi:1, step:1};
+  const mn = Math.min(...v), mx = Math.max(...v);
+  const ladder = [1,2,5,10,20,25,50,100,200,250,500,1000,2000,2500,5000];
+  const n = maxTicks || 8;
+  const step = ladder.find(s=> (Math.ceil(mx/s) - Math.floor(mn/s)) <= n) || ladder[ladder.length-1];
+  const lo = Math.max(0, Math.floor(mn/step)*step);
+  const hi = Math.ceil(mx/step)*step;
+  return { lo, hi: hi>lo ? hi : lo+step, step };   // כל הערכים זהים → ציר בגובה שנתה אחת
+}
+
 // קו ייחוס אופקי (ערך % קבוע) לגרפים. n = מספר נקודות (ברירת מחדל: 3 שכבות)
 function refLine(label, value, color, n){
   return {label, data: Array.from({length: n || GRADES.length}, ()=>value),
@@ -2174,6 +2193,11 @@ function renderSubjects(){
 
   destroyChart('subjectsChart');
   const htByGrade = GRADES.map((_,gi)=> cityTotal(gi));   // זכאי בגרוטק — מדד הטק
+  // הציר נגזר מארבע הסדרות ואינו מתחיל באפס. מתמטיקה 5 גבוהה פי שלושה ממדמ"ח,
+  // ועל ציר מאופס הירידה של מדמ"ח בין השכבות מצטמצמת לרצועה דקה בתחתית.
+  // המילוי בוטל יחד עם הקיטוע: על ציר שאינו מאופס גודל השטח כבר אינו
+  // פרופורציונלי לערך. `backgroundColor` נשאר — הוא צובע את ריבועי הלגנדה.
+  const sjAx = niceAxis([].concat(htByGrade, cs, ph, ma), 8);
   charts.subjectsChart = new Chart(document.getElementById('subjectsChart'), {
     type:'line',
     data:{ labels: GRADES.map(g=>'שכבה '+g),
@@ -2182,30 +2206,38 @@ function renderSubjects(){
           backgroundColor:'rgba(106,62,156,0.10)',
           borderWidth:5, pointRadius:9, pointStyle:'rectRot',
           pointBackgroundColor:COL.primary, pointBorderColor:'#fff', pointBorderWidth:2,
-          fill:true, tension:0.3, order:0,
+          fill:false, tension:0.3, order:0,
           datalabels:{anchor:'end',align:'top',offset:6,color:COL.primaryD,
             font:{family:'Heebo',size:14,weight:'900'},
             formatter:(v,ctx)=> v+' ('+cityPct(ctx.dataIndex).toFixed(0)+'%)'}},
         {label:'מדעי המחשב', data:cs, borderColor:COL.cs, backgroundColor:'rgba(26,115,232,0.08)',
-          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.cs, fill:true, tension:0.3, order:1,
+          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.cs, fill:false, tension:0.3, order:1,
           datalabels:{anchor:'end',align:'top',color:COL.cs,font:hf2(),formatter:v=>v}},
         {label:'פיזיקה', data:ph, borderColor:COL.ph, backgroundColor:'rgba(232,66,53,0.07)',
-          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ph, fill:true, tension:0.3, order:2,
+          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ph, fill:false, tension:0.3, order:2,
           datalabels:{anchor:'end',align:'bottom',color:COL.ph,font:hf2(),formatter:v=>v}},
         {label:'מתמטיקה 5 יח"ל', data:ma, borderColor:COL.ma, backgroundColor:'rgba(52,168,83,0.07)',
-          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ma, fill:true, tension:0.3, order:3,
+          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ma, fill:false, tension:0.3, order:3,
           borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:v=>v}}
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:12}},
+      // הנקודות הקיצוניות יושבות עכשיו על קצות הציר ולא באמצעו, והתוויות
+      // (`anchor:'end'`) נחתכות בלי ריפוד — למעלה למדד ולמתמטיקה, למטה לפיזיקה.
+      layout:{padding:{top:22,bottom:8}},
       plugins:{legend:{position:'top',labels:{font:HF,color:'#5f6368'}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=> ctx.datasetIndex===0
             ? 'מדד טק: '+ctx.parsed.y+' ('+cityPct(ctx.dataIndex).toFixed(1)+'%)'
             : ctx.dataset.label+': '+ctx.parsed.y }}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
-               y:{beginAtZero:true,grace:'12%',ticks:{font:HF,color:'#5f6368'},grid:{color:GC}} } }
+               y:{beginAtZero:false, min:sjAx.lo, max:sjAx.hi,
+                  ticks:{stepSize:sjAx.step,font:HF,color:'#5f6368'},grid:{color:GC}} } }
   });
+  // ההערה מותנית: על נתונים נמוכים יותר `niceAxis` מחזיר lo=0, ומשפט קבוע
+  // על "ציר שאינו מתחיל באפס" היה שקרי שם.
+  document.getElementById('sjAxis').textContent = sjAx.lo > 0
+    ? `הציר האנכי מתחיל ב-${sjAx.lo} ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = ${sjAx.step} תלמידים.`
+    : `שנתה על הציר האנכי = ${sjAx.step} תלמידים.`;
 
   const drops=[
     {name:'מדעי המחשב', drop:parseFloat(d(1))},
@@ -3225,6 +3257,65 @@ function renderGender(){
   });
   document.getElementById('gjAxis').textContent =
     `הציר האנכי מתחיל ב-${gjLo}% ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = 5 נקודות אחוז.`;
+
+  // === קריאת הגרף — חתך, לא מסע ═══════════════════════════════════════════
+  // קו ש"עולה" לכיוון יב׳ נקרא כשיפור, והוא בדיוק ההפך: המחזור הצעיר הוא זה
+  // שיגיע ליב׳, ולכן פער לרעתו הוא ירידה שטרם התרחשה. שני האפקטים — שינוי
+  // בתוך מחזור מול הפרש בין מחזורים — אינם ניתנים להפרדה מדגימה אחת, ולכן
+  // ההצלבה מול התקופה המקבילה שנה אחורה. המשפט נגזר מהמספרים בשני הכיוונים.
+  const HT_SUB = 4;                     // זכאות למדד טק — אותה סדרה שכבר בגרף
+  const gjAt   = g => cityGirlsPctOfSubjAtGrade(ALL_GRADES.indexOf(g), HT_SUB);
+  const gjCur  = ALLDATA[CURRENT_PERIOD];
+  // אלכסון מחזורי = שנה שלמה **ואותו חצי שנה**. דגימה בהפרש חצי שנה אינה מחזור.
+  const gjPrevP = gjCur ? periodsSorted().find(p=> p.year===gjCur.year-1 && p.half===gjCur.half) : null;
+  // withPeriod בלבד, ובתוכה רק חישוב טהור — אותה נוסחה בדיוק, על תקופה אחרת.
+  const gjWas  = g => gjPrevP ? withPeriod(gjPrevP.key, ()=> gjAt(g)) : null;
+
+  const gjBox = document.getElementById('gjRead');
+  const gj10 = gjAt('י'), gj11 = gjAt('יא'), gj12 = gjAt('יב');
+  if(gj10 == null || gj12 == null){
+    gjBox.style.display = 'none';       // אין נתון בשכבות הקצה — אין מה לקרוא
+  }else{
+    gjBox.style.display = '';
+    const pc  = v => v==null ? '—' : v.toFixed(1)+'%';
+    const gap = gj12 - gj10;            // חיובי = המחזור הצעיר מיוצג פחות מהבוגר
+    const was10 = gjWas('י'), was11 = gjWas('יא');
+
+    // האלכסון: המחזור שהיה י׳ הוא היום יא׳, וזה שהיה יא׳ הוא היום יב׳
+    const diag = [];
+    if(was10 != null && gj11 != null) diag.push(gj11 - was10);
+    if(was11 != null && gj12 != null) diag.push(gj12 - was11);
+    const dAvg   = diag.length ? diag.reduce((a,b)=>a+b,0)/diag.length : null;
+    const within = dAvg == null ? '' : dAvg > 1 ? 'עולה' : dAvg < -1 ? 'יורד' : 'נשאר יציב';
+
+    const cross = `שכבת י׳ עומדת על <strong>${pc(gj10)}</strong> מול <strong>${pc(gj12)}</strong> ב-יב׳` +
+      (Math.abs(gap) > 1 ? ` — פער של <strong>${Math.abs(gap).toFixed(1)} נק׳</strong>` : '') +
+      `. שלוש השכבות נמדדו באותה דגימה, ולכן זה הפרש בין מחזורים ולא שינוי שנמדד על אותם תלמידים.`;
+
+    // איפה נמצא ההפרש — במחזור הנכנס או בתוך המחזורים — נגזר אף הוא.
+    // אותה שכבה, שנה קודם: זו ההשוואה שאומרת אם המצטרפים השתנו.
+    const intake = (was10 != null) ? gj10 - was10 : null;
+    const intakeTxt = intake == null ? ''
+      : Math.abs(intake) > 1
+        ? ` ההפרש הוא במחזור הנכנס: <strong>${pc(gj10)}</strong> ב-י׳ השנה מול <strong>${pc(was10)}</strong> אשתקד.`
+        : ` המחזור הנכנס דומה לזה של אשתקד (${pc(gj10)} מול ${pc(was10)}), ולכן השינוי הוא בתוך המחזורים ולא בהרכב המצטרפים.`;
+
+    const diagTxt = dAvg == null ? '' :
+      ` מול ${gjPrevP.label}: המחזור שהיה י׳ (${pc(was10)}) הוא היום יא׳ (${pc(gj11)}), והמחזור שהיה יא׳ (${pc(was11)}) הוא היום יב׳ (${pc(gj12)}) — בתוך מחזור הייצוג <strong>${within}</strong>.` + intakeTxt;
+
+    const ahead = gap > 1
+      ? ` אם המחזור הנכנס ישמור על שיעורו, שכבת יב׳ תרד תוך שנתיים מ-${pc(gj12)} לכיוון ${pc(gj10)}.`
+      : gap < -1
+        ? ` אם המחזור הנכנס ישמור על שיעורו, שכבת יב׳ תעלה תוך שנתיים מ-${pc(gj12)} לכיוון ${pc(gj10)}.`
+        : ` אין הפרש מובהק בין המחזורים, ושכבת יב׳ צפויה להישאר בטווח הנוכחי.`;
+
+    gjBox.className = 'insight' + (gap > 1 ? ' warn' : '');
+    gjBox.innerHTML =
+      `<div class="insight-t">${gap > 1 ? 'הקו עולה לכיוון יב׳ — אבל הכיוון בזמן הוא דווקא יורד'
+                              : gap < -1 ? 'המחזור הצעיר מיוצג טוב יותר מהבוגר'
+                              : 'שלוש השכבות קרובות זו לזו'}</div>` +
+      `<div class="insight-b">${cross}${diagTxt}${ahead}</div>`;
+  }
 
   // === ייצוג לפי בית ספר ===
   destroyChart('genderBySchool');
@@ -5357,7 +5448,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v57';
+const BUILD = 'v58';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
