@@ -1279,6 +1279,34 @@ body{
       <div id="gjAxis" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">—</div>
     </div>
 
+    <!-- המחזור הנכנס, לפי בית ספר — הפירוט של הכרטיס שמעל -->
+    <div class="card" id="gsCard">
+      <div class="card-head">
+        <div>
+          <div class="card-title">המחזור הנכנס לי׳ — כל בית ספר מול עצמו</div>
+          <div class="card-sub" id="gsSub">—</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="cursor:default;">בית ספר</th>
+              <th style="cursor:default;text-align:center;" id="gsThOld">—</th>
+              <th style="cursor:default;text-align:center;" id="gsThNew">—</th>
+              <th style="cursor:default;text-align:center;">שינוי <i class="ti" data-tip="ההפרש בנקודות אחוז בשיעור התלמידות בקרב זכאי הבגרוטק בשכבה י׳, בין שתי הדגימות. בית ספר מושווה לעצמו בלבד.">i</i></th>
+              <th style="cursor:default;text-align:center;">זכאים בי׳</th>
+            </tr>
+          </thead>
+          <tbody id="gsTbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
+        בתי ספר חד-מגדריים מוצגים מעומעמים ואינם נספרים בסיכום — 100% או 0% תלמידות
+        שם הוא אופי בית הספר ולא תנועה של המחזור.
+      </div>
+    </div>
+
     <!-- School comparison -->
     <div class="card">
       <div class="card-head">
@@ -3317,6 +3345,59 @@ function renderGender(){
       `<div class="insight-b">${cross}${diagTxt}${ahead}</div>`;
   }
 
+  // === המחזור הנכנס לפי בית ספר — הפירוט של הכרטיס שמעל ══════════════════
+  // "המחזור הנכנס ירד" הוא מספר עירוני, ומספר עירוני לבדו אינו ניתן לפעולה.
+  // הטבלה מפרקת אותו לבתי ספר, ומראה גם אם הירידה פרוסה או מרוכזת באחד-שניים.
+  // `yySchoolRows` מספקת את המבנה: מיפוי לפי שם, שכבה שקיימת בשתי הדגימות בלבד,
+  // מיון לפי השינוי, והפרדת מי שאין לו בסיס השוואה — עם הנוסחה שלנו כפרמטר.
+  const gsCard = document.getElementById('gsCard');
+  const gsRows = (gjPrevP && gjCur) ? yySchoolRows(gjPrevP, gjCur, {
+    grades: ['י'],
+    pct:    s => girlsPctOfSubjAtGrade(s, ALL_GRADES.indexOf('י'), HT_SUB),
+    noCommon: 'אין שכבה י׳ בשתי הדגימות'
+  }) : null;
+
+  if(!gsRows || !gsRows.cmp.length){
+    gsCard.style.display = 'none';      // אין תקופה מקבילה → אין השוואה → אין כרטיס
+  }else{
+    gsCard.style.display = '';
+    // חד-מגדרי: אותו זיהוי שבטבלת בתי הספר שמתחת (הערת הגיליון). 100%/0% שם הוא
+    // אופי בית הספר ולא תנועה, ובספירת "כמה ירדו" הוא רעש.
+    const isSG = r => !!(r.sb && r.sb.note && (r.sb.note.includes('בנות') || r.sb.note.includes('בנים')));
+    const mixed = gsRows.cmp.filter(r=> !isSG(r));
+    const sgRows = gsRows.cmp.filter(isSG);
+    const up = mixed.filter(r=> r.d >  1).length;
+    const dn = mixed.filter(r=> r.d < -1).length;
+    const fl = mixed.length - up - dn;
+
+    document.getElementById('gsThOld').textContent = gjPrevP.label;
+    document.getElementById('gsThNew').textContent = gjCur.label;
+    document.getElementById('gsSub').innerHTML =
+      `% תלמידות בקרב זכאי הבגרוטק בשכבה י׳ · ` +
+      `<strong style="color:#c5221f;">${dn} ירדו</strong> · ` +
+      `<strong style="color:#137333;">${up} עלו</strong> · <strong>${fl} ללא שינוי</strong> (±1 נק׳)` +
+      (sgRows.length ? ` · ${sgRows.length} חד-מגדריים` : '') +
+      (gsRows.nope.length ? ` · ${gsRows.nope.length} ללא בסיס השוואה` : '');
+
+    const heads = r => (r.sb && r.sb.grades['י']) ? r.sb.grades['י'][HT_SUB] : '—';
+    const row = (r, dim) => `
+      <tr${dim ? ' style="opacity:.55;"' : ''}>
+        <td class="nm">${r.name}${r.note? `<span style="font-size:10px;font-weight:700;background:var(--accent-l);color:#a04a10;padding:2px 7px;border-radius:7px;margin-right:6px;">${r.note}</span>`:''}</td>
+        <td style="text-align:center;color:var(--muted);">${r.a.toFixed(1)}%</td>
+        <td style="text-align:center;font-weight:700;">${r.b.toFixed(1)}%</td>
+        <td style="text-align:center;">${deltaCell(r.d)}</td>
+        <td style="text-align:center;color:var(--muted);font-size:12px;">${heads(r)}</td>
+      </tr>`;
+    document.getElementById('gsTbody').innerHTML =
+      mixed.map(r=> row(r, false)).join('') +
+      sgRows.map(r=> row(r, true)).join('') +
+      gsRows.nope.map(r=> `
+        <tr>
+          <td class="nm" style="opacity:.6;">${r.name}</td>
+          <td colspan="4" style="text-align:center;color:var(--muted);font-size:12px;">אין נתוני השוואה — ${r.none}</td>
+        </tr>`).join('');
+  }
+
   // === ייצוג לפי בית ספר ===
   destroyChart('genderBySchool');
   // לכל בית ספר (י-יב), % תלמידות בקרב לומדי הטק
@@ -3396,7 +3477,9 @@ function renderGender(){
       'לא נמצא בגיליון בית ספר שכל תלמידיו בני מגדר אחד בשכבות י׳–יב׳.</div>';
 
   // === תובנות מגדריות אוטומטיות ===
-  document.getElementById('genderInsights').innerHTML = generateGenderInsights({pAll,p12,phP,csP:cs12t?cs12g/cs12t*100:0,regular});
+  // `p10` — המחזור הנכנס. אין כאן חישוב חדש: `gj10` כבר נגזר למעלה מאותה
+  // `cityGirlsPctOfSubjAtGrade` שמזינה את הגרף.
+  document.getElementById('genderInsights').innerHTML = generateGenderInsights({pAll,p12,p10:gj10,phP,csP:cs12t?cs12g/cs12t*100:0,regular});
 }
 
 // כרטיס בית ספר חד-מגדרי — אותו מבנה ועיצוב, הנתונים והנוסח נגזרים מהשכבה
@@ -3445,12 +3528,20 @@ function lowShare(p){ return p < 3; }
 function generateGenderInsights(ctx){
   const ins=[];
   // 1. ביצוע עירוני מול ארצי
+  // הנתון נמדד על **המחזור המסיים**, והוא זה שיוצא מהמערכת. כשהמחזור הנכנס
+  // נמוך ממנו — היתרון הוא מלאי ולא זרימה, וכרטיס שחוגג בלי לומר זאת סותר את
+  // כרטיס שלוש השכבות שמעליו. ההסתייגות נגזרת ומופיעה רק כשהיא נכונה; מול מי
+  // שכבת י׳ עומדת — מעל הארצי או מתחתיו — נגזר אף הוא.
   const above = ctx.p12 - NATIONAL_GIRLS;
+  const p10 = ctx.p10;
+  const caveat = (p10 != null && p10 < ctx.p12 - 1)
+    ? ` <strong>אבל</strong> — הנתון הזה הוא של המחזור המסיים. המחזור שנכנס עכשיו לי׳ עומד על <strong>${p10.toFixed(1)}%</strong>: ${p10 < NATIONAL_GIRLS ? `<strong>מתחת</strong> לארצי, ו-` : `עדיין מעל הארצי, אך `}${Math.abs(ctx.p12 - p10).toFixed(1)} נק׳ מתחת ליב׳ של היום. היתרון נשען על מי שיוצא, לא על מי שנכנס.`
+    : '';
   ins.push({
     kind: above>=0 ? 'good':'warn',
     icon: above>=0 ? '✓' : '⚠',
     title: above>=0 ? 'חולון מעל הממוצע הארצי בייצוג תלמידות' : 'חולון מתחת לממוצע הארצי בייצוג תלמידות',
-    body: `שכבת יב׳ בחולון: <strong>${ctx.p12.toFixed(1)}%</strong> תלמידות בקרב זכאי בגרוטק. ארצי: <strong>${NATIONAL_GIRLS}%</strong>. הפער: <strong>${above>=0?'+':''}${above.toFixed(1)} נקודות אחוז</strong>. זה לא רק "מספר טוב" — בערים שמובילות פדגוגית בייצוג נשי בהייטק, זה משהו לחגוג עליו ביוזמת המשרד ולגייס סביבו תקציבים.`
+    body: `שכבת יב׳ בחולון: <strong>${ctx.p12.toFixed(1)}%</strong> תלמידות בקרב זכאי בגרוטק. ארצי: <strong>${NATIONAL_GIRLS}%</strong>. הפער: <strong>${above>=0?'+':''}${above.toFixed(1)} נקודות אחוז</strong>. זה לא רק "מספר טוב" — בערים שמובילות פדגוגית בייצוג נשי בהייטק, זה משהו לחגוג עליו ביוזמת המשרד ולגייס סביבו תקציבים.${caveat}`
   });
 
   // 2. פער מקצועי: מדמ"ח מול פיזיקה
@@ -4252,21 +4343,36 @@ function renderYYSubjects(A, B){
 // ─── 3. בתי ספר ─────────────────────────────────────────────────
 // בית ספר מושווה לעצמו, ורק על השכבות שקיימות לו בשתי הדגימות —
 // אחרת שכבה שנוספה נראית כמו זינוק.
-function yySchoolRows(A, B){
+// `opts` אופציונלי — בלעדיו זו בדיוק ההתנהגות של תצוגה 8 (מדד הטק, י׳–יב׳).
+// הפילוח המגדרי בתצוגה 6 קורא לה עם שכבה אחת ונוסחה אחרת; המבנה — מיפוי לפי
+// **שם** בין תקופות, "רק שכבות שקיימות בשתיהן", המיון וההפרדה cmp/nope — משותף.
+// אין כאן withPeriod: הפונקציה קוראת `p.schools` ישירות ואינה נוגעת בגלובלים.
+function yySchoolRows(A, B, opts){
+  const o  = opts || {};
+  const gs = o.grades || GRADES;
+  const val = o.pct || ((s, common)=>{
+    let t=0, d=0; common.forEach(g=>{ const r=s.grades[g]; t+=r[4]; d+=r[0]; }); return d? t/d*100 : null;
+  });
   const mapOf = p => { const m = {}; p.schools.forEach(s=> m[s.name] = s); return m; };
   const MA = mapOf(A), MB = mapOf(B);
   const rows = [];
   [...new Set([...Object.keys(MA), ...Object.keys(MB)])].forEach(n=>{
     const a = MA[n], b = MB[n];
     if(!a || !b){ rows.push({ name:n, none:'קיים רק ב' + (a ? A.label : B.label) }); return; }
-    const common = GRADES.filter(g=> a.grades[g] && b.grades[g]);
-    if(!common.length){ rows.push({ name:n, none:'אין שכבות י׳–יב׳ משותפות' }); return; }
-    const pct = s =>{ let t=0, d=0; common.forEach(g=>{ const r=s.grades[g]; t+=r[4]; d+=r[0]; }); return d? t/d*100 : null; };
-    const pa = pct(a), pb = pct(b);
+    const common = gs.filter(g=> a.grades[g] && b.grades[g]);
+    if(!common.length){ rows.push({ name:n, none: o.noCommon || 'אין שכבות י׳–יב׳ משותפות' }); return; }
+    const pa = val(a, common), pb = val(b, common);
     if(pa == null || pb == null){ rows.push({ name:n, none:'אין מכנה תקין' }); return; }
-    rows.push({ name:n, a:pa, b:pb, d:pb-pa, grades:common, note:(b.note||'') });
+    rows.push({ name:n, a:pa, b:pb, d:pb-pa, grades:common, note:(b.note||''), sa:a, sb:b });
   });
   return { cmp: rows.filter(r=> !r.none).sort((x,y)=> y.d - x.d), nope: rows.filter(r=> r.none) };
+}
+
+// תא "שינוי" בטבלת בתי ספר — אפור מתחת ל-0.05 נק׳, אחרת ירוק/אדום עם חץ.
+function deltaCell(d){
+  const col = Math.abs(d) < 0.05 ? '#5f6368' : d > 0 ? '#137333' : '#c5221f';
+  const arw = Math.abs(d) < 0.05 ? '' : (d > 0 ? '▲ ' : '▼ ');
+  return `<span style="font-weight:900;color:${col};">${arw}${d>=0?'+':'−'}${Math.abs(d).toFixed(1)}</span>`;
 }
 
 function renderYYSchools(A, B){
@@ -4283,11 +4389,7 @@ function renderYYSchools(A, B){
     `<strong style="color:#c5221f;">${dn} ירדו</strong> · <strong>${fl} ללא שינוי</strong> (±1 נק׳)` +
     (nope.length ? ` · ${nope.length} ללא בסיס השוואה` : '');
 
-  const cell = r =>{
-    const col = Math.abs(r.d) < 0.05 ? '#5f6368' : r.d > 0 ? '#137333' : '#c5221f';
-    const arw = Math.abs(r.d) < 0.05 ? '' : (r.d > 0 ? '▲ ' : '▼ ');
-    return `<span style="font-weight:900;color:${col};">${arw}${r.d>=0?'+':'−'}${Math.abs(r.d).toFixed(1)}</span>`;
-  };
+  const cell = r => deltaCell(r.d);
   document.getElementById('yySchoolTbody').innerHTML =
     cmp.map(r=> `
       <tr>
@@ -5448,7 +5550,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v58';
+const BUILD = 'v59';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
