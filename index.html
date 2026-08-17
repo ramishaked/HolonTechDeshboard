@@ -1831,6 +1831,21 @@ const HOLON_HIST = {
   techN:322, ma5N:485
 };
 
+// ── פירוק הפוטנציאל של חולון — דו"ח המצוינות 2024, עמ' 66 (§12.2) ─
+// כמה תלמידים חסר להם **רכיב אחד בלבד** כדי להיספר במדד, ואיזה.
+// זה הנתון שקובע באיזה מקצוע יושב החסם: פיזיקה/מדמ"ח בפער של כמעט
+// חמישה לאחד מול המתמטיקה. עד v57 המסך הצהיר שאין ידיעה כזו.
+//
+// ⚠ **שנת הדו"ח אינה שנת הגיליון.** מוצג עם השנה צמודה, כמו כל רפרנס
+// חיצוני אחר בתצוגה. המקבילה החיה למאגר עצמה נגזרת מהגיליון (`ma5 − ht`)
+// ואינה מוחלפת בנתון הזה — הדו"ח נותן את **ההרכב**, לא את הגודל.
+const HOLON_POT_2024 = {
+  year: 2024, src: 'דו"ח המצוינות 2024, עמ׳ 66',
+  phcs: 101,   // חסרים רק פיזיקה/מדעי המחשב
+  ma5 :  22,   // חסרים רק 5 יח"ל מתמטיקה
+  en5 :   2    // חסרים רק 5 יח"ל אנגלית
+};
+
 // ── הסדרה הרשמית של משרד החינוך, תשע"ו–תשפ"ד (§12.5) ────────────
 // **מקור רשמי** — הופק ע"י המשתמש מאתר משרד החינוך (16.08.2026), דף חולון.
 // מחליף את ערכי המדידה-מהגרף שהיו כאן ב-v23–v24: כשיש נתון רשמי הוא גובר.
@@ -5023,13 +5038,13 @@ function renderExec(){
   }
 
   document.getElementById('exSub').textContent =
-    'השורה התחתונה, מה עובד, מה חוסם, והיעד' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
+    'השורה התחתונה, מה עובד, מה חוסם, היעד — ואיך מגיעים אליו' + (DATA_LABEL? ' — ' + DATA_LABEL : '');
   document.getElementById('exMeta').innerHTML =
     `<div class="meta-pill">מקום <strong>#${c.rank}</strong> מתוך ${CITIES.length}</div>` +
     (c.tgtPct != null ? `<div class="meta-pill">יעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '');
 
   box.innerHTML = execBottomLine(c) + execPositives(c) + execBlockers(c) +
-                  execGoal(c) + execSubjects(c) + execSchools(c);
+                  execGoal(c) + execFocus(c) + execSubjects(c) + execSchools(c);
 }
 
 // ── 1 · השורה התחתונה ───────────────────────────────────────────
@@ -5322,6 +5337,92 @@ function execGoal(c){
   </div>`;
 }
 
+// ── 3.5 · איך מגיעים ליעד ───────────────────────────────────────
+// **ארבעה מספרים ומשפט אחד.** הפורום שהתצוגה נועדה לו אינו קורא טבלאות
+// בעלות שש עמודות; שתי הטבלאות שמתחת ירדו לתפקיד העמקה, והכרטיס הזה
+// נושא את התשובה. אין כאן נוסחה חדשה ואין גלאי חדש.
+//
+// **המאגר נמדד בשכבת י׳ ולא ביב׳** — וזה העיקר. התוכנית היא ל-`EXEC_SPAN`
+// שנים, ושכבת יב׳ של היום מסיימת בעוד חודשים; מי שבי׳ מגיע ליב׳ בתוך
+// האופק. כל שאר התצוגה היא יב׳, ולכן עד כה היא תיארה תוכנית תלת-שנתית
+// על מחזור שאי אפשר לפעול עליו.
+//
+// ⚠ **הפער והמאגר הם שתי שכבות שונות**, וההשוואה ביניהם היא היטל קדימה
+// ולא מדידה. מוצהר בגוף הכרטיס עם שנת הסיום של המחזור, ולא נבלע בשקט.
+const FOCUS_N = 4;   // כמה מוקדים — קשב ניהולי הוא משאב של 3–4, לא של 12
+
+function execFocus(c){
+  if(c.gap == null || !c.gap) return '';
+
+  // מאגר שכבת י׳ — אותה נוסחה של `pool` ב-`execSubjects`, על אינדקס 0.
+  // בתי הספר נגזרים בזמן ריצה ואינם רשימה קבועה, כמו כל טענה בתצוגה 9.
+  const parts = SCHOOLS.filter(s=> hasGrade(s,0))
+    .map(s=> ({ name:s.name, p: subjVal(s,0,3) - totalTech(s,0) }))
+    .filter(x=> x.p > 0)
+    .sort((a,b)=> b.p - a.p);
+
+  // ⚠ **המאגר הוא סכום המאגרים החיוביים, לא `ma5 − ht` העירוני.** בית ספר
+  // שבו `ht > ma5` תורם **אפס תלמידים** למאגר ולא תלמידים שליליים; החיסור
+  // העירוני מקזז אותו, ואז סכום המוקדים גדול מהמאגר ו-`hotPct` עובר 100%.
+  // בנתוני האמת השניים זהים (325) — ההפרש הוא מסלול הכישלון, לא המצב.
+  const pool = parts.reduce((a,x)=> a + x.p, 0);
+  if(!pool) return '';
+
+  const ma5 = citySubjectByGrade(3)[0], ht = cityTotal(0);
+  const hot = parts.slice(0, FOCUS_N);
+  const hotSum = hot.reduce((a,x)=> a + x.p, 0);
+  const hotPct = hotSum / pool * 100;
+
+  // הרכב החוסר — מהדו"ח, ולא מהגיליון: בגיליון אין חיתוך ברמת תלמיד.
+  const P    = HOLON_POT_2024;
+  const one  = P.phcs + P.ma5 + P.en5;
+  const per10 = Math.round(P.phcs / one * 10);
+
+  const gy   = ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year;
+  const grad = gy ? hebYearName(gy + 2) : null;      // י׳ של היום ← יב׳
+  const share = c.gap / pool * 100;
+
+  const tiles = [
+    { cls:'c3', lbl:'בוגרים נוספים נדרשים בשנתון',
+      num:`+${num(c.gap)}`,
+      sub:`מ-${num(c.cur12)} זכאי יב׳ ל-${num(c.need)} — הסף לכניסה לחמישייה. ` +
+          `כ-<strong>${num(Math.ceil(c.gap/EXEC_SPAN))} בשנה</strong> לאורך ${EXEC_SPAN} שנים.` },
+    { cls:'c1', lbl:'תלמידי י׳ שכבר עם מתמטיקה 5 ובלי המדד',
+      num:num(pool),
+      sub:`<strong>פי ${(pool/c.gap).toFixed(1)} מהפער.</strong> הם עברו את המחסום הקשה ביותר ` +
+          `ומגיעים ליב׳ ${grad? 'ב' + grad : 'בתוך האופק'} — כלומר בתוך התוכנית. ` +
+          `<span class="alt-num">${num(ma5)} לומדי מתמטיקה 5 מול ${num(ht)} במדד, שכבת י׳ ${DATA_LABEL||''}` +
+          (Math.max(0, ma5 - ht) !== pool
+            ? ` · החיסור העירוני נותן ${num(Math.max(0, ma5 - ht))} — בית ספר שבו הזכאות גדולה ממתמטיקה 5 מתקזז בו ואינו גורע מהמאגר`
+            : '') + `</span>` },
+    { cls:'c2', lbl:`${hot.length} בתי ספר מחזיקים את רוב המאגר`,
+      num:`${hotPct.toFixed(0)}%`,
+      sub:`${hot.map(x=> `<strong>${x.name}</strong> ${num(x.p)}`).join(' · ')} — ` +
+          `${num(hotSum)} מתוך ${num(pool)}. <strong>כאן יושב הקשב.</strong>` },
+    { cls:'c1', lbl:'חסר להם מקצוע מדעי, לא מתמטיקה',
+      num:`${per10} מתוך 10`,
+      sub:`מבין מי שחסר לו רכיב אחד בלבד: <strong>${num(P.phcs)} חסרים פיזיקה או מדעי המחשב</strong>, ` +
+          `${num(P.ma5)} חסרים מתמטיקה 5, ו-${num(P.en5)} אנגלית. ` +
+          `<span class="alt-num">${P.src} — נתוני ${P.year}, ולא שנת הגיליון</span>` }
+  ];
+
+  return `
+    <div class="ex-h">איך מגיעים ליעד</div>
+    <div class="st-grid">` + tiles.map(t=>`
+      <div class="st-card ${t.cls}">
+        <div class="st-lbl">${t.lbl}</div>
+        <div><span class="st-num">${t.num}</span></div>
+        <div class="st-sub">${t.sub}</div>
+      </div>`).join('') + `</div>
+    <div class="insight"><div class="insight-t">בשורה אחת</div>
+      <div class="insight-b">
+        הפער <strong>אינו</strong> דורש לגייס תלמידים חדשים למתמטיקה. הוא דורש להמיר
+        <strong>${num(c.gap)} מתוך ${num(pool)}</strong> — ${share.toFixed(0)}% ממי שכבר עם מתמטיקה 5
+        בשכבת י׳ — ורובם מרוכזים ${hot.length===1? 'בבית ספר אחד' : 'ב-'+hot.length+' בתי ספר'}.
+        ההמרה היא מקצוע מדעי אחד: פיזיקה או מדעי המחשב.
+      </div></div>`;
+}
+
 // ── 4 · תוכנית הגידול לפי מקצוע ─────────────────────────────────
 // שני מסלולים נפרדים, ו**אינם מתחברים בחיבור**: תוספת בפיזיקה או
 // במדמ"ח מייצרת זכאות רק אצל מי שכבר עם 5 יח"ל מתמטיקה ואנגלית.
@@ -5396,7 +5497,13 @@ function execSubjects(c){
       <div class="cmp-note">
         <strong>הנחת הפיצול, מוצהרת:</strong> התוספת מתחלקת בין פיזיקה למדמ״ח לפי התמהיל הקיים
         (${num(ph)}:${num(cs)} ≈ ${(ph/mix*100).toFixed(0)}%:${(cs/mix*100).toFixed(0)}%).
-        <strong>זו החלטת מדיניות ולא נגזרת מהנתונים</strong> — הנתונים אינם קובעים באיזה מקצוע להשקיע.
+        <strong>זו החלטת מדיניות ולא נגזרת מהנתונים</strong> — הגיליון אינו קובע איך לחלק
+        <em>בין שני המדעים</em>. <strong>מה כן ידוע:</strong> ${HOLON_POT_2024.src} מפרק את מי שחסר לו
+        רכיב אחד בלבד — <strong>${num(HOLON_POT_2024.phcs)} חסרים פיזיקה או מדמ״ח</strong> מול
+        ${num(HOLON_POT_2024.ma5)} שחסרים מתמטיקה 5 ו-${num(HOLON_POT_2024.en5)} אנגלית.
+        החסם יושב במדעים, לא במתמטיקה — שורת המתמטיקה בטבלה נגזרת מהנחת יחס-המרה קבוע ולא
+        מניתוח חסמים, ולכן היא מבקשת את התוספת הגדולה ביותר. <span class="alt-num">נתוני
+        ${HOLON_POT_2024.year}, ולא שנת הגיליון.</span>
         ${enBad? `<br><strong>⚠ שורת אנגלית 5 יח״ל אינה מוזנת בגיליון</strong> — ${num(en5)} לומדים מול
         ${num(c.cur12)} זכאים, כלומר יותר זכאים מלומדים. ההגדרה כוללת אנגלית (§12.3), ולכן
         מאגר ${num(pool)} התלמידים הוא <strong>חסם עליון ולא מספר מדויק</strong>: חלק מהם חסרים אנגלית ולא מדע.` : ''}
@@ -5417,7 +5524,13 @@ function execSchools(c){
   const rows = SCHOOLS.filter(s=> hasGrade(s,2) && totalStudents(s,2) > 0)
     .map(s=>{
       const st = totalStudents(s,2), tech = totalTech(s,2);
-      return { name:s.name, st, tech, pct: schoolGradePct(s,2), note: badge(s),
+      // מאגר שכבת י׳ — הקריאה השנייה של הטבלה. בלעדיה בית ספר שכבר עומד
+      // ביעד ביב׳ מקבל `✓` ויורד לתחתית, גם כשהוא מחזיק מאגר גדול בי׳,
+      // וכרטיס "איך מגיעים ליעד" שמעל נראה כסותר את הטבלה שמתחתיו.
+      // `null` (אין שכבת י׳) ולא `0` — הפרדה שהפרסר לא עושה בעצמו.
+      const pool10 = hasGrade(s,0)
+        ? Math.max(0, subjVal(s,0,3) - totalTech(s,0)) : null;
+      return { name:s.name, st, tech, pool10, pct: schoolGradePct(s,2), note: badge(s),
                add: Math.max(0, Math.round(tgtIn/100 * st) - tech) };
     })
     .sort((a,b)=> b.add - a.add || b.st - a.st);
@@ -5435,7 +5548,7 @@ function execSchools(c){
     <div class="ex-in">
       <table class="tbl">
         <thead><tr><th>בית ספר</th><th>תלמידי יב׳</th><th>זכאים היום</th>
-          <th>% טק</th><th>נדרש ביעד</th><th>תוספת</th></tr></thead>
+          <th>% טק</th><th>נדרש ביעד</th><th>תוספת</th><th>מאגר י׳</th></tr></thead>
         <tbody>${rows.map(r=>`
           <tr class="ex-click" onclick="goToDeepDive('${r.name.replace(/'/g,"\\'")}')">
             <td class="nm">${r.name}${r.note}</td>
@@ -5443,12 +5556,14 @@ function execSchools(c){
             <td>${r.pct.toFixed(1)}%</td>
             <td>${num(Math.round(tgtIn/100 * r.st))}</td>
             <td class="ex-add">${r.add? '+'+num(r.add) : '✓'}</td>
+            <td>${r.pool10 == null? '—' : num(r.pool10)}</td>
           </tr>`).join('')}
           <tr class="ex-sum"><td class="nm">סך הכל</td>
             <td>${num(rows.reduce((a,r)=>a+r.st,0))}</td>
             <td>${num(rows.reduce((a,r)=>a+r.tech,0))}</td>
             <td>${ownPct.toFixed(1)}%</td><td>—</td>
-            <td class="ex-add">+${num(sum)}</td></tr>
+            <td class="ex-add">+${num(sum)}</td>
+            <td>${num(rows.reduce((a,r)=>a+(r.pool10||0),0))}</td></tr>
         </tbody>
       </table>
       <div class="cmp-note">
@@ -5457,7 +5572,11 @@ function execSchools(c){
         לפי אותו יחס שמוצג בכרטיס "המצבת הקובעת" למעלה ובכרטיס המכנה בתצוגת חולון–ארצי.<br>
         <strong>הסכום ${num(sum)} גדול מ-${num(c.gap)} שבכרטיס היעד</strong>, כי
         ${above? nSchools(above)+' כבר מעל היעד ותורמים 0' : 'אף בית ספר אינו מעל היעד'} —
-        עודף מעל היעד אינו מקזז חוסר במקום אחר. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת.
+        עודף מעל היעד אינו מקזז חוסר במקום אחר. שני המספרים נכונים, וכל אחד עונה על שאלה אחרת.<br>
+        <strong>שתי קריאות לטבלה.</strong> <em>תוספת</em> היא כמה חסר <strong>ביב׳ היום</strong>,
+        והמיון לפיה. <em>מאגר י׳</em> הוא כמה תלמידי י׳ כבר עם מתמטיקה 5 ובלי המדד —
+        המחזור שמגיע ליב׳ בתוך אופק התוכנית, וזה החתך שכרטיס "איך מגיעים ליעד" ממיין לפיו.
+        <strong>הן אינן מסכימות:</strong> בית ספר יכול לקבל ✓ ביב׳ ולהחזיק מאגר גדול בי׳.
         לחיצה על שורה פותחת את ההעמקה לאותו בית ספר.
       </div>
     </div>
@@ -5550,7 +5669,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v59';
+const BUILD = 'v60';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 

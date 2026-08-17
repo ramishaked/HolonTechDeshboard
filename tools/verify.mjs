@@ -315,7 +315,7 @@ async function browserRun() {
     const ref = JSON.parse(fs.readFileSync(DATA, 'utf8'));
     const live = await page.evaluate(() => ({
       NAT, NAT_2014, NAT_GIRLS_2024, HOLON_MOE, HOLON_HIST, HOLON_MID,
-      CITY_DATA, CITY_ASTERISK, CITY_NEAR, POP_BAND,
+      HOLON_POT_2024, CITY_DATA, CITY_ASTERISK, CITY_NEAR, POP_BAND,
     }));
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     const nat = ref['ארצי_סדרות'], g = ref['ארצי_שיעור_תלמידות_2024'], c = ref['רשויות'];
@@ -334,6 +334,13 @@ async function browserRun() {
       ['חולון — משה"ח',   [live.HOLON_MOE.years, live.HOLON_MOE.tech, live.HOLON_MOE.ma5],
         [ref['חולון_סדרות']['רשמי_משהח']['שנים'], ref['חולון_סדרות']['רשמי_משהח']['בגרות_הייטק'],
          ref['חולון_סדרות']['רשמי_משהח']['מתמטיקה_5']]],
+      ['חולון — פירוק הפוטנציאל',
+        [live.HOLON_POT_2024.phcs, live.HOLON_POT_2024.ma5, live.HOLON_POT_2024.en5,
+         live.HOLON_POT_2024.year],
+        [ref['חולון_פוטנציאל_2024']['חסרים_רק_פיזיקה_או_מדעי_המחשב'],
+         ref['חולון_פוטנציאל_2024']['חסרים_רק_מתמטיקה_5'],
+         ref['חולון_פוטנציאל_2024']['חסרים_רק_אנגלית_5'],
+         ref['חולון_פוטנציאל_2024']['שנה']]],
       ['33 רשויות',       live.CITY_DATA, c['שורות']],
       ['כוכבית',          live.CITY_ASTERISK, c['כוכבית']],
       ['רצועת גודל',      live.POP_BAND, c['רצועת_גודל']],
@@ -361,6 +368,21 @@ async function browserRun() {
              p10: t('kPct10'), p11: t('kPct11'), p12: t('k12Pct'), drop: t('kDrop') };
   });
 
+  // ── כרטיס "איך מגיעים ליעד" (תצוגה 11) ─────────────────────────
+  // נקרא **מה-DOM ולא מהנוסחה** — הבדיקה היא שהמספרים הגיעו למסך, לא
+  // שהחישוב חוזר על עצמו. ארבעה אריחים, ואם אחד נופל ל-`—` זו רגרסיה.
+  const focus = await page.evaluate(
+    '(function(){var hs=[].slice.call(document.querySelectorAll("#exBody .ex-h"));' +
+    ' var h=hs.filter(function(x){return x.textContent.indexOf("איך מגיעים")>=0;})[0];' +
+    ' if(!h||!h.nextElementSibling) return null;' +
+    ' return [].slice.call(h.nextElementSibling.querySelectorAll(".st-card")).map(function(c){' +
+    '   return c.querySelector(".st-lbl").textContent.trim()+" = "+c.querySelector(".st-num").textContent.trim();});})()');
+  if (!focus) fail('תצוגה 11: כרטיס "איך מגיעים ליעד" לא נבנה');
+  else if (focus.length !== 4) fail(`תצוגה 11: ${focus.length} אריחים בכרטיס היעד במקום 4`);
+  else if (focus.some(t => /=\s*(—|0|NaN|undefined)$/.test(t)))
+    fail(`תצוגה 11: אריח ריק בכרטיס היעד — ${focus.join(' | ')}`);
+  else pass('תצוגה 11 — כרטיס "איך מגיעים ליעד", 4 אריחים מלאים');
+
   if (LIVE) {
     // אין מול מה להשוות אוטומטית — הערכים ב-§8 נמדדו בתאריך מסוים
     // והגיליון חי. מדפיסים אותם להצלבה ידנית מול §8, וזה כל התפקיד.
@@ -376,6 +398,7 @@ async function browserRun() {
     console.log(`  מדד יא׳       ${got.p11.replace(/\s+/g, ' ')}`);
     console.log(`  מדד יב׳       ${got.p12.replace(/\s+/g, ' ')}`);
     console.log(`  נשירה י׳→יב׳  ${got.drop.replace(/\s+/g, ' ')}`);
+    if (focus) { console.log('  איך מגיעים ליעד:'); focus.forEach(t => console.log(`    ${t}`)); }
     console.log('\n  ⚠ אלה נתוני אמת. §8 נמדד בתאריך מסוים — הפרש אינו בהכרח באג.');
   } else {
     console.log('\n── מספרים (מול חישוב עצמאי מהפיקסצ׳ר) ──');
