@@ -5198,10 +5198,6 @@ function execBottomLine(c){
   const { rank:gRank, rows:gRows } = girlsRank();
   const gLive = cityGirlsPctOfTech();
   const vsNat = c.me.tech - NATIONAL;
-  // קבוצות הייחוס — נגזרות בזמן ריצה ב-`ntGroups()`, כמו בתצוגה 9.
-  const gr    = ntGroups();
-  const socio = gr.find(g=> g.key === 'socio');
-  const size  = gr.find(g=> g.key === 'size');
 
   // הכיוון מול השנה הקודמת — מהסדרה הרשמית `HOLON_MOE`, ולא מהגיליון:
   // שני המספרים באותו מכנה ואותה הגדרה. שנה שאינה בסדרה — בלי חץ.
@@ -5212,6 +5208,34 @@ function execBottomLine(c){
   // מאגרי הפוטנציאל — אותה נוסחה של הכרטיס למטה, דרך `execCohort`.
   const p10 = execCohort('י').reduce((a,x)=> a + x.p, 0);
   const p9  = execCohort('ט').reduce((a,x)=> a + x.p, 0);
+
+  // שנת היעד נגזרת: שנת הגיליון + אופק התוכנית (EXEC_SPAN), לא צרובה.
+  const gy    = ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year;
+  const tgtYr = gy ? hebYearName(gy + EXEC_SPAN) : null;
+
+  // שלושת המובילים במדד המשוקלל י׳–יב׳ — דירוג בין בתי ספר על FULL בלבד
+  // (כלל ברזל 4: בית ספר חלקי אינו בר-דירוג), באותה נוסחה של תצוגת ההשוואה.
+  const top3 = FULL.filter(s=> schoolStudentTotal(s) > 0)
+    .map(s=> ({ name:s.name, pct: schoolTechPct(s) }))
+    .sort((a,b)=> b.pct - a.pct).slice(0, 3);
+
+  // שיעור ההמרה של עתיד טק — השנה המזווגת האחרונה, מ-`ALLDATA` (חוצה-
+  // תקופות, כמו תצוגה 7, ואינו מושפע מבורר התקופה). חץ מול השנה שלפניה.
+  const ys = ftYears();
+  let conv = null;
+  if(ys.length){
+    const fg = ftGrade([ys[0].start, ys[0].end]);
+    const f  = fg ? ftCityFunnel(ys[0].start, ys[0].end, fg) : null;
+    if(f && f.convPct != null){
+      let dC = null;
+      if(ys[1]){
+        const fg1 = ftGrade([ys[1].start, ys[1].end]);
+        const f1  = fg1 ? ftCityFunnel(ys[1].start, ys[1].end, fg1) : null;
+        if(f1 && f1.convPct != null) dC = f.convPct - f1.convPct;
+      }
+      conv = Object.assign(f, { g: fg, label: ys[0].label, d: dC });
+    }
+  }
 
   // חץ כיוון נגזר מהערך: ▲ ירוק / ▼ אדום / "ללא שינוי" אפור.
   const chip = v => v == null ? '' :
@@ -5226,14 +5250,17 @@ function execBottomLine(c){
     { cls:'c1', lbl:'מול הממוצע הארצי',
       num:`${vsNat > 0 ? '+' : vsNat < 0 ? '−' : ''}${signed(vsNat)}`, den:' נק׳',
       sub:`חולון ${ntPc(c.me.tech)} · ארצי ${NATIONAL}%` },
-    { cls:'c3', lbl:`דירוג מבין ${CITIES.length} הרשויות הגדולות`,
-      num:`#${c.rank}`, den:` / ${CITIES.length}`,
-      sub: c.done ? `בתוך החמישייה · נתוני ${CITY_YEAR}`
-                  : `הסף לחמישייה ${ntPc(c.tgtPct)} (${c.defend.name})` },
-    { cls:'c3', lbl:'הפער לחמישייה · שכבת יב׳',
-      num: c.gap != null ? `+${num(c.gap)}` : '✓',
-      sub: c.gap != null ? `זכאים נוספים · ${(c.tgtPct - c.me.tech).toFixed(1)} נק׳ מהרשמי`
-                         : `חולון כבר בחמישייה` },
+    // היעד מודגש עם שנת היעד הנגזרת — כולל המיקום היום והפער, שהיו
+    // קודם שני אריחים נפרדים (דירוג · פער).
+    { cls:'c3', lbl:`היעד ל${tgtYr || EXEC_SPAN + ' שנים'} — כניסה לחמישייה`,
+      num: c.done ? '✓' : (c.tgtPct != null ? ntPc(c.tgtPct) : '—'),
+      sub: c.done
+        ? `חולון כבר בחמישייה · נתוני ${CITY_YEAR}`
+        : `היום #${c.rank}/${CITIES.length} · +${num(c.gap)} זכאים ביב׳ · ~${num(Math.ceil(c.gap/EXEC_SPAN))} בשנה` },
+    { cls:'c1', lbl:'שלושת המובילים · מדד משוקלל י׳–יב׳',
+      num: top3.length ? ntPc(top3[0].pct) : '—',
+      den: top3.length ? ` ${top3[0].name}` : '',
+      sub: top3.slice(1).map(x=> `${x.name} ${ntPc(x.pct)}`).join(' · ') || 'אין בתי ספר מלאים לדירוג' },
     { cls:'c2', lbl:`הגיליון החי · יב׳ ${DATA_LABEL || ''}`,
       num: ntPc(c.live12),
       sub:`${num(c.cur12)} זכאים מתוך ${num(c.den)}` +
@@ -5246,9 +5273,9 @@ function execBottomLine(c){
       num: ntPc(gLive),
       sub: gRank ? `#${gRank} מתוך ${gRows.length} ארצי · יב׳ ${ntPc(c.me.girls)} (${CITY_YEAR})`
                  : `מהגיליון החי` },
-    { cls:'c2', lbl:'בקבוצות הייחוס',
-      num:`#${socio.pos}`, den:` / ${socio.rows.length}`,
-      sub:`${socio.lbl} · בקבוצת הגודל #${size.pos}/${size.rows.length}` }
+    ...(conv ? [{ cls:'c2', lbl:`המרת עתיד טק · ${conv.label}`,
+      num:`${conv.convPct.toFixed(0)}%`, chip: chip(conv.d),
+      sub:`${num(conv.chose)} מתוך ${num(conv.entered)} שנכנסו בחרו טק (שכבה ${conv.g}׳)` }] : [])
   ];
 
   return `<div class="ex-kpis">` + tiles.map(t=>`
@@ -5941,7 +5968,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v68';
+const BUILD = 'v69';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
