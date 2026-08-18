@@ -5523,8 +5523,11 @@ function execPotential(c){
   // תורם אפס, לא מינוס שמקזז אחרים.
   const cohort = g => SCHOOLS.filter(s=> s.grades[g] && s.grades[g][3] > 0)
     .map(s=>{ const r = s.grades[g];
-      return { name:s.name, note:badge(s), ma5:r[3], ht:r[4], p:Math.max(0, r[3]-r[4]) }; });
-  const sumC = rows => rows.reduce((a,x)=>({ ht:a.ht+Math.min(x.ht,x.ma5), p:a.p+x.p }), { ht:0, p:0 });
+      return { name:s.name, note:badge(s), en:r[14], ht:r[4], p:Math.max(0, r[3]-r[4]) }; });
+  // ⚠ **ה"במסלול" אינו נחתך למתמטיקה 5.** באילון ט׳ עמ"ט (92) גדול
+  // ממתמטיקה 5 (75) בנתונים החיים — קלמפ היה מציג שם 75 וסותר את
+  // תצוגת עתיד טק והגלאים שמציגים 92. המוט הוא במסלול + מאגר, לא ma5.
+  const sumC = rows => rows.reduce((a,x)=>({ ht:a.ht+x.ht, p:a.p+x.p, en:a.en+x.en }), { ht:0, p:0, en:0 });
 
   const c10 = cohort('י'),  t10 = sumC(c10);
   const c9  = cohort('ט'),  t9  = sumC(c9);
@@ -5533,9 +5536,9 @@ function execPotential(c){
 
   // מוט מחזור: טורקיז=במסלול · זהוב=המאגר, על סקאלה משותפת לקבוצה.
   const line = (cap, x, scale)=>{
-    const all = Math.min(x.ht, x.ma5 || x.ht) + x.p;
+    const all = x.ht + x.p;
     if(!all) return '';
-    const ht = all - x.p;
+    const ht = x.ht;
     return `
       <div class="fnl-line">
         <div class="fnl-cap" style="width:150px;">${cap}</div>
@@ -5566,8 +5569,8 @@ function execPotential(c){
   const restP = rest.reduce((a,s)=> a + s.tot, 0);
   const topP  = top.reduce((a,s)=> a + s.tot, 0);
   const sScale = Math.max(...top.map(s=>
-    Math.max(s.g10? Math.min(s.g10.ht,s.g10.ma5)+s.g10.p : 0,
-             s.g9?  Math.min(s.g9.ht, s.g9.ma5)+s.g9.p  : 0)), 1);
+    Math.max(s.g10? s.g10.ht + s.g10.p : 0,
+             s.g9?  s.g9.ht  + s.g9.p  : 0)), 1);
 
   const schoolRows = top.map(s=> `
     <div class="fnl-g">
@@ -5586,8 +5589,15 @@ function execPotential(c){
         : `המאגר המשותף <strong>קטן מהפער ${num(c.gap)}</strong> — גם המרה מלאה אינה סוגרת אותו.`)
     : '';
 
-  const lede = `${num(tot)} בטווח השפעה — י׳ ${num(t10.p)} · ט׳ ${num(t9.p)}` +
-    (top.length ? ` · ${top[0].name} מוביל עם ${num(top[0].tot)}` : '');
+  // אותה בדיקה נגזרת של `execSubjects` (§12.3), על השכבות של הכרטיס:
+  // פחות לומדי אנגלית 5 מתלמידי המסלול = השורה אינה מוזנת, והמאגר הוא
+  // **חסם עליון** — חלק אולי חסרים אנגלית ולא מדע. בלי הבדיקה הזו שני
+  // כרטיסים סמוכים היו סותרים זה את זה.
+  const enFed = (t10.en + t9.en) >= (t10.ht + t9.ht);
+
+  const lede = `${num(tot)} בטווח השפעה — י׳ ${c10.length? num(t10.p) : '—'} · ` +
+    `ט׳ ${c9.length? num(t9.p) : '—'}` +
+    (top.length ? ` · ${top[0].name} מוביל (י׳+ט׳) עם ${num(top[0].tot)}` : '');
 
   const body = `
     <div class="pot-box" style="margin-top:0;">
@@ -5595,7 +5605,10 @@ function execPotential(c){
       <div class="pot-txt"><strong>תלמידים עם 5 יח״ל מתמטיקה ובלי מסלול הטק, בשני המחזורים
         שעדיין בטווח השפעה</strong> — ${num(t10.p)} בשכבת י׳ ו-${num(t9.p)} בשכבת ט׳
         (${DATA_LABEL || 'התקופה הנבחרת'}). שכבות יא׳–יב׳ אינן כאן: הן קרובות מדי לבחינות
-        כדי לצרף מקצוע מדעי. מה שחסר לתלמידי המאגר הוא מקצוע מדעי אחד — פיזיקה או מדעי המחשב.</div>
+        כדי לצרף מקצוע מדעי. ${enFed
+          ? `מה שחסר לתלמידי המאגר הוא מקצוע מדעי אחד — פיזיקה או מדעי המחשב.`
+          : `החסר המרכזי הוא מקצוע מדעי — פיזיקה או מדעי המחשב; <strong>שורת אנגלית 5 אינה
+             מוזנת בשכבות אלו</strong>, ולכן המאגר הוא חסם עליון — חלק אולי חסרים גם אנגלית.`}</div>
     </div>
     <div class="fnl" style="margin-top:16px;">
       ${line(cap10, t10, cityScale)}
@@ -5605,13 +5618,14 @@ function execPotential(c){
         <span><i style="background:#c8952f;"></i>מתמטיקה 5 בלי מסלול — המאגר</span>
       </div>
     </div>
-    <div class="card-title" style="margin-top:20px;">חמשת המוקדים — ${(topP/tot*100).toFixed(0)}% מהמאגר</div>
+    <div class="card-title" style="margin-top:20px;">חמשת המוקדים — ${(topP/tot*100).toFixed(0)}% מהמאגר המשותף (י׳+ט׳)</div>
     <div class="fnl" style="margin-top:10px;">${schoolRows}</div>
     <div class="insight"><div class="insight-t">מה זה אומר</div>
       <div class="insight-b">${vsGap}
         ${yr(1) ? `שני המחזורים עולים שכבה ב${yr(1)} ומגיעים ליב׳ ב${yr(2)} וב${yr(3)} — בתוך אופק התוכנית.` : ''}
-        הצעד לכל תלמיד במאגר הוא צירוף מקצוע מדעי אחד, והפירוק למקצועות בבלוקים שמתחת.
-        <span class="alt-num">בשכבת ט׳ "במסלול" = רישום לקבוצת עמ״ט, לא בחירת מקצוע ·
+        הצעד ל${enFed? 'כל תלמיד' : 'רוב תלמידי המאגר'} הוא צירוף מקצוע מדעי אחד, והפירוק למקצועות בבלוקים שמתחת.
+        <span class="alt-num">המיון כאן משלב י׳+ט׳, ולכן המוביל יכול להיות שונה מזה שבכרטיסים
+        שמתחת, שמודדים י׳ בלבד או יב׳ · בשכבת ט׳ "במסלול" = רישום לקבוצת עמ״ט, לא בחירת מקצוע ·
         ההשוואה לפער היעד (שכבת יב׳) היא היטל קדימה בין מחזורים שונים, לא מדידה</span>
       </div></div>`;
 
@@ -5980,7 +5994,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v64';
+const BUILD = 'v65';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
