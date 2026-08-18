@@ -387,20 +387,22 @@ async function browserRun() {
     else pass(`תצוגה 11 — ${acc.length} בלוקים מתקפלים, כולם סגורים ועם מסקנה בכותרת`);
   }
 
-  // כרטיס "איך מגיעים ליעד" — נקרא **מה-DOM ולא מהנוסחה**: הבדיקה היא
-  // שהמספרים הגיעו למסך, לא שהחישוב חוזר על עצמו.
-  const focus = await page.evaluate(
-    '(function(){var ds=[].slice.call(document.querySelectorAll("#exBody details.card"));' +
-    ' var d=ds.filter(function(x){var t=x.querySelector(".card-title");' +
-    '   return t&&t.textContent.indexOf("איך מגיעים")>=0;})[0];' +
+  // כרטיס "היכן טמון הפוטנציאל" (v66, החליף את "איך מגיעים ליעד") —
+  // נקרא **מה-DOM ולא מהנוסחה**: המספר הגדול, טבלת הפעולה ותאיה.
+  const pot = await page.evaluate(
+    '(function(){var d=document.querySelector("#exBody details.card[data-blk=pot]");' +
     ' if(!d) return null;' +
-    ' return [].slice.call(d.querySelectorAll(".st-card")).map(function(c){' +
-    '   return c.querySelector(".st-lbl").textContent.trim()+" = "+c.querySelector(".st-num").textContent.trim();});})()');
-  if (!focus) fail('תצוגה 11: כרטיס "איך מגיעים ליעד" לא נבנה');
-  else if (focus.length !== 4) fail(`תצוגה 11: ${focus.length} אריחים בכרטיס היעד במקום 4`);
-  else if (focus.some(t => /=\s*(—|0|NaN|undefined)$/.test(t)))
-    fail(`תצוגה 11: אריח ריק בכרטיס היעד — ${focus.join(' | ')}`);
-  else pass('תצוגה 11 — כרטיס "איך מגיעים ליעד", 4 אריחים מלאים');
+    ' var n=d.querySelector(".pot-num"), rows=[].slice.call(d.querySelectorAll("tbody tr"));' +
+    ' return { num:n?n.textContent.trim():"", rows:rows.length,' +
+    '   cells:rows.map(function(r){return [].slice.call(r.querySelectorAll("td"))' +
+    '     .map(function(c){return c.textContent.trim();}).join(" | ");}) };})()');
+  if (!pot) fail('תצוגה 11: כרטיס "היכן טמון הפוטנציאל" לא נבנה');
+  else if (!/^[\d,.]+$/.test(pot.num) || Number(pot.num.replace(/,/g, '')) <= 0)
+    fail(`תצוגה 11: מספר הפוטנציאל ריק או אפס — "${pot.num}"`);
+  else if (pot.rows < 2) fail(`תצוגה 11: טבלת הפעולה בכרטיס הפוטנציאל ריקה (${pot.rows} שורות)`);
+  else if (pot.cells.some(t => /NaN|undefined/.test(t)))
+    fail(`תצוגה 11: תא שבור בטבלת הפעולה — ${pot.cells.find(t => /NaN|undefined/.test(t))}`);
+  else pass(`תצוגה 11 — כרטיס הפוטנציאל: ${pot.num} תלמידים, טבלת פעולה עם ${pot.rows - 1} בתי ספר`);
 
   // מצב האקורדיאון חייב לשרוד רינדור מחדש. `renderExec` בונה מחדש את כל
   // `#exBody`, ולכן עד v61 שני הבלוקים המתקפלים התקפלו בחזרה בכל מעבר
