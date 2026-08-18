@@ -365,6 +365,21 @@ body{
 /* בתקציר .alt-num עוטף משפט שלם ולא מספר-סוגריים — nowrap הגלובלי גרם
    לו לגלוש שמאלה ולהיחתך ב-overflow:hidden של הכרטיס (דווח 18.08) */
 #view-exec .alt-num{white-space:normal;}
+/* גריד ה-KPI של התקציר (v68) — 8 אריחים קומפקטיים, מספר + תת-שורה,
+   במקום 4 אריחים עמוסי מלל. אותם .st-card, רק צפופים יותר */
+#view-exec .ex-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+@media(max-width:1150px){#view-exec .ex-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){#view-exec .ex-kpis{grid-template-columns:1fr;}}
+#view-exec .ex-kpis .st-card{padding:14px 16px 12px;}
+#view-exec .ex-kpis .st-lbl{font-size:11px;margin-bottom:6px;}
+#view-exec .ex-kpis .st-num{font-size:29px;letter-spacing:-0.5px;}
+#view-exec .ex-kpis .st-den{font-size:13px;}
+#view-exec .ex-kpis .st-sub{font-size:11px;margin-top:4px;line-height:1.5;}
+/* חץ כיוון נגזר — לעולם לא צרוב (§9.1) */
+.ex-chip{font-size:11.5px;font-weight:900;margin-inline-start:6px;white-space:nowrap;vertical-align:4px;}
+.ex-chip.up{color:#137333;}
+.ex-chip.down{color:#c5221f;}
+.ex-chip.flat{color:var(--muted);}
 /* `nowrap` נכון למספר בסוגריים ליד מדד; במשפט שלם הוא הפך למינימום-רוחב
    של 854px, ודרכו כפה על `.main` רוחב 1165px וגלישה אופקית בכל הדף. */
 .card-sub .alt-num,.page-sub .alt-num,.cmp-note .alt-num{white-space:normal;}
@@ -5170,86 +5185,76 @@ function girlsRank(){
 // ── 1 · השורה התחתונה ───────────────────────────────────────────
 // הסדר: **המספר הפורמלי שפורסם קודם, והמעובד אחריו.** מול ראש עיר
 // נקודת המוצא היא מה שמשרד החינוך פרסם, ולא מה שאנחנו גזרנו מהגיליון.
-// ⚠ **הבלוק הזה אינו מתקפל** (בקשת המשתמש) — ארבעת המספרים נשארים
-// חשופים, ושאר התצוגה נסגרת מתחתיהם.
+// ⚠ **הבלוק הזה אינו מתקפל** (בקשת המשתמש) — המספרים נשארים חשופים,
+// ושאר התצוגה נסגרת מתחתיהם.
+//
+// **מ-v68 זהו גריד KPI של 8 אריחים קומפקטיים** ולא 4 אריחים עמוסי מלל —
+// בקשת משתמש (18.08): "יותר מדי מלל באריחים... במקום בטקסט, אריחים
+// נוספים עם המידע הכי חשוב מספרית". כל אריח: מספר אחד + תת-שורה
+// מספרית קצרה. **המסקנות המילוליות לא נמחקו** — הן חיות בבלוקים
+// המתקפלים (מה עובד · חסמים · תצוגה 9); כאן נשארו רק המספרים.
+// מילות/חיצי כיוון עדיין נגזרים מהערך (§9.1), לעולם לא צרובים.
 function execBottomLine(c){
   const { rank:gRank, rows:gRows } = girlsRank();
   const gLive = cityGirlsPctOfTech();
-  // §9.1 פריט 0-1: "מעל הארצי" היה צרוב, ובלי ענף סימן הוא היה מדפיס
-  // "‎-1.4 נק׳ מעל הארצי" ביום שחולון תרד. שוויון מקבל ניסוח משלו —
-  // "0.0 נק׳ מעל" אינו משפט.
-  const vsNat  = c.me.tech - NATIONAL;
-  const natSay = Math.abs(vsNat) < 0.05 ? 'בדיוק כמו הממוצע הארצי'
-    : `${signed(vsNat)} נק׳ ${vsNat > 0 ? 'מעל הארצי' : 'מתחת לארצי'}`;
-  // קבוצות הייחוס — אשכול חברתי-כלכלי והיקף אוכלוסייה. נגזרות בזמן
-  // ריצה ב-`ntGroups()`, בדיוק כמו בתצוגת חולון–ארצי.
+  const vsNat = c.me.tech - NATIONAL;
+  // קבוצות הייחוס — נגזרות בזמן ריצה ב-`ntGroups()`, כמו בתצוגה 9.
   const gr    = ntGroups();
   const socio = gr.find(g=> g.key === 'socio');
   const size  = gr.find(g=> g.key === 'size');
-  // משפט המסקנה של אריח הייחוס נגזר מיחס חולון לשני הממוצעים. עד v57 הוא
-  // אמר "גבוה בשתיהן" תמיד (§9.1, פריט 0-2), והפך לשקרי ברגע שהאשכול תוקן
-  // ל-7 — שם חולון מתחת לממוצע הקבוצה. `avg` כבר מחריג את `CITY_ASTERISK`.
-  const aboveS = c.me.tech >= socio.avg, aboveZ = c.me.tech >= size.avg;
-  const refSay = aboveS && aboveZ
-    ? 'חולון גבוה בשתיהן — <strong>"התנאים שלנו שונים" אינו מסביר את הפער</strong>.'
-    : aboveZ ? 'חולון מעל ממוצע קבוצת הגודל ו<strong>מתחת לממוצע אשכולה</strong>.'
-    : aboveS ? 'חולון מעל ממוצע אשכולה ו<strong>מתחת לממוצע קבוצת הגודל</strong>.'
-    :          'חולון <strong>מתחת לממוצע בשתי קבוצות הייחוס</strong>.';
 
   // הכיוון מול השנה הקודמת — מהסדרה הרשמית `HOLON_MOE`, ולא מהגיליון:
-  // שני המספרים באותו מכנה ואותה הגדרה. מילת הכיוון נגזרת (§9.1),
-  // ושנה שאינה בסדרה פשוט לא מציגה את המשפט.
+  // שני המספרים באותו מכנה ואותה הגדרה. שנה שאינה בסדרה — בלי חץ.
   const moeI  = HOLON_MOE.years.indexOf(CITY_YEAR);
   const moePv = moeI > 0 ? HOLON_MOE.tech[moeI-1] : null;
   const dMoe  = moePv != null ? c.me.tech - moePv : null;
-  const moeSay = dMoe == null ? '' :
-    (Math.abs(dMoe) < 0.05
-      ? `ללא שינוי מ-${HOLON_MOE.years[moeI-1]}. `
-      : `<strong>${dMoe > 0 ? 'עלייה' : 'ירידה'} של ${signed(dMoe)} נק׳</strong> ` +
-        `מ-${ntPc(moePv)} ב-${HOLON_MOE.years[moeI-1]}. `);
+
+  // מאגרי הפוטנציאל — אותה נוסחה של הכרטיס למטה, דרך `execCohort`.
+  const p10 = execCohort('י').reduce((a,x)=> a + x.p, 0);
+  const p9  = execCohort('ט').reduce((a,x)=> a + x.p, 0);
+
+  // חץ כיוון נגזר מהערך: ▲ ירוק / ▼ אדום / "ללא שינוי" אפור.
+  const chip = v => v == null ? '' :
+    Math.abs(v) < 0.05 ? `<span class="ex-chip flat">ללא שינוי</span>` :
+    `<span class="ex-chip ${v > 0 ? 'up' : 'down'}">${v > 0 ? '▲' : '▼'} ${signed(v)}</span>`;
 
   const tiles = [
-    { cls:'c1', lbl:`המדד הרשמי — משרד החינוך ${CITY_YEAR}`,
-      num: ntPc(c.me.tech),
-      sub: `זהו המספר שפורסם ושבו חולון נמדדת מול שאר הרשויות. ` +
-           `${moeSay}<strong>${natSay}</strong> (${NATIONAL}%).<br>` +
-           `<span class="alt-num">מהגיליון, שכבת יב׳ ${DATA_LABEL||''}: <strong>${ntPc(c.live12)}</strong> — ` +
-           `${num(c.cur12)} זכאים מתוך ${num(c.den)}` +
-           (c.onAlt? ', באותו מכנה מצבת' : '. אין שורת מצבת בתקופה זו — סכום שורות בתי הספר') + `</span>` },
-    { cls:'c2', lbl:'המיקום בקבוצות הייחוס',
-      num:`#${socio.pos}`, den:` / ${socio.rows.length}`,
-      sub: `<strong>${socio.lbl}</strong> — ממוצע הקבוצה ${ntPc(socio.avg)}.<br>` +
-           `<strong>${size.lbl}</strong>: מקום <strong>#${size.pos}</strong> מתוך ${size.rows.length}, ` +
-           `ממוצע ${ntPc(size.avg)}. ${refSay}` },
-    { cls:'c3', lbl:`מיקום מבין ${CITIES.length} הרשויות הגדולות`,
+    { cls:'c1', lbl:`המדד הרשמי · משרד החינוך ${CITY_YEAR}`,
+      num: ntPc(c.me.tech), chip: chip(dMoe),
+      sub: moePv != null ? `מ-${ntPc(moePv)} ב-${HOLON_MOE.years[moeI-1]}`
+                         : `הבסיס להשוואה בין הרשויות` },
+    { cls:'c1', lbl:'מול הממוצע הארצי',
+      num:`${vsNat > 0 ? '+' : vsNat < 0 ? '−' : ''}${signed(vsNat)}`, den:' נק׳',
+      sub:`חולון ${ntPc(c.me.tech)} · ארצי ${NATIONAL}%` },
+    { cls:'c3', lbl:`דירוג מבין ${CITIES.length} הרשויות הגדולות`,
       num:`#${c.rank}`, den:` / ${CITIES.length}`,
-      sub: c.done
-        ? `<strong>חולון כבר בחמישייה.</strong> נתוני ${CITY_YEAR}.`
-        : `כדי להיכנס לחמישייה צריך לעבור את <strong>${c.defend.name}</strong> — ${ntPc(c.tgtPct)}. ` +
-          `הפער: <strong>${(c.tgtPct - c.me.tech).toFixed(1)} נק׳</strong> מהמספר הרשמי.` },
-    // §9.1 פריט 0-3: "זה ההישג הבולט" היה מותנה ב-`gRank ?` בלבד — כלומר
-    // "חולון נמצאה ברשימה", לא "חולון גבוהה" — ונאמר גם למקום אחרון.
-    // עכשיו נגזר מהשליש שבו היא יושבת. **הסקופ מסומן:** המספר הגדול הוא
-    // י׳–יב׳ מהגיליון החי, ואילו הדירוג ו-`me.girls` הם `CITY_DATA` רשמי
-    // ליב׳ — שלושה סקופים באריח אחד, ועד v60 אף אחד מהם לא סומן.
-    { cls:'c1', lbl:'ייצוג תלמידות בקרב לומדי הטק · י׳–יב׳',
+      sub: c.done ? `בתוך החמישייה · נתוני ${CITY_YEAR}`
+                  : `הסף לחמישייה ${ntPc(c.tgtPct)} (${c.defend.name})` },
+    { cls:'c3', lbl:'הפער לחמישייה · שכבת יב׳',
+      num: c.gap != null ? `+${num(c.gap)}` : '✓',
+      sub: c.gap != null ? `זכאים נוספים · ${(c.tgtPct - c.me.tech).toFixed(1)} נק׳ מהרשמי`
+                         : `חולון כבר בחמישייה` },
+    { cls:'c2', lbl:`הגיליון החי · יב׳ ${DATA_LABEL || ''}`,
+      num: ntPc(c.live12),
+      sub:`${num(c.cur12)} זכאים מתוך ${num(c.den)}` +
+          (c.onAlt ? ' במצבת' : ' · אין שורת מצבת') },
+    ...(p10 + p9 > 0 ? [{ cls:'c2', lbl:'מאגר הפוטנציאל · שכבות י׳+ט׳',
+      num: num(p10 + p9),
+      sub:`י׳ ${num(p10)} · ט׳ ${num(p9)} — הפירוט בכרטיס למטה` }] : []),
+    // הסקופ מסומן בקצרה: המספר הגדול י׳–יב׳ מהגיליון, הדירוג יב׳ רשמי.
+    { cls:'c1', lbl:'תלמידות בקרב לומדי הטק · י׳–יב׳',
       num: ntPc(gLive),
-      sub: gRank
-        ? `<span class="alt-num">מהגיליון, י׳–יב׳ ${DATA_LABEL||''}.</span> ` +
-          `בנתוני ${CITY_YEAR} חולון <strong>#${gRank}</strong> מתוך ${gRows.length} בייצוג תלמידות ` +
-          `בשכבת יב׳ (${ntPc(c.me.girls)})` +
-          (gRank <= Math.ceil(gRows.length/3)
-            ? `. <strong>זה ההישג הבולט של העיר</strong>, והוא לא בא על חשבון המדד.`
-            : gRank <= Math.ceil(gRows.length*2/3)
-              ? ` — במחצית העליונה, ולא על חשבון המדד.`
-              : `. <strong>זו נקודת חולשה</strong>, ולא הישג.`)
-        : `נתוני הגיליון לתקופה הנוכחית, שכבות י׳–יב׳.` }
+      sub: gRank ? `#${gRank} מתוך ${gRows.length} ארצי · יב׳ ${ntPc(c.me.girls)} (${CITY_YEAR})`
+                 : `מהגיליון החי` },
+    { cls:'c2', lbl:'בקבוצות הייחוס',
+      num:`#${socio.pos}`, den:` / ${socio.rows.length}`,
+      sub:`${socio.lbl} · בקבוצת הגודל #${size.pos}/${size.rows.length}` }
   ];
 
-  return `<div class="st-grid">` + tiles.map(t=>`
+  return `<div class="ex-kpis">` + tiles.map(t=>`
     <div class="st-card ${t.cls}">
       <div class="st-lbl">${t.lbl}</div>
-      <div><span class="st-num">${t.num}</span>${t.den? `<span class="st-den">${t.den}</span>`:''}</div>
+      <div><span class="st-num">${t.num}</span>${t.den? `<span class="st-den">${t.den}</span>`:''}${t.chip || ''}</div>
       <div class="st-sub">${t.sub}</div>
     </div>`).join('') + `</div>`;
 }
@@ -5551,22 +5556,25 @@ function execTgtIn(c){
   return (c.onAlt && c.live12) ? c.tgtPct * (ownPct / c.live12) : c.tgtPct;
 }
 
+// מחזור = שורת בית ספר בשכבה: במסלול, מאגר (מתמטיקה 5 פחות במסלול,
+// קלמפ 0 לכל בית ספר בנפרד — בית ספר שבו המסלול ≥ מתמטיקה 5 תורם אפס,
+// לא מינוס שמקזז אחרים) ואנגלית. משותפת לכרטיס הפוטנציאל ולאריח שבראש.
+function execCohort(g){
+  return SCHOOLS.filter(s=> s.grades[g] && s.grades[g][3] > 0)
+    .map(s=>{ const r = s.grades[g];
+      return { name:s.name, note:badge(s), en:r[14], ht:r[4], p:Math.max(0, r[3]-r[4]) }; });
+}
+
 function execPotential(c){
   const gy = ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year;
 
-  // מחזור = שורת בית ספר בשכבה: מתמטיקה 5, במסלול, ומאגר. קלמפ 0 לכל
-  // בית ספר בנפרד — בית ספר שבו המסלול ≥ מתמטיקה 5
-  // תורם אפס, לא מינוס שמקזז אחרים.
-  const cohort = g => SCHOOLS.filter(s=> s.grades[g] && s.grades[g][3] > 0)
-    .map(s=>{ const r = s.grades[g];
-      return { name:s.name, note:badge(s), en:r[14], ht:r[4], p:Math.max(0, r[3]-r[4]) }; });
   // ⚠ **ה"במסלול" אינו נחתך למתמטיקה 5.** באילון ט׳ עמ"ט (92) גדול
   // ממתמטיקה 5 (75) בנתונים החיים — קלמפ היה מציג שם 75 וסותר את
   // תצוגת עתיד טק והגלאים שמציגים 92. המוט הוא במסלול + מאגר, לא ma5.
   const sumC = rows => rows.reduce((a,x)=>({ ht:a.ht+x.ht, p:a.p+x.p, en:a.en+x.en }), { ht:0, p:0, en:0 });
 
-  const c10 = cohort('י'),  t10 = sumC(c10);
-  const c9  = cohort('ט'),  t9  = sumC(c9);
+  const c10 = execCohort('י'),  t10 = sumC(c10);
+  const c9  = execCohort('ט'),  t9  = sumC(c9);
   const tot = t10.p + t9.p;
   if(!tot) return '';
 
@@ -5933,7 +5941,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v67';
+const BUILD = 'v68';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
