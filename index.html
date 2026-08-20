@@ -577,16 +577,38 @@ body{
    (.st-card · .ins-card · .ct-row · .cmp-row · .tbl) ואין כאן שפה
    עיצובית חדשה — רק שני דברים שלא היו: בלוק מתקפל, וכרטיס חסם
    בגוון "אדמיניסטרטיבי" שאינו אחד משלושת הגוונים של מנוע הגלאים. */
-#view-exec details.card{padding:0;}
-#view-exec details.card > summary{
+#view-exec details.card,
+#view-principals details.card{padding:0;}
+#view-exec details.card > summary,
+#view-principals details.card > summary{
   list-style:none;cursor:pointer;padding:20px 24px;display:flex;
   align-items:baseline;gap:10px;user-select:none;}
-#view-exec details.card > summary::-webkit-details-marker{display:none;}
-#view-exec details.card > summary:hover .card-title{color:var(--primary);}
-#view-exec details.card > summary .ex-cv{font-size:12px;color:var(--muted);
+#view-exec details.card > summary::-webkit-details-marker,
+#view-principals details.card > summary::-webkit-details-marker{display:none;}
+#view-exec details.card > summary:hover .card-title,
+#view-principals details.card > summary:hover .card-title{color:var(--primary);}
+#view-exec details.card > summary .ex-cv,
+#view-principals details.card > summary .ex-cv{font-size:12px;color:var(--muted);
   transition:transform .18s;flex-shrink:0;}
-#view-exec details[open].card > summary .ex-cv{transform:rotate(-90deg);}
-#view-exec details.card > .ex-in{padding:0 24px 22px;}
+#view-exec details[open].card > summary .ex-cv,
+#view-principals details[open].card > summary .ex-cv{transform:rotate(-90deg);}
+#view-exec details.card > .ex-in,
+#view-principals details.card > .ex-in{padding:0 24px 22px;}
+
+/* ── תצוגה 12: מפגש מנהלים ─────────────────────────────────────
+   שעוני מד (חצי-דונאט של Chart.js) בתוך אריחי `.kpi` הקיימים — אין
+   שפה עיצובית חדשה, רק עטיפת קנבס עם מספר מרכזי. `direction:ltr` על
+   העטיפה מאותה סיבה של `#yyDecade` — Chart.js מצייר מוסט תחת RTL. */
+#view-principals .pr-gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+@media(max-width:1150px){#view-principals .pr-gauges{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){#view-principals .pr-gauges{grid-template-columns:1fr;}}
+.pr-g-wrap{position:relative;height:112px;margin-top:8px;direction:ltr;}
+.pr-g-num{position:absolute;right:0;left:0;bottom:0;text-align:center;
+  font-size:30px;font-weight:900;color:var(--text);line-height:1;pointer-events:none;}
+#view-principals .pr-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+@media(max-width:1150px){#view-principals .pr-cards{grid-template-columns:1fr;}}
+.pr-big{font-size:26px;font-weight:900;color:var(--text);margin:6px 0 8px;}
+#prDecade{direction:ltr;}
 /* בתוך בלוק מתקפל הכרטיסים הפנימיים הופכים לשקעים. `.st-card` ו-`.ins-card`
    נושאים בדיוק את השילוב של `.card` (רקע card + מסגרת + radius + צל), ובלי
    הכלל הזה עטיפתם ב-`details.card` יוצרת מסגרת כפולה על רקע זהה — בדיוק
@@ -926,6 +948,9 @@ body{
       <div class="sb-list">
         <div class="sb-item" data-view="insights" title="תובנות ומסקנות">
           <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2a6.1 6.1 0 0 0-3.6 11c.6.5 1 1.2 1 2v.4h5.2v-.4c0-.8.4-1.5 1-2A6.1 6.1 0 0 0 12 3.2z"/><path d="M9.6 19.3h4.8"/><path d="M10.6 21.4h2.8"/></svg><span>תובנות ומסקנות</span>
+        </div>
+        <div class="sb-item" data-view="principals" title="מפגש מנהלים">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5.2"/><path d="M12 6.6l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z"/><path d="M9.2 13.6 7.6 20.5l4.4-2.4 4.4 2.4-1.6-6.9"/></svg><span>מפגש מנהלים</span>
         </div>
       </div>
     </div>
@@ -1693,6 +1718,22 @@ body{
     </div>
   </section>
 
+  <!-- VIEW 12: מפגש מנהלים ─────────────────────────────────────────
+       הישגים ומגמות בלבד, לקהל של מנהלי בתי ספר: בלי ביקורת ובלי שמות
+       בתי ספר — למעט אקורדיאון "חמשת המובילים", שסגור בברירת מחדל
+       ונפתח רק בהחלטה במהלך המפגש. השלד בלבד; הכל נבנה ב-renderPrincipals
+       מפונקציות קיימות. כרטיס שהתנאי החיובי שלו אינו מתקיים בנתונים —
+       אינו מוצג, ולא מנוסח "יפה". -->
+  <section class="view" id="view-principals">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">הישגים ומגמות — מפגש מנהלים</h1>
+        <p class="page-sub" id="prSub">—</p>
+      </div>
+      <div class="page-meta" id="prMeta"></div>
+    </div>
+    <div id="prBody"></div>
+  </section>
 
 </main>
 
@@ -5882,6 +5923,244 @@ function execSchools(c){
       </div>`);
 }
 
+// ════════════════════════════════════════════════════════════════
+// VIEW 12: מפגש מנהלים — הישגים ומגמות
+// ────────────────────────────────────────────────────────────────
+// קהל היעד: פורום מנהלי בתי הספר. תצוגת הישגים בלבד (בקשת המשתמש,
+// 20.08): בלי ביקורת, בלי דירוג פנימי גלוי ובלי שמות בתי ספר —
+// למעט אקורדיאון "חמשת המובילים" שסגור בברירת מחדל ונפתח בהחלטה.
+//
+// **אפס נוסחאות חדשות** — כמו התקציר: הכל הרכבה מפונקציות קיימות
+// (execCtx · cityPct · girlsRank · ftCityFunnel · holonSeries ·
+// ntGroups · execCohort), ולכן זהה בהגדרה לשאר התצוגות.
+//
+// **חיובי ≠ מרופד:** לכל שעון וכרטיס יש תנאי הצגה נגזר מהמספרים
+// (שכבת י׳ מעל יב׳ · תלמידות מעל הארצי · המרה בטווח הירוק · מעל
+// ממוצע קבוצת הגודל). כשהתנאי אינו מתקיים הרכיב פשוט לא נבנה —
+// אין ניסוח-יפה של מספר רע, כי משפט כזה היה טענה צרובה (§9.1).
+// ════════════════════════════════════════════════════════════════
+
+// שעון מד: חצי-דונאט עם מילוי value/ref (נחתך ל-0–100%). המספר עצמו
+// יושב ב-HTML מעל הקנבס (.pr-g-num) — לא תלוי ב-plugin.
+function prGauge(id, val, ref, color){
+  destroyChart(id);
+  const el = document.getElementById(id);
+  if(!el) return;
+  const fill = Math.max(0, Math.min(1, ref ? val/ref : 0));
+  charts[id] = new Chart(el, { type:'doughnut',
+    data:{ datasets:[{ data:[fill, 1-fill],
+      backgroundColor:[color, '#eee6f5'], borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      rotation:-90, circumference:180, cutout:'74%',
+      plugins:{ legend:{display:false}, tooltip:{enabled:false},
+                datalabels:{display:false} } } });
+}
+
+// שיעור ההמרה של השנה המזווגת האחרונה — אותה שליפה של גריד ה-KPI
+// בתקציר: מ-ALLDATA דרך ftYears, חוצה-תקופות ואינו מושפע מהבורר.
+function prConv(){
+  const ys = ftYears();
+  if(!ys.length) return null;
+  const g = ftGrade([ys[0].start, ys[0].end]);
+  const f = g ? ftCityFunnel(ys[0].start, ys[0].end, g) : null;
+  return (f && f.convPct != null) ? Object.assign({}, f, { label: ys[0].label }) : null;
+}
+
+// גרף העשור של המפגש: הסדרות הרשמיות בלבד (holonSeries + NAT) — מכנה
+// אחיד של משה"ח, בלי תפר מול הגיליון החי. הנתון החי יושב בשעונים.
+function prDecade(){
+  destroyChart('prDecade');
+  const el = document.getElementById('prDecade');
+  if(!el) return;
+  const tech = holonSeries('tech'), ma5 = holonSeries('ma5');
+  const years = [...new Set([...tech.map(p=> p.y), ...NAT.years])].sort((a,b)=> a-b);
+  const at    = (arr,y)=>{ const p = arr.find(q=> q.y===y); return p? p.v : null; };
+  const natAt = y=>{ const i = NAT.years.indexOf(y); return i>=0? NAT.tech[i] : null; };
+  // תיוג קצה בלבד — נקודת הפתיחה ונקודת הסיום של כל קו. תיוג מלא של
+  // שלושה קווים על 12 שנים הופך לרעש; הערכים המלאים ב-tooltip.
+  const edge = (color, align)=> ({
+    display: ctx=>{
+      const d = ctx.dataset.data; let first=-1, last=-1;
+      d.forEach((v,i)=>{ if(v!=null){ if(first<0) first=i; last=i; } });
+      return ctx.dataIndex===first || ctx.dataIndex===last;
+    },
+    anchor:'end', align: align||'top', color, font:hf2(),
+    formatter:v=> v.toFixed(1)+'%' });
+  charts.prDecade = new Chart(el, { type:'line',
+    data:{ labels: years,
+      datasets:[
+        { label:'מתמטיקה 5 יח״ל — חולון', data: years.map(y=> at(ma5,y)),
+          borderColor:COL.good, borderWidth:3, pointRadius:4,
+          pointBackgroundColor:COL.good, tension:0.25, spanGaps:true, fill:false,
+          datalabels: edge('#1d7a3d') },
+        { label:'מדד הטק — חולון', data: years.map(y=> at(tech,y)),
+          borderColor:COL.primary, backgroundColor:'rgba(106,62,156,0.08)',
+          borderWidth:4, pointRadius:5, pointBackgroundColor:COL.primary,
+          pointBorderColor:'#fff', pointBorderWidth:2,
+          tension:0.25, spanGaps:true, fill:true,
+          datalabels: edge(COL.primaryD) },
+        { label:'מדד הטק — ארצי', data: years.map(natAt),
+          borderColor:'#9aa0a6', borderWidth:2, pointRadius:0,
+          tension:0.25, spanGaps:true, fill:false, order:2,
+          datalabels: edge('#5f6368','bottom') } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:12,right:26,left:26}},
+      plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14}},
+        tooltip:{callbacks:{label:ctx=> ctx.dataset.label+': '+
+          (ctx.parsed.y==null? '—' : ctx.parsed.y.toFixed(1)+'%')}} },
+      scales:{ x:{ticks:{font:HF,color:'#5f6368'},grid:{display:false}},
+               y:{beginAtZero:true, grace:'12%',
+                  ticks:{callback:v=> v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } } });
+}
+
+function renderPrincipals(){
+  const box = document.getElementById('prBody');
+  const me  = ntMe();
+  document.getElementById('prSub').textContent =
+    'מה עובד ולאן אנחנו הולכים' + (DATA_LABEL? ' · ' + DATA_LABEL : '');
+  if(!me || !SCHOOLS.length){
+    document.getElementById('prMeta').innerHTML = '';
+    box.innerHTML = '<div class="insight warn"><div class="insight-t">אין מספיק נתונים</div>' +
+      '<div class="insight-b">התקופה הנבחרת אינה מכילה נתוני בתי ספר.</div></div>';
+    return;
+  }
+  const c     = execCtx();
+  const gy    = ALLDATA[CURRENT_PERIOD] && ALLDATA[CURRENT_PERIOD].year;
+  const tgtYr = gy ? hebYearName(gy + EXEC_SPAN) : null;
+  const p10   = cityPct(0), p12 = cityPct(2);
+
+  document.getElementById('prMeta').innerHTML =
+    `<div class="meta-pill">מקום <strong>#${c.rank}</strong> מתוך ${CITIES.length} הגדולות</div>` +
+    (c.tgtPct != null ? `<div class="meta-pill">היעד <strong>${ntPc(c.tgtPct)}</strong></div>` : '');
+
+  const tile = (cls, lbl, id, numHtml, sub)=> `
+    <div class="kpi ${cls}">
+      <div class="kpi-lbl">${lbl}</div>
+      <div class="pr-g-wrap"><canvas id="${id}"></canvas><div class="pr-g-num">${numHtml}</div></div>
+      <div class="kpi-sub">${sub}</div>
+    </div>`;
+
+  // ── ארבעת השעונים — כל אחד מותנה בנתונים ──────────────────────
+  const gauges = [], paint = [];
+
+  // 1 · המטרה העירונית: המדד הרשמי מול סף החמישייה (נגזר, לא צרוב)
+  if(c.done){
+    gauges.push(tile('good', 'המטרה העירונית — החמישייה', 'prG1', '✓',
+      `חולון כבר בחמישייה · נתוני ${CITY_YEAR}`));
+    paint.push(()=> prGauge('prG1', 1, 1, COL.good));
+  } else if(c.tgtPct != null){
+    gauges.push(tile('pri', `המטרה העירונית — חמישייה עד ${tgtYr || hebYearName(CITY_YEAR + EXEC_SPAN)}`,
+      'prG1', ntPc(me.tech),
+      `היעד ${ntPc(c.tgtPct)} · היום #${c.rank} מתוך ${CITIES.length} · משה״ח ${CITY_YEAR}`));
+    paint.push(()=> prGauge('prG1', me.tech, c.tgtPct, COL.primary));
+  }
+
+  // 2 · שכבת י׳ — מוצג רק כשהשכבה הצעירה אכן מעל הבוגרת (זה הסיפור)
+  if(p10 > 0 && p10 >= p12){
+    const overTgt = c.tgtPct != null && p10 >= c.tgtPct;
+    gauges.push(tile('acc', 'מדד הטק בשכבת י׳ — הדור הבא', 'prG2', ntPc(p10),
+      (overTgt ? 'השכבה הצעירה כבר מעל היעד העירוני' : 'השכבה הצעירה מעל שכבת יב׳') +
+      ' · מכנה פנימי של שכבת י׳ — אינו בר-השוואה ישירה למדד הבוגרים הרשמי'));
+    paint.push(()=> prGauge('prG2', p10, c.tgtPct || p10, COL.accent));
+  }
+
+  // 3 · ההישג המגדרי — מוצג רק כשחולון מעל הארצי
+  if(me.girls > NATIONAL_GIRLS){
+    const gr = girlsRank();
+    gauges.push(tile('pink', 'תלמידות בקרב זכאי ההייטק', 'prG3', ntPc(me.girls),
+      `#${gr.rank} מבין ${gr.rows.length} הרשויות הגדולות · ארצי ${ntPc(NATIONAL_GIRLS)} · ${CITY_YEAR}`));
+    paint.push(()=> prGauge('prG3', me.girls, NATIONAL_GIRLS, 'var(--pink)'));
+  }
+
+  // 4 · המרת עתיד טק — מוצג רק בטווח הירוק של הרמזור (§3.6)
+  const cv = prConv();
+  if(cv && cv.convPct > 50){
+    gauges.push(tile('good', `המרת עתיד טק · ${cv.label}`, 'prG4',
+      Math.round(cv.convPct) + '%',
+      `${num(cv.chose)} מתוך ${num(cv.entered)} שנכנסו לתוכנית בחרו במקצועות הטק`));
+    paint.push(()=> prGauge('prG4', cv.convPct, 100, COL.good));
+  }
+
+  // ── גרף העשור המרכזי ─────────────────────────────────────────
+  const tech = holonSeries('tech');
+  const est  = tech.filter(p=> !p.exact).map(p=> p.y);
+  const decade = `
+    <div class="card">
+      <div class="card-head"><div>
+        <div class="card-title">עשור של ניהול מבוסס נתונים</div>
+        <div class="card-sub">הסדרות הרשמיות — משרד החינוך ודו״ח המצוינות · מכנה אחיד</div>
+      </div></div>
+      <div class="chart-box tall"><canvas id="prDecade"></canvas></div>
+      ${est.length ? `<div class="cmp-note">${est.join(', ')} — ערך משוער (נמדד מגרף הדו״ח); שאר השנים רשמיות.</div>` : ''}
+    </div>`;
+
+  // ── כרטיסי ההישגים — נגזרים, מותנים ──────────────────────────
+  const cards = [];
+  const card = (title, big, sub)=> `
+    <div class="card">
+      <div class="card-title">${title}</div>
+      <div class="pr-big">${big}</div>
+      <div class="card-sub" style="padding-right:0;">${sub}</div>
+    </div>`;
+
+  const ms = holonSeries('ma5');
+  if(ms.length > 1 && ms[ms.length-1].v > ms[0].v){
+    const a = ms[0], b = ms[ms.length-1];
+    cards.push(card('השיפור במתמטיקה 5 יח״ל',
+      `${ntPc(a.v)} ← ${ntPc(b.v)}`,
+      `פי ${(b.v/a.v).toFixed(1)} מ-${a.y} עד ${b.y} · הבסיס שממנו צומח מדד הטק`));
+  }
+
+  const gSize = ntGroups().find(g=> g.key === 'size');
+  if(gSize && gSize.avg != null && gSize.pos > 0 && me.tech >= gSize.avg){
+    const intern = p12;   // הגיליון החי, יב׳, מכנה פנימי — מספר ייחוס בלבד
+    cards.push(card('רשויות בהיקף אוכלוסייה דומה',
+      `#${gSize.pos} מתוך ${gSize.rows.length}`,
+      `${signed(me.tech - gSize.avg)} נק׳ ${dirWord(me.tech - gSize.avg, 'מעל', 'מתחת ל', 'ברמת ')}ממוצע הקבוצה · ${CITY_YEAR}` +
+      (intern > me.tech
+        ? `<br>המדידה הפנימית שלנו גבוהה יותר (יב׳ ${ntPc(intern)} בגיליון החי) — הדירוג בין רשויות נמדד במכנה אחיד של משרד החינוך`
+        : '')));
+  }
+
+  const pool = execCohort('י').reduce((a,x)=> a + x.p, 0);
+  if(pool > 0){
+    cards.push(card('מאגר הצמיחה — שכבת י׳',
+      `${num(pool)} תלמידים`,
+      `כבר עם 5 יח״ל מתמטיקה וקרובים למדד · מספר עירוני מצרפי${DATA_LABEL? ' · ' + DATA_LABEL : ''}`));
+  }
+
+  // ── חמשת המובילים — סגור בברירת מחדל, נפתח רק בהחלטה ─────────
+  // המקום היחיד בתצוגה שבו מופיעים שמות בתי ספר. הצדעה, לא דירוג:
+  // אין השוואה לממוצע ואין רשימת "מתחת". FULL בלבד (כלל ברזל 4).
+  const top5 = FULL.filter(s=> schoolStudentTotal(s) > 0)
+    .map(s=> ({ name:s.name, pct: schoolTechPct(s) }))
+    .sort((a,b)=> b.pct - a.pct).slice(0, 5);
+  const acc = top5.length ? `
+    <details class="card">
+      <summary><span class="ex-cv">◂</span><div>
+        <div class="card-title">מצוינות בית-ספרית — חמשת המובילים</div>
+        <div class="card-sub">סגור בברירת מחדל · נפתח רק אם מחליטים להציג במהלך המפגש</div>
+      </div></summary>
+      <div class="ex-in">
+        ${top5.map((s,i)=> `
+        <div class="bn-row good"><div class="bn-rank">${i+1}</div>
+          <div class="bn-name">${s.name}</div>
+          <div class="bn-stat" style="color:#137333;">${s.pct.toFixed(1)}%</div>
+        </div>`).join('')}
+        <div class="cmp-note">מדד משוקלל י׳–יב׳ מהגיליון החי · בתי ספר עם י׳–יב׳ מלאים בלבד.</div>
+      </div>
+    </details>` : '';
+
+  box.innerHTML =
+    (gauges.length ? `<div class="pr-gauges">${gauges.join('')}</div>` : '') +
+    decade +
+    (cards.length ? `<div class="pr-cards">${cards.join('')}</div>` : '') +
+    acc;
+
+  paint.forEach(f=> f());
+  prDecade();
+}
+
 // NAVIGATION
 // ════════════════════════════════════════════════════════════════
 let CURRENT_VIEW='overview';
@@ -5914,6 +6193,7 @@ function switchView(viewId){
   if(viewId==='trends') renderTrends();
   if(viewId==='national') renderNational();
   if(viewId==='cities') renderCities();
+  if(viewId==='principals') renderPrincipals();
 }
 document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
@@ -5968,7 +6248,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v69';
+const BUILD = 'v70';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
