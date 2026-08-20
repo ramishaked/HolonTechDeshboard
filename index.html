@@ -599,13 +599,11 @@ body{
    שעוני מד (חצי-דונאט של Chart.js) בתוך אריחי `.kpi` הקיימים — אין
    שפה עיצובית חדשה, רק עטיפת קנבס עם מספר מרכזי. `direction:ltr` על
    העטיפה מאותה סיבה של `#yyDecade` — Chart.js מצייר מוסט תחת RTL. */
-#view-principals .pr-gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
-@media(max-width:1150px){#view-principals .pr-gauges{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:560px){#view-principals .pr-gauges{grid-template-columns:1fr;}}
-.pr-g-wrap{position:relative;height:118px;margin-top:8px;direction:ltr;}
-.pr-g-num{position:absolute;right:0;left:0;bottom:-4px;text-align:center;
+#view-principals .pr-gauges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+@media(max-width:900px){#view-principals .pr-gauges{grid-template-columns:1fr;}}
+.pr-g-wrap{position:relative;height:132px;margin-top:8px;direction:ltr;}
+.pr-g-num{position:absolute;right:0;left:0;bottom:0;text-align:center;
   font-size:28px;font-weight:900;line-height:1;pointer-events:none;}
-.kpi.info::before{background:var(--info);}
 #view-principals .pr-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px;}
 @media(max-width:1150px){#view-principals .pr-cards{grid-template-columns:1fr;}}
 .pr-big{font-size:26px;font-weight:900;color:var(--text);margin:6px 0 8px;}
@@ -5970,17 +5968,18 @@ function prGauge(id, val, max, color, opts){
         if(!arc) return;
         const ctx = ch.ctx, rI = arc.innerRadius, rO = arc.outerRadius;
         ctx.save();
-        // רצועת המטרה — קשת מודגשת צמודה מבחוץ לסקאלה
+        // רצועת המטרה — קשת ירוקה מודגשת צמודה מבחוץ לסקאלה
         if(o.zone && max){
           ctx.beginPath();
-          ctx.lineWidth = 5; ctx.lineCap = 'butt';
-          ctx.strokeStyle = 'rgba(244,123,32,0.85)';
+          ctx.lineWidth = 6; ctx.lineCap = 'butt';
+          ctx.strokeStyle = 'rgba(52,168,83,0.9)';
           ctx.arc(arc.x, arc.y, rO + 4,
             cAng(Math.max(0, Math.min(1, o.zone[0]/max))),
             cAng(Math.max(0, Math.min(1, o.zone[1]/max))));
           ctx.stroke();
         }
-        // שנתות מספריות
+        // שנתות מספריות. תוויות הקצה (0 והמקסימום) יושבות על קו הבסיס
+        // ולכן מצוירות **מעליו** — מתחתיו הן נחתכות בגבול הקנבס.
         if(o.step && max){
           ctx.lineWidth = 2; ctx.strokeStyle = '#fff';
           ctx.fillStyle = '#8a8398';
@@ -5993,8 +5992,10 @@ function prGauge(id, val, max, color, opts){
             ctx.moveTo(arc.x + dx*(rI - 1), arc.y + dy*(rI - 1));
             ctx.lineTo(arc.x + dx*(rO + 1), arc.y + dy*(rO + 1));
             ctx.stroke();
+            const isEnd = v < o.step/2 || v > max - o.step/2;
             ctx.fillText(String(Math.round(v)),
-              arc.x + dx*(rO + 12), arc.y + dy*(rO + 12) + 3);
+              arc.x + dx*(rO + 12),
+              isEnd ? arc.y - 4 : arc.y + dy*(rO + 12) + 3);
           }
         }
         ctx.restore();
@@ -6028,40 +6029,51 @@ function prSheetPts(){
                 onMatz: o.g.tech != null }));
 }
 
-// גרף ההתפתחות המרכזי: **הסדרות הרשמיות בלבד** (בקשת המשתמש 20.08) —
-// הן נסגרות ב-2024 על העלייה האחרונה שפורסמה. הזינוק שנדגם בגיליון
-// החי מוצג בכרטיס המתמטיקה שמעל, לא כהמשך קו — תפר בין שני מכנים
-// אינו קו רצוף. ציר ה-Y נגזר מהנתונים (`niceAxis`) ואינו מתחיל
-// באפס — כדי שהעלייה תיראה, לא תימחץ.
+// גרף ההתפתחות המרכזי (רעיון המשתמש, 20.08): מדד הטק והארצי —
+// **הסדרות הרשמיות בלבד**, נסגרות ב-2024 על העלייה האחרונה שפורסמה;
+// **רק קו המתמטיקה ממשיך** אל דגימות הגיליון החי (`prSheetPts` →
+// `yyGrade12`, מכנה מצבת) — כך רואים גם שאנחנו מודדים וגם את הזינוק,
+// והמקטע הנדגם מסומן: מקווקו, נקודות מעוינות והערת מקור. ציר ה-Y
+// נגזר מהנתונים (`niceAxis`) ואינו מתחיל באפס — שהעלייה תיראה.
 function prDecade(){
   destroyChart('prDecade');
   const el = document.getElementById('prDecade');
   if(!el) return;
   const sT = holonSeries('tech'), sM = holonSeries('ma5');
-  const labels   = sT.map(p=> String(p.y));
-  const techData = sT.map(p=> p.v);
-  const ma5Data  = sM.map(p=> p.v);
-  const natData  = sT.map(p=>{ const i = NAT.years.indexOf(p.y); return i>=0? NAT.tech[i] : null; });
-  const n = labels.length;
-  // מתויגות הנקודות הקובעות: הפתיחה ושתי האחרונות — כך העלייה
-  // האחרונה שפורסמה (2023→2024) נקראת במספרים, בלי רעש באמצע.
+  const ours = prSheetPts();
+  const n = sT.length;                                    // אינדקס התפר
+  const labels   = sT.map(p=> String(p.y)).concat(ours.map(o=> o.label));
+  const pad      = ours.map(()=> null);                   // הרשמיות נעצרות ב-2024
+  const techData = sT.map(p=> p.v).concat(pad);
+  const natData  = sT.map(p=>{ const i = NAT.years.indexOf(p.y); return i>=0? NAT.tech[i] : null; })
+                     .concat(pad);
+  const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> o.ma5));
+  // תיוג הנקודות הקובעות: הפתיחה, שתי הרשמיות האחרונות (העלייה
+  // שפורסמה 2023→2024) וכל נקודות הגיליון של המתמטיקה.
   const lbl = color=> ({
     display: ctx=> (ctx.dataIndex === 0 || ctx.dataIndex >= n - 2) &&
                    ctx.dataset.data[ctx.dataIndex] != null,
     anchor:'end', align:'top', offset:10, color, font:hf2(),
     backgroundColor:'#fff', borderRadius:3, padding:{top:1,bottom:1,left:4,right:4},
     formatter:v=> v==null? '' : v.toFixed(1)+'%' });
-  const holonLine = (label, data, col, fillBg)=> ({
-    label, data, order:1, borderColor:col, backgroundColor: fillBg || col,
-    borderWidth: fillBg? 4 : 3, tension:0.25, spanGaps:true,
-    fill: !!fillBg, pointRadius:4, pointBackgroundColor:'#fff',
-    pointBorderColor: col, pointBorderWidth:2,
-    datalabels: lbl(col) });
   charts.prDecade = new Chart(el, { type:'line',
     data:{ labels,
       datasets:[
-        holonLine('מתמטיקה 5 יח״ל — חולון', ma5Data, COL.good),
-        holonLine('מדד הטק — חולון', techData, COL.primary, 'rgba(106,62,156,0.08)'),
+        { label:'מתמטיקה 5 יח״ל — חולון', data: ma5Data,
+          order:1, borderColor:COL.good, backgroundColor:COL.good,
+          borderWidth:3, tension:0.25, spanGaps:true, fill:false,
+          pointRadius:   ctx=> ctx.dataIndex >= n ? 6 : 4,
+          pointStyle:    ctx=> ctx.dataIndex >= n ? 'rectRot' : 'circle',
+          pointBackgroundColor: ctx=> ctx.dataIndex >= n ? COL.good : '#fff',
+          pointBorderColor:COL.good, pointBorderWidth:2,
+          segment:{ borderDash: ctx=> ctx.p0DataIndex >= n-1 ? [7,5] : undefined },
+          datalabels: lbl('#1d7a3d') },
+        { label:'מדד הטק — חולון', data: techData,
+          order:1, borderColor:COL.primary, backgroundColor:'rgba(106,62,156,0.08)',
+          borderWidth:4, tension:0.25, spanGaps:true, fill:true,
+          pointRadius:4, pointBackgroundColor:'#fff',
+          pointBorderColor:COL.primary, pointBorderWidth:2,
+          datalabels: lbl(COL.primaryD) },
         { label:'מדד הטק — ארצי', data: natData,
           borderColor:'#9aa0a6', borderWidth:2, pointRadius:0,
           tension:0.25, spanGaps:true, fill:false, order:2,
@@ -6105,37 +6117,38 @@ function renderPrincipals(){
       <div class="kpi-sub">${sub}</div>
     </div>`;
 
-  // ── ארבעת השעונים — כל אחד מותנה בנתונים ──────────────────────
-  // הסקאלות: לשני שעוני המדד — ההישג הגבוה בארץ (CITY_DATA ממוין, נגזר,
-  // מעוגל לכפולת השנתה); תלמידות — 50%; המרה — 100%. השנתות מצוירות על
-  // הקשת. צבעים חיוביים בלבד, בלי אדום ושחור.
+  // ── שלושה שעונים, ומתחתם שלושה כרטיסים — פריסה סימטרית 3+3
+  // (בקשת המשתמש 20.08). הסקאלות: שעוני המדד — ההישג הגבוה בארץ
+  // (CITY_DATA ממוין, נגזר, מעוגל לכפולת השנתה); תלמידות — 50%.
+  // השנתות מצוירות על הקשת. צבעים חיוביים בלבד, בלי אדום ושחור.
   const topTech = allCities()[0] ? allCities()[0].tech : 100;
   const idxMax  = Math.ceil(topTech/8)*8;               // 31.6 → 32
-  // רצועת המטרה על שעון 1: מסף החמישייה (נגזר) ועד 20% —
+  // רצועת המטרה על שעון 1 (ירוקה): מסף החמישייה (נגזר) ועד 20% —
   // הרף העליון שהמשתמש הגדיר לרצועה (20.08).
   const PR_GOAL_HI = 20;
   const gauges = [], paint = [];
 
-  // 1 · המטרה העירונית: המדד הרשמי, על סקאלת המובילה הארצית
+  // 1 · המטרה העירונית: המדד הרשמי, על סקאלת המובילה הארצית.
+  //     כתום חולון; היעד — הרצועה הירוקה שעל הקשת.
   if(c.done){
     gauges.push(tile('good', 'המטרה העירונית — החמישייה', 'prG1', '✓',
       '#137333', `חולון כבר בחמישייה · נתוני ${CITY_YEAR}`));
     paint.push(()=> prGauge('prG1', topTech, idxMax, COL.good, {step:8}));
   } else if(c.tgtPct != null){
-    gauges.push(tile('good', `המטרה העירונית — חמישייה עד ${tgtYr || hebYearName(CITY_YEAR + EXEC_SPAN)}`,
-      'prG1', ntPc(me.tech), '#137333',
-      `רצועת המטרה ${ntPc(c.tgtPct)}–${PR_GOAL_HI}% · היום #${c.rank} מתוך ${CITIES.length}`));
-    paint.push(()=> prGauge('prG1', me.tech, idxMax, COL.good,
+    gauges.push(tile('acc', `המטרה העירונית — חמישייה עד ${tgtYr || hebYearName(CITY_YEAR + EXEC_SPAN)}`,
+      'prG1', ntPc(me.tech), COL.accent,
+      `הרצועה הירוקה — המטרה ${ntPc(c.tgtPct)}–${PR_GOAL_HI}% · היום #${c.rank} מתוך ${CITIES.length}`));
+    paint.push(()=> prGauge('prG1', me.tech, idxMax, COL.accent,
       {step:8, zone:[c.tgtPct, PR_GOAL_HI]}));
   }
 
   // 2 · שכבת י׳ — מוצג רק כשהשכבה הצעירה אכן מעל הבוגרת (זה הסיפור)
   if(p10 > 0 && p10 >= p12){
     const overTgt = c.tgtPct != null && p10 >= c.tgtPct;
-    gauges.push(tile('acc', 'מדד הטק בשכבת י׳ — הדור הבא', 'prG2', ntPc(p10),
-      COL.accent,
+    gauges.push(tile('good', 'מדד הטק בשכבת י׳ — הדור הבא', 'prG2', ntPc(p10),
+      '#137333',
       overTgt ? 'השכבה הצעירה כבר מעל היעד העירוני' : 'השכבה הצעירה מעל שכבת יב׳'));
-    paint.push(()=> prGauge('prG2', p10, idxMax, COL.accent, {step:8}));
+    paint.push(()=> prGauge('prG2', p10, idxMax, COL.good, {step:8}));
   }
 
   // 3 · ההישג המגדרי — מוצג רק כשחולון מעל הארצי. סגול (בקשת המשתמש)
@@ -6145,15 +6158,6 @@ function renderPrincipals(){
       COL.primary,
       `#${gr.rank} מבין הרשויות הגדולות · ארצי ${ntPc(NATIONAL_GIRLS)}`));
     paint.push(()=> prGauge('prG3', me.girls, 50, COL.primary, {step:10}));
-  }
-
-  // 4 · המרת עתיד טק — מוצג רק בטווח הירוק של הרמזור (§3.6)
-  const cv = prConv();
-  if(cv && cv.convPct > 50){
-    gauges.push(tile('info', `המרת עתיד טק · ${cv.label}`, 'prG4',
-      Math.round(cv.convPct) + '%', COL.info,
-      `${num(cv.chose)} מתוך ${num(cv.entered)} בחרו במקצועות הטק`));
-    paint.push(()=> prGauge('prG4', cv.convPct, 100, COL.info, {step:20}));
   }
 
   // ── גרף ההתפתחות — רשמי בלבד, מתחת לכרטיסים ──────────────────
@@ -6166,7 +6170,9 @@ function renderPrincipals(){
         <div class="card-title">התפתחות המדדים לאורך השנים</div>
       </div></div>
       <div class="chart-box tall"><canvas id="prDecade"></canvas></div>
-      <div class="cmp-note">הסדרות הרשמיות — משרד החינוך ודו״ח המצוינות.${
+      <div class="cmp-note">מדד הטק והארצי — הסדרות הרשמיות, עד ${CITY_YEAR}.${
+        pts.length ? ' קו המתמטיקה ממשיך בדגימות שלנו מהגיליון החי (מקווקו · שכבת יב׳ במכנה המצבת' +
+          (pts.some(o=> !o.onMatz) ? '; ' + pts.filter(o=> !o.onMatz).map(o=> o.label).join(', ') + ' — ללא מצבת, סכום בתי הספר' : '') + ').' : ''}${
         est.length ? ` ${est.join(', ')} — ערך משוער.` : ''}</div>
     </div>`;
 
@@ -6201,11 +6207,13 @@ function renderPrincipals(){
       `${signed(me.tech - gSize.avg)} נק׳ ${dirWord(me.tech - gSize.avg, 'מעל', 'מתחת ל', 'ברמת ')}ממוצע הקבוצה · ${CITY_YEAR}`));
   }
 
-  const pool = execCohort('י').reduce((a,x)=> a + x.p, 0);
-  if(pool > 0){
-    cards.push(card('מאגר הצמיחה — שכבת י׳',
-      `${num(pool)} תלמידים`,
-      `כבר עם 5 יח״ל מתמטיקה וקרובים למדד · מספר עירוני מצרפי${DATA_LABEL? ' · ' + DATA_LABEL : ''}`));
+  // המרת עתיד טק — ירדה משורת השעונים לכרטיס בפריסת ה-3+3.
+  // מוצגת רק בטווח הירוק של הרמזור (§3.6); חוצת-תקופות.
+  const cv = prConv();
+  if(cv && cv.convPct > 50){
+    cards.push(card(`המרת עתיד טק · ${cv.label}`,
+      Math.round(cv.convPct) + '%',
+      `${num(cv.chose)} מתוך ${num(cv.entered)} שנכנסו לתוכנית בחרו במקצועות הטק`));
   }
 
   // ── חמשת המובילים — סגור בברירת מחדל, נפתח רק בהחלטה ─────────
@@ -6217,20 +6225,25 @@ function renderPrincipals(){
     .map(s=> ({ name:s.name, pct: schoolGradePct(s, 2) }))
     .filter(s=> s.pct > p12)
     .sort((a,b)=> b.pct - a.pct).slice(0, 5);
+  // הגוף זהה לכרטיס "בתי ספר מובילים" שבסקירה העירונית (בקשת המשתמש):
+  // אותה שורת כותרות `.bn-head` ואותן שורות `.bn-row` בתוך `.bn-list`.
   const acc = top5.length ? `
     <details class="card">
       <summary><span class="ex-cv">◂</span><div>
         <div class="card-title">מצוינות בית-ספרית — המובילים בשכבת יב׳</div>
-        <div class="card-sub">סגור בברירת מחדל · נפתח רק אם מחליטים להציג במהלך המפגש</div>
+        <div class="card-sub">% זכאי מדד טק בשכבת יב׳ מעל הממוצע העירוני <strong>${ntPc(p12)}</strong>${altSpan(cityPctAlt(2))}</div>
       </div></summary>
       <div class="ex-in">
+        <div class="bn-head"><span>בית ספר</span><span>% טק</span><span>פער מהממוצע</span></div>
+        <div class="bn-list">
         ${top5.map((s,i)=> `
         <div class="bn-row good"><div class="bn-rank">${i+1}</div>
           <div class="bn-name">${s.name}</div>
           <div class="bn-stat" style="color:#137333;">${s.pct.toFixed(1)}%</div>
-          <div class="bn-arrow">+${signed(s.pct - p12)} נק׳ מעל הממוצע העירוני</div>
+          <div class="bn-arrow">+${signed(s.pct - p12)} נק׳</div>
         </div>`).join('')}
-        <div class="cmp-note">% זכאי מדד טק בשכבת יב׳, מהגיליון החי · ממוצע עירוני ${ntPc(p12)} · בתי ספר עם י׳–יב׳ מלאים בלבד.</div>
+        </div>
+        <div class="cmp-note">בתי ספר עם י׳–יב׳ מלאים בלבד · נפתח רק אם מחליטים להציג במהלך המפגש.</div>
       </div>
     </details>` : '';
 
@@ -6332,7 +6345,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v72';
+const BUILD = 'v73';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
