@@ -453,7 +453,8 @@ async function browserRun() {
     console.log(`  מדד יא׳       ${got.p11.replace(/\s+/g, ' ')}`);
     console.log(`  מדד יב׳       ${got.p12.replace(/\s+/g, ' ')}`);
     console.log(`  נשירה י׳→יב׳  ${got.drop.replace(/\s+/g, ' ')}`);
-    if (focus) { console.log('  איך מגיעים ליעד:'); focus.forEach(t => console.log(`    ${t}`)); }
+    // שורת `focus` ("איך מגיעים ליעד") הוסרה — הכרטיס `execFocus` נמחק
+    // ב-v66 והמשתנה כבר לא נאסף; ההפניה שנשארה הפילה כל ריצת --live.
     // המסך הסגור הוא התקציר עצמו — ולכן שש שורות המסקנה הן הפלט שצריך
     // להצליב, לא פחות מהמדדים שמעליהן.
     if (acc.length) {

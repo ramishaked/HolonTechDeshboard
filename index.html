@@ -6012,13 +6012,21 @@ function prConv(){
   return (f && f.convPct != null) ? Object.assign({}, f, { label: ys[0].label }) : null;
 }
 
-// נקודות הגיליון החי להמשך הגרף וכרטיס המתמטיקה: כל דגימות סוף-השנה,
+// נקודות הגיליון החי להמשך הגרף וכרטיס המתמטיקה: דגימות סוף-השנה,
 // כרונולוגית, דרך `yyGrade12` — אותה נוסחה של גרף העשור בתצוגה 8
 // (מכנה מצבת, נפילה מסומנת לסכום בתי הספר). אפס נוסחאות חדשות.
+//
+// ⚠ **חסימה מפורשת — החלטת המשתמש (23.08):** ההמשך הנדגם בתצוגת
+// המפגש נעצר בתשפ"ה (2025). תשפ"ו במתמטיקה יורד מ-23.4 ל-22.5 במכנה
+// המצבת, ותצוגת ההישגים מציגה את הקו רק עד שיאו; תשפ"ז נפתח בגיליון
+// וריק, וברגע שתחל הזנה חלקית היה קופץ לגרף עם ערך מטעה. **הרחבת
+// הטווח היא החלטה ידנית** — לעדכן את הקבוע כשמחליטים להציג שנה נוספת.
+// המספרים המלאים, כולל תשפ"ו, מוצגים כרגיל בתצוגה 8 ובסקירה.
+const PR_SHEET_MAX_YEAR = 2025;   // תשפ"ה
 function prSheetPts(){
   return Object.keys(ALLDATA)
     .map(k=> Object.assign({ key:k }, ALLDATA[k]))
-    .filter(p=> p.half === 2 && p.year > 0)
+    .filter(p=> p.half === 2 && p.year > 0 && p.year <= PR_SHEET_MAX_YEAR)
     .sort((a,b)=> a.year - b.year)
     .map(p=> ({ p, g: yyGrade12(p.key) }))
     .filter(o=> o.g)
@@ -6185,26 +6193,31 @@ function renderPrincipals(){
       <div class="card-sub" style="padding-right:0;">${sub}</div>
     </div>`;
 
-  // מתמטיקה — הזינוק בין שתי הדגימות האחרונות של הגיליון החי
-  // (תשפ"ה→תשפ"ו, דרך `prSheetPts`/`yyGrade12`), מוצג רק כשיש עלייה.
-  // נפילה: פחות משתי דגימות → השיפור הרשמי של העשור, אם קיים.
+  // מתמטיקה — העלייה מהסדרה הרשמית (2024) אל הדגימה האחרונה שבטווח
+  // התצוגה (תשפ"ה, `PR_SHEET_MAX_YEAR`), מוצגת רק כשיש עלייה — אותה
+  // נקודה שסוגרת את הקו הירוק בגרף. נפילה: השיפור הרשמי של העשור.
   const ms = holonSeries('ma5');
-  if(pts.length >= 2 && pts[pts.length-1].ma5 > pts[pts.length-2].ma5){
-    const a = pts[pts.length-2], b = pts[pts.length-1];
-    cards.push(card('הזינוק במתמטיקה 5 יח״ל',
-      `${ntPc(a.ma5)} ← ${ntPc(b.ma5)}`,
-      `+${signed(b.ma5 - a.ma5)} נק׳ מ${a.label} ל${b.label} · שכבת יב׳, הגיליון החי`));
+  const msOfficial = ms.length ? ms[ms.length-1] : null;
+  const msLive = pts.length ? pts[pts.length-1] : null;
+  if(msOfficial && msLive && msLive.ma5 > msOfficial.v){
+    cards.push(card('העלייה במתמטיקה 5 יח״ל',
+      `${ntPc(msOfficial.v)} ← ${ntPc(msLive.ma5)}`,
+      `+${signed(msLive.ma5 - msOfficial.v)} נק׳ מ-${msOfficial.y} ל${msLive.label} · שכבת יב׳, הגיליון החי במכנה המצבת`));
   } else if(ms.length > 1 && ms[ms.length-1].v > ms[0].v){
     cards.push(card('השיפור במתמטיקה 5 יח״ל',
       `${ntPc(ms[0].v)} ← ${ntPc(ms[ms.length-1].v)}`,
       `פי ${(ms[ms.length-1].v/ms[0].v).toFixed(1)} מ-${ms[0].y} עד ${ms[ms.length-1].y}`));
   }
 
-  const gSize = ntGroups().find(g=> g.key === 'size');
-  if(gSize && gSize.avg != null && gSize.pos > 0 && me.tech >= gSize.avg){
-    cards.push(card('רשויות בהיקף אוכלוסייה דומה',
-      `#${gSize.pos} מתוך ${gSize.rows.length}`,
-      `${signed(me.tech - gSize.avg)} נק׳ ${dirWord(me.tech - gSize.avg, 'מעל', 'מתחת ל', 'ברמת ')}ממוצע הקבוצה · ${CITY_YEAR}`));
+  // המיקום בין 20 הרשויות הגדולות (בקשת המשתמש 23.08, החליף את כרטיס
+  // קבוצת הגודל) — לחיץ, ומוביל לדירוג המלא בתצוגת חולון–ארצי.
+  if(c.rank > 0){
+    cards.push(`
+    <div class="card" style="cursor:pointer;" onclick="switchView('national')">
+      <div class="card-title">מבין 20 הרשויות הגדולות</div>
+      <div class="pr-big">#${c.rank} מתוך ${CITIES.length}</div>
+      <div class="card-sub" style="padding-right:0;">מדד ${CITY_YEAR} · לחיצה — הדירוג המלא בחולון–ארצי ←</div>
+    </div>`);
   }
 
   // המרת עתיד טק — ירדה משורת השעונים לכרטיס בפריסת ה-3+3.
@@ -6345,7 +6358,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v73';
+const BUILD = 'v74';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
