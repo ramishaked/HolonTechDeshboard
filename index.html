@@ -881,6 +881,21 @@ body{
 .src-btns button{font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;border:0;border-radius:9px;padding:10px 16px;cursor:pointer;}
 .src-btns .p{background:var(--primary);color:#fff;flex:1;}
 .src-btns .s{background:var(--primary-l);color:var(--primary-d);}
+
+/* תצוגה 13 — שאלה על הנתונים (v83). שדה RTL, כפתור בסגנון חלון המקור,
+   צ׳יפים של דוגמאות ב-.qc, והתשובה ב-.insight. */
+#askQ{width:100%;min-height:84px;font-family:'Heebo',sans-serif;font-size:14px;color:var(--text);
+  direction:rtl;text-align:right;background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:11px 13px;resize:vertical;line-height:1.55;}
+#askQ:focus{outline:none;border-color:var(--primary);}
+.ask-row{display:flex;gap:12px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.ask-row .p{font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;border:0;border-radius:9px;
+  padding:10px 22px;cursor:pointer;background:var(--primary);color:#fff;}
+.ask-row .p:disabled{opacity:.5;cursor:default;}
+.ask-hint{font-size:11px;color:var(--muted);}
+.ask-ex{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+#askA .insight-b{white-space:pre-line;}
+.ask-src{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -966,6 +981,9 @@ body{
         </div>
         <div class="sb-item" data-view="principals" title="מפגש מנהלים">
           <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5.2"/><path d="M12 6.6l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3z"/><path d="M9.2 13.6 7.6 20.5l4.4-2.4 4.4 2.4-1.6-6.9"/></svg><span>מפגש מנהלים</span>
+        </div>
+        <div class="sb-item" data-view="ask" title="שאלה על הנתונים">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10.5H9.6L5.6 19.2v-3.7H4z"/><path d="M10.1 8.9a1.9 1.9 0 1 1 2.7 1.7c-.6.3-.8.7-.8 1.3"/><path d="M12 13.4v.2"/></svg><span>שאלה על הנתונים</span>
         </div>
       </div>
     </div>
@@ -1751,6 +1769,31 @@ body{
       <div class="page-meta" id="prMeta"></div>
     </div>
     <div id="prBody"></div>
+  </section>
+
+  <!-- 13 — שאלה על הנתונים (v83). הטקסט הסטטי כאן הוא מה ש-verify קורא:
+       הרשת נפתחת רק בלחיצה על הכפתור. -->
+  <section class="view" id="view-ask">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">שאלה על הנתונים</h1>
+        <p class="page-sub">שאלה חופשית על מה שיש בדשבורד: בתי ספר, שכבות, מקצועות, מגדר, עתיד טק, ההשוואה לארצי ולרשויות אחרות, וכל התקופות שנטענו. הדף מחשב בעצמו חבילה של מספרים ושולח אותה עם השאלה; Claude מנסח את התשובה מתוך החבילה בלבד, מצטט את המספרים ואומר כשנתון חסר. זו תשובה של מודל ולא מקור: לאימות, התצוגה שאליה התשובה מפנה.</p>
+      </div>
+      <div class="page-meta" id="askMeta"></div>
+    </div>
+    <div class="card">
+      <textarea id="askQ" maxlength="500" placeholder="לדוגמה: באילו בתי ספר הפיזיקה ירדה ביב׳ אבל עלתה בי׳?"></textarea>
+      <div class="ask-row">
+        <button class="p" id="askBtn">שאל</button>
+        <span class="ask-hint" id="askHint">Ctrl+Enter שולח · עד 500 תווים</span>
+      </div>
+      <div class="ask-ex" id="askEx"></div>
+      <div class="insight" id="askA" style="display:none;">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+      <div class="ask-src" id="askSrc"></div>
+    </div>
   </section>
 
 </main>
@@ -6390,6 +6433,7 @@ function switchView(viewId){
   if(viewId==='national') renderNational();
   if(viewId==='cities') renderCities();
   if(viewId==='principals') renderPrincipals();
+  if(viewId==='ask') renderAsk();
 }
 document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
@@ -6444,13 +6488,19 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v82';
+const BUILD = 'v83';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
 // ── מקור הטאבים ─────────────────────────────────────────────────
 // אם המפה הזו מלאה — היא הקובעת, ואין תלות בגילוי אוטומטי.
 // פורמט: 'שם הטאב כפי שהוא בגיליון': 'GID'
+// ── תצוגה 13: כתובת שירות השאלות (v83) ─────────────────────────
+// הכתובת של פרויקט Vercel שתיקיית השורש שלו היא `ask/` בריפו הזה. זו
+// התלות החיצונית היחידה מעבר לגיליון, ומבודדת לתצוגה הזו: ריק = הכפתור
+// מנוטרל והדף מסביר, ושום תצוגה אחרת לא מושפעת. ראה ask/README.md.
+const ASK_URL = '';
+
 const GID_MAP = {
   'תשפ"ה (סוף שנה)'   : '392061415',
   'תשפ"ו (תחילת שנה)' : '1592440184',
@@ -6555,11 +6605,11 @@ function clearSource(){
 }
 
 // ── fetch עם תקציב זמן — כדי ששום בקשה תקועה לא תקפיא את הדשבורד ──
-async function fetchT(url, ms){
+async function fetchT(url, ms, init){
   const ctl = new AbortController();
   const t = setTimeout(()=> ctl.abort(), ms||15000);
   try{
-    return await fetch(url, {signal:ctl.signal, cache:'no-store'});
+    return await fetch(url, Object.assign({signal:ctl.signal, cache:'no-store'}, init||{}));
   }catch(e){
     throw new Error(e.name==='AbortError' ? 'הבקשה לא נענתה תוך '+((ms||15000)/1000)+' שניות' : e.message);
   }finally{ clearTimeout(t); }
@@ -6748,6 +6798,179 @@ function withPeriod(key, fn, filter){
 // סדר כרונולוגי מפורש — לא הסתמכות על סדר המפתחות ב-ALLDATA
 function periodsSorted(){
   return Object.keys(ALLDATA).map(k=> ALLDATA[k]).sort((a,b)=> (a.year-b.year)||(a.half-b.half));
+}
+
+// ════════════════════════════════════════════════════════════════
+// VIEW 13: שאלה על הנתונים (v83)
+// ────────────────────────────────────────────────────────────────
+// אפס נוסחאות חדשות. `buildAskPayload` אורז את מה שהתצוגות כבר מחשבות
+// (דרך `withPeriod` על הנוסחאות הקיימות) לחבילת JSON, והשירות ב-Vercel
+// (ask/api/ask.js) מוסיף את ההגדרות ופונה ל-Claude. המודל מנסח, לא מחשב:
+// כל מספר בתשובה קיים בחבילה. מפתחות ממוינים כדי שהחבילה תהיה זהה בייט
+// לבייט בין שאלות באותו סשן (מטמון ה-prompt בצד השירות).
+const ROW_KEYS = ['total','cs','ph','ma5','ht','cs_g','ph_g','ht_g','amat','ma5_g','ft','ft_g','ma3','ma4','en5'];
+const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+const rowObj = r => { const o = {}; ROW_KEYS.forEach((k,i)=> o[k] = r[i]); return o; };
+const stripTags = h => String(h == null ? '' : h).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+function buildAskPayload(){
+  const periods = periodsSorted();
+  const cur = ALLDATA[CURRENT_PERIOD];
+
+  // עיר + בתי ספר, לכל תקופה, דרך הנוסחאות הקיימות בלבד.
+  const byPeriod = periods.map(p=> withPeriod(p.key, ()=>{
+    const city = {};
+    ALL_GRADES.forEach((g, ai)=>{
+      const rows = SCHOOLS.map(s=> s.grades[g]).filter(Boolean);
+      if(!rows.length) return;
+      const sum = {}; ROW_KEYS.forEach((k,i)=>{ if(k !== 'total' && k !== 'amat') sum[k] = rows.reduce((a,r)=> a + r[i], 0); });
+      const gi = GRADES.indexOf(g);
+      city[g] = Object.assign(sum, {
+        students: cityDenomByName(g),                       // מכנה בתי הספר (§3.2)
+        matz: cityDenomAlt(g),                              // מצבת משה"ח, null כשאין
+        techPct:     gi >= 0 ? r1(cityPct(gi))    : null,   // י׳–יב׳ בלבד: המדד
+        techPctMatz: gi >= 0 ? r1(cityPctAlt(gi)) : null,
+        subjPct: { cs: r1(citySubjPctAtGrade(ai,1)), ph: r1(citySubjPctAtGrade(ai,2)), ma5: r1(citySubjPctAtGrade(ai,3)) }
+      });
+    });
+    return {
+      key: p.key, label: p.label, year: p.year, half: p.half,
+      overallPct: r1(cityOverallPct()), overallPctMatz: r1(cityOverallPctAlt()),
+      girlsPctOfTech: r1(cityGirlsPctOfTech()),
+      city,
+      schools: SCHOOLS.map(s=>{
+        const grades = {}; ALL_GRADES.forEach(g=>{ if(s.grades[g]) grades[g] = rowObj(s.grades[g]); });
+        const hasHigh = schoolStudentTotal(s) > 0;
+        return { name: s.name, note: s.note || null, partial: !!s.partial,
+                 techPct: hasHigh ? r1(schoolTechPct(s)) : null,
+                 dropPct: (hasHigh && !s.partial) ? r1(schoolDropPct(s)) : null,
+                 grades };
+      })
+    };
+  }));
+
+  // שכבת יב׳ במכנה המצבת לכל דגימת סוף שנה — הנוסחה של תצוגות 8 ו-12.
+  const yy12 = {};
+  periods.filter(p=> p.half === 2).forEach(p=>{ const g = yyGrade12(p.key); if(g) yy12[p.label] = g; });
+
+  // עתיד טק — משפך לפי שנה מזווגת (§3.6), עירוני ולפי בית ספר.
+  const futureTech = ftYears().map(y=>{
+    const g = ftGrade([y.start, y.end]);
+    return { year: y.year, label: y.label, grade: g,
+      city: g ? ftCityFunnel(y.start, y.end, g) : null,
+      schools: g ? ftFunnelRows(y.start, y.end, g).map(r=> ({ name:r.name, techPct:r1(r.idx), entered:r.entered, chose:r.chose,
+                cohort:r.cohort, entryPct:r1(r.entryPct), convPct:r1(r.convPct) })) : [] };
+  });
+
+  // תקציר המנהלים (תקופה נבחרת): היעד, הפער, המאגר — כמו תצוגה 11.
+  const c = execCtx();
+  const cohortSum = g => execCohort(g).reduce((a,x)=> a + x.p, 0);
+  const exec = c.me ? { rank: c.rank, ofBig: CITIES.length, inTop5: c.done, targetPct: r1(c.tgtPct),
+    defend: c.defend ? c.defend.name : null, den12: c.den, onMatz: c.onAlt, tech12: c.cur12,
+    live12Pct: r1(c.live12), need: c.need, gap: c.gap,
+    potential: { grade10: cohortSum('י'), grade9: cohortSum('ט') } } : null;
+
+  // הגלאים — הממצאים שתצוגת התובנות מציגה, כטקסט.
+  const ctx = insightCtx();
+  const insights = CITY_DETECTORS
+    .map(d=>{ const ev = d.test(ctx); return ev ? { d, ev, cost: d.cost(ev) } : null; })
+    .filter(Boolean).sort((a,b)=> b.cost - a.cost).slice(0,5)
+    .map(x=> ({ title: stripTags(x.d.title(x.ev)), body: stripTags(x.d.body(x.ev)), students: Math.round(x.cost) }));
+
+  const gr = girlsRank();
+  return {
+    build: BUILD,
+    currentPeriod: cur ? cur.label : null,
+    periods: byPeriod,
+    grade12Matz: yy12,
+    futureTech,
+    exec,
+    girls: { cityPctOfTech: r1(cityGirlsPctOfTech()), rankAmongCities: gr.rank || null, ofCities: gr.rows.length,
+             national2024: NAT_GIRLS_2024 },
+    holonOfficial: { note: 'משרד החינוך, שכבת יב׳, מכנה מצבת. exact=false = ערך משוער',
+      tech: holonSeries('tech'), ma5: holonSeries('ma5'), potential2024: HOLON_POT_2024 },
+    national: { series: NAT, latestTech: NATIONAL, anchor2014: NAT_2014 },
+    cities: { year: CITY_YEAR, me: CITY_ME, rows: CITY_DATA, big20: CITIES.map(x=> x.name),
+      asterisk: Object.keys(CITY_ASTERISK),
+      groups: ntGroups().map(g=> ({ key:g.key, title:g.title, members:g.rows.map(x=> x.name), holonPos:g.pos, avg:r1(g.avg) })) },
+    insights
+  };
+}
+// JSON עם מפתחות ממוינים — כדי שהחבילה תהיה זהה בין שאלות (מטמון).
+function askJson(obj){
+  return JSON.stringify(obj, (k, v)=> (v && typeof v === 'object' && !Array.isArray(v))
+    ? Object.keys(v).sort().reduce((o,kk)=> (o[kk] = v[kk], o), {}) : v);
+}
+
+let ASK_WIRED = false;
+function renderAsk(){
+  const periods = periodsSorted();
+  document.getElementById('askMeta').innerHTML =
+    `<div class="meta-pill"><strong>${periods.length}</strong> תקופות</div>` +
+    `<div class="meta-pill"><strong>${SCHOOLS.length}</strong> בתי ספר</div>`;
+
+  // דוגמאות — שמות ותקופות נגזרים מהנתונים, לא צרובים.
+  const yp = yyPeriods();
+  const pair = (yp.pair && yp.pair.length === 2) ? yp.pair : null;
+  const top = FULL.filter(s=> schoolStudentTotal(s) > 0).sort((a,b)=> schoolTechPct(b) - schoolTechPct(a))[0];
+  const ex = [
+    'באיזה בית ספר הפער בין י׳ ל-יב׳ במדד הוא הגדול ביותר, ומה המספרים?',
+    pair ? `מה השתנה בשכבת יב׳ במכנה המצבת בין ${pair[0].label} ל${pair[1].label}, במדד ובמתמטיקה 5?` : null,
+    top ? `מה שיעור התלמידות במדעי המחשב ב${top.name} לעומת הממוצע העירוני?` : null,
+    'כמה זכאים חסרים לחולון ביב׳ כדי להיכנס לחמישייה של 20 הרשויות הגדולות, ואיזו רשות מחזיקה את המקום?'
+  ].filter(Boolean);
+  document.getElementById('askEx').innerHTML = ex.map(q=> `<span class="qc" data-q="${q.replace(/"/g,'&quot;')}">${q}</span>`).join('');
+
+  const btn = document.getElementById('askBtn');
+  const hint = document.getElementById('askHint');
+  if(!ASK_URL){
+    btn.disabled = true;
+    hint.textContent = 'כתובת השירות טרם הוגדרה (ASK_URL). ראה ask/README.md.';
+  }
+  document.getElementById('askSrc').textContent =
+    `החבילה שנשלחת: ${periods.length} תקופות · ${SCHOOLS.length} בתי ספר בתקופה ${DATA_LABEL || ''} · הסדרות הרשמיות של חולון והארצי · ${CITY_DATA.length} רשויות (${CITY_YEAR}). ` +
+    `השירות לא שומר שאלות ולא תשובות.`;
+
+  if(!ASK_WIRED){
+    ASK_WIRED = true;
+    btn.addEventListener('click', askSend);
+    document.getElementById('askQ').addEventListener('keydown', e=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) askSend(); });
+    document.getElementById('askEx').addEventListener('click', e=>{
+      const q = e.target.closest('.qc'); if(!q) return;
+      document.getElementById('askQ').value = q.dataset.q;
+      document.getElementById('askQ').focus();
+    });
+  }
+}
+
+function askShow(kind, t, b){
+  const box = document.getElementById('askA');
+  box.style.display = '';
+  box.className = 'insight' + (kind === 'warn' ? ' warn' : '');
+  box.querySelector('.insight-t').textContent = t;
+  box.querySelector('.insight-b').textContent = b;
+}
+
+async function askSend(){
+  const q = document.getElementById('askQ').value.trim();
+  if(!q) return askShow('warn', 'אין שאלה', 'כתוב שאלה בשדה, או בחר אחת מהדוגמאות.');
+  if(!ASK_URL) return askShow('warn', 'השירות לא הוגדר', 'כתובת השירות (ASK_URL) ריקה. ראה ask/README.md.');
+  const btn = document.getElementById('askBtn');
+  btn.disabled = true; btn.textContent = 'מנתח…';
+  askShow('', 'מנתח', 'השאלה והחבילה נשלחו. תשובה בדרך כלל תוך 10–30 שניות.');
+  try{
+    const res = await fetchT(ASK_URL.replace(/\/$/, '') + '/api/ask', 90000, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, payload: JSON.parse(askJson(buildAskPayload())) })
+    });
+    let j = null; try{ j = await res.json(); }catch(_){ j = null; }
+    if(!res.ok || !j || !j.answer) throw new Error((j && j.error) || ('השירות החזיר ' + res.status));
+    askShow('', 'תשובה', j.answer + (j.truncated ? '\n\n(התשובה נחתכה באורכה המרבי.)' : ''));
+  }catch(e){
+    askShow('warn', 'לא התקבלה תשובה', e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = 'שאל';
+  }
 }
 
 function buildPeriodSelect(keys){

@@ -1,2 +1,5 @@
 tools/node_modules/
 tools/package-lock.json
+ask/node_modules/
+ask/package-lock.json
+.vercel/

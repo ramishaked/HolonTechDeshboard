@@ -197,6 +197,19 @@ async function browserRun() {
   await page.route('**/cdnjs.cloudflare.com/**', r =>
     r.fulfill({ status: 200, contentType: 'text/javascript; charset=utf-8', body: stub }));
 
+  // שירות השאלות (תצוגה 13, v83) — התלות החיצונית היחידה מעבר לגיליון.
+  // כאן הוא נענה בתשובה קבועה: מה שנבדק הוא שהדף בונה חבילה, שולח,
+  // ומציג — לא המודל. הכתובת האמיתית ב-`ASK_URL` שבדף.
+  await page.route('**/*.vercel.app/**', r => {
+    const m = r.request().method();
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type' };
+    if (m === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
+    let q = '';
+    try { q = JSON.parse(r.request().postData() || '{}').question || ''; } catch (_) {}
+    r.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', headers: cors,
+                body: JSON.stringify({ answer: 'תשובת בדיקה לשאלה: ' + q }) });
+  });
+
   // הגיליון — הדפדפן לא מגיע אליו בשום מקרה (ראה liveCsv), ולכן ה-CSV
   // תמיד מוגש דרך היירוט. במצב רגיל הוא סינתטי; ב---live הוא האמיתי.
   const served = new Set();
@@ -436,6 +449,37 @@ async function browserRun() {
     }
     await page.click('.sb-item[data-view="overview"]');   // להחזיר את המצב
     await page.waitForTimeout(80);
+  }
+
+  // ── תצוגה 13: חבילת המדדים ושליחה ──────────────────────────────
+  // החבילה חייבת להסתרלז, להכיל את כל בתי הספר של התקופה, ולהסכים עם
+  // הנוסחאות שהיא אורזת — כאן: מדד יב׳ במצבת מול `cityPctAlt(2)`.
+  const ask = await page.evaluate(
+    '(function(){var p=buildAskPayload(); var j=askJson(p); var cur=p.periods.filter(function(x){return x.key===CURRENT_PERIOD})[0];' +
+    ' return {bytes:j.length, nPer:p.periods.length, nSch:cur?cur.schools.length:-1, sch:SCHOOLS.length,' +
+    ' p12:cur&&cur.city["יב"]?cur.city["יב"].techPctMatz:null, ref:cityPctAlt(2), sorted: j.indexOf(\'"build"\') < j.indexOf(\'"periods"\'), url: ASK_URL};})()');
+  if (ask.nSch !== ask.sch) fail(`תצוגה 13 — החבילה מכילה ${ask.nSch} בתי ספר במקום ${ask.sch}`);
+  else if (ask.nPer < 1 || ask.bytes > 400 * 1024) fail(`תצוגה 13 — חבילה ${ask.nPer} תקופות, ${ask.bytes} בייט`);
+  else if (ask.p12 != null && ask.ref != null && Math.abs(ask.p12 - ask.ref) > 0.06)
+    fail(`תצוגה 13 — מדד יב׳ במצבת בחבילה ${ask.p12} מול ${ask.ref.toFixed(1)} בדף`);
+  else if (!ask.sorted) fail('תצוגה 13 — מפתחות החבילה אינם ממוינים (מטמון)');
+  else pass(`תצוגה 13 — חבילה: ${ask.nPer} תקופות · ${ask.nSch} בתי ספר · ${(ask.bytes / 1024).toFixed(0)}KB · מדד יב׳ במצבת ${ask.p12 ?? '—'}`);
+
+  // לחיצה אמיתית על הכפתור — רק כשיש כתובת שירות. ה-route למעלה עונה.
+  if (ask.url) {
+    await page.click('.sb-item[data-view="ask"]');
+    await page.waitForTimeout(150);
+    await page.fill('#askQ', 'בדיקה');
+    await page.click('#askBtn');
+    try {
+      await page.waitForFunction(
+        () => (document.querySelector('#askA .insight-b')?.textContent || '').includes('תשובת בדיקה'), { timeout: 8000 });
+      pass('תצוגה 13 — שאלה נשלחה והתשובה הוצגה');
+    } catch (_) {
+      fail('תצוגה 13 — התשובה לא הוצגה: ' + (await page.evaluate(() => document.querySelector('#askA')?.innerText || '')));
+    }
+  } else {
+    pass('תצוגה 13 — ASK_URL ריק, הכפתור מנוטרל (השליחה לא נבדקה)');
   }
 
   if (LIVE) {

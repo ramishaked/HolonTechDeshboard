@@ -1,0 +1,11 @@
+{
+  "name": "holon-tech-ask",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "פונקציית Serverless אחת: שאלה על נתוני דשבורד מדד הטק, נענית על ידי Claude. תיקיית השורש של פרויקט Vercel נפרד.",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0"
+  }
+}
