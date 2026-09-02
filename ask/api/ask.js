@@ -87,6 +87,18 @@ export default async function handler(req, res){
   const data = JSON.stringify(payload);
   if(data.length > MAX_BODY)   return res.status(413).json({ error: 'חבילת הנתונים גדולה מדי' });
 
+  // שאלת המשך אחת: הדף שולח את השאלה והתשובה הקודמות, והן נכנסות
+  // כתורות קודמים. אין כאן זיכרון: מה שלא נשלח, לא קיים.
+  const prior = body.prior && typeof body.prior === 'object' ? body.prior : null;
+  const messages = [];
+  if(prior){
+    const pq = String(prior.question || '').trim(), pa = String(prior.answer || '').trim();
+    if(!pq || !pa || pq.length > MAX_Q || pa.length > 12000)
+      return res.status(400).json({ error: 'שאלת ההמשך אינה תקינה' });
+    messages.push({ role: 'user', content: pq }, { role: 'assistant', content: pa });
+  }
+  messages.push({ role: 'user', content: question });
+
   const client = new Anthropic(process.env.ANTHROPIC_WORKSPACE_ID
     ? { defaultHeaders: { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } } : {});
   // החבילה יושבת ב-system אחרי ההגדרות, עם נקודת מטמון: השאלה השנייה
@@ -99,7 +111,7 @@ export default async function handler(req, res){
       { type: 'text', text: SYSTEM },
       { type: 'text', text: 'חבילת הנתונים:\n' + data, cache_control: { type: 'ephemeral' } }
     ],
-    messages: [{ role: 'user', content: question }]
+    messages
   };
   try{
     // fallbacks="default": סירוב של מסנן הבטיחות (נדיר בשאלות על נתוני

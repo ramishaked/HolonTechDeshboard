@@ -906,6 +906,10 @@ body{
 .ask-md .ask-h{font-weight:700;color:var(--primary-d);margin:10px 0 4px;}
 .ask-md code{font-family:inherit;background:var(--bg);padding:0 4px;border-radius:4px;}
 .ask-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08);}
+.ask-fq{width:100%;min-height:52px;margin-top:14px;font-family:'Heebo',sans-serif;font-size:13px;color:var(--text);
+  direction:rtl;text-align:right;background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:9px 12px;resize:vertical;}
+.ask-fq:focus{outline:none;border-color:var(--primary);border-style:solid;}
+.ask-row .p.s{background:var(--primary-l);color:var(--primary-d);}
 .ask-usage{font-size:11px;color:var(--muted);}
 .ask-src{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;}
 </style>
@@ -1801,6 +1805,16 @@ body{
       </div>
       <div class="ask-ex" id="askEx"></div>
       <div class="insight" id="askA" style="display:none;">
+        <div class="insight-t">—</div>
+        <div class="insight-b">—</div>
+      </div>
+      <!-- שאלת המשך אחת בלבד (v87). לא צ'אט: אחרי התשובה השנייה השדה נעלם,
+           ושאלה ראשית חדשה מאפסת הכל. -->
+      <div id="askF" style="display:none;">
+        <textarea id="askFQ" class="ask-fq" maxlength="500" placeholder="שאלת המשך על התשובה (אחת בלבד)"></textarea>
+        <div class="ask-row"><button class="p s" id="askFBtn">שאל המשך</button><span class="ask-hint">שאלת המשך נשלחת יחד עם השאלה והתשובה הקודמות</span></div>
+      </div>
+      <div class="insight" id="askA2" style="display:none;">
         <div class="insight-t">—</div>
         <div class="insight-b">—</div>
       </div>
@@ -6500,7 +6514,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v86';
+const BUILD = 'v87';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6945,9 +6959,11 @@ function renderAsk(){
 
   if(!ASK_WIRED){
     ASK_WIRED = true;
-    btn.addEventListener('click', askSend);
-    document.getElementById('askQ').addEventListener('keydown', e=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) askSend(); });
-    document.getElementById('askA').addEventListener('click', e=>{ if(e.target.id === 'askCopy') askCopy(e.target); });
+    btn.addEventListener('click', ()=> askSend(false));     // לא להעביר את האירוע כ-followUp
+    document.getElementById('askQ').addEventListener('keydown', e=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) askSend(false); });
+    document.getElementById('view-ask').addEventListener('click', e=>{ const b = e.target.closest('.ask-copy'); if(b) askCopy(b); });
+    document.getElementById('askFBtn').addEventListener('click', ()=> askSend(true));
+    document.getElementById('askFQ').addEventListener('keydown', e=>{ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) askSend(true); });
     document.getElementById('askEx').addEventListener('click', e=>{
       const q = e.target.closest('.qc'); if(!q) return;
       document.getElementById('askQ').value = q.dataset.q;
@@ -6991,26 +7007,27 @@ function askMd(src){
   return `<div class="ask-md">${out.join('')}</div>`;
 }
 
-// התשובה האחרונה כטקסט גולמי (Markdown), להעתקה.
-let ASK_LAST = '';
-function askShow(kind, t, b, md, usage){
-  const box = document.getElementById('askA');
+// התשובות כטקסט גולמי (Markdown), להעתקה ולשאלת ההמשך. מאופס בשאלה ראשית.
+const ASK_TXT = {};
+let ASK_Q = '';                      // השאלה הראשית האחרונה
+function askShow(kind, t, b, md, usage, boxId){
+  const box = document.getElementById(boxId || 'askA');
   box.style.display = '';
   box.className = 'insight' + (kind === 'warn' ? ' warn' : '');
   box.querySelector('.insight-t').textContent = t;
   if(md){
-    ASK_LAST = b;
+    ASK_TXT[box.id] = b;
     // שורת הכלים: העתקה + מונה הטוקנים של הקריאה (מה ששולם בפועל).
     const u = usage ? `${num(usage.input)} טוקנים קלט` + (usage.cached ? ` (${num(usage.cached)} מהמטמון)` : '') + ` · ${num(usage.output)} פלט` : '';
     box.querySelector('.insight-b').innerHTML = askMd(b) +
-      `<div class="ask-tools"><button class="flt-btn" id="askCopy">העתק תשובה</button><span class="ask-usage">${u}</span></div>`;
+      `<div class="ask-tools"><button class="flt-btn ask-copy" data-box="${box.id}">העתק תשובה</button><span class="ask-usage">${u}</span></div>`;
   } else {
     box.querySelector('.insight-b').textContent = b;
   }
 }
 // העתקה: Clipboard API, ונפילה לבחירת טקסט בדפדפן ישן / בלי HTTPS.
 async function askCopy(btn){
-  const text = ASK_LAST.replace(/\*\*/g, '');
+  const text = (ASK_TXT[btn.dataset.box] || '').replace(/\*\*/g, '');
   let ok = false;
   try{ await navigator.clipboard.writeText(text); ok = true; }
   catch(_){
@@ -7021,25 +7038,41 @@ async function askCopy(btn){
   setTimeout(()=> btn.textContent = 'העתק תשובה', 1800);
 }
 
-async function askSend(){
-  const q = document.getElementById('askQ').value.trim();
-  if(!q) return askShow('warn', 'אין שאלה', 'כתוב שאלה בשדה, או בחר אחת מהדוגמאות.');
-  if(!ASK_URL) return askShow('warn', 'השירות לא הוגדר', 'כתובת השירות (ASK_URL) ריקה. ראה ask/README.md.');
-  const btn = document.getElementById('askBtn');
+// followUp=true: שאלת המשך אחת על התשובה הראשית. נשלחת עם השאלה והתשובה
+// הקודמות, ואחריה השדה נעלם. שאלה ראשית חדשה מאפסת את השרשור.
+async function askSend(followUp){
+  const boxId = followUp ? 'askA2' : 'askA';
+  const q = document.getElementById(followUp ? 'askFQ' : 'askQ').value.trim();
+  if(!q) return askShow('warn', 'אין שאלה', 'כתוב שאלה בשדה, או בחר אחת מהדוגמאות.', false, null, boxId);
+  if(!ASK_URL) return askShow('warn', 'השירות לא הוגדר', 'כתובת השירות (ASK_URL) ריקה. ראה ask/README.md.', false, null, boxId);
+  if(followUp && !ASK_TXT.askA) return;
+  const btn = document.getElementById(followUp ? 'askFBtn' : 'askBtn');
+  const label = btn.textContent;
   btn.disabled = true; btn.textContent = 'מנתח…';
-  askShow('', 'מנתח', 'השאלה והחבילה נשלחו. תשובה בדרך כלל תוך 10–30 שניות.');
+  if(!followUp){
+    ASK_Q = q; delete ASK_TXT.askA; delete ASK_TXT.askA2;
+    document.getElementById('askF').style.display = 'none';
+    document.getElementById('askA2').style.display = 'none';
+    document.getElementById('askFQ').value = '';
+  }
+  askShow('', 'מנתח', 'השאלה והחבילה נשלחו. תשובה בדרך כלל תוך 10–30 שניות.', false, null, boxId);
   try{
+    const body = { question: q, payload: JSON.parse(askJson(buildAskPayload())) };
+    if(followUp) body.prior = { question: ASK_Q, answer: ASK_TXT.askA };
     const res = await fetchT(ASK_URL.replace(/\/$/, '') + '/api/ask', 90000, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q, payload: JSON.parse(askJson(buildAskPayload())) })
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
     let j = null; try{ j = await res.json(); }catch(_){ j = null; }
     if(!res.ok || !j || !j.answer) throw new Error((j && j.error) || ('השירות החזיר ' + res.status));
-    askShow('', 'תשובה', j.answer + (j.truncated ? '\n\n(התשובה נחתכה באורכה המרבי.)' : ''), true, j.usage);
+    askShow('', followUp ? 'תשובה לשאלת ההמשך' : 'תשובה',
+      j.answer + (j.truncated ? '\n\n(התשובה נחתכה באורכה המרבי.)' : ''), true, j.usage, boxId);
+    // אחרי תשובה ראשית נפתח שדה ההמשך; אחרי תשובת ההמשך הוא נסגר. לא צ'אט.
+    document.getElementById('askF').style.display = followUp ? 'none' : '';
+    if(!followUp) document.getElementById('askFQ').focus();
   }catch(e){
-    askShow('warn', 'לא התקבלה תשובה', e.message);
+    askShow('warn', 'לא התקבלה תשובה', e.message, false, null, boxId);
   }finally{
-    btn.disabled = false; btn.textContent = 'שאל';
+    btn.disabled = false; btn.textContent = label;
   }
 }
 

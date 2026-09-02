@@ -475,6 +475,18 @@ async function browserRun() {
       await page.waitForFunction(
         () => (document.querySelector('#askA .insight-b')?.textContent || '').includes('תשובת בדיקה'), { timeout: 8000 });
       pass('תצוגה 13 — שאלה נשלחה והתשובה הוצגה');
+      // שאלת המשך אחת (v87): השדה נפתח אחרי התשובה, נסגר אחרי תשובת ההמשך.
+      const fOpen = await page.evaluate(() => document.getElementById('askF').style.display !== 'none');
+      if (!fOpen) fail('תצוגה 13 — שדה שאלת ההמשך לא נפתח אחרי התשובה');
+      else {
+        await page.fill('#askFQ', 'ולמה?');
+        await page.click('#askFBtn');
+        await page.waitForFunction(
+          () => (document.querySelector('#askA2 .insight-b')?.textContent || '').includes('תשובת בדיקה לשאלה: ולמה?'), { timeout: 8000 });
+        const fClosed = await page.evaluate(() => document.getElementById('askF').style.display === 'none');
+        if (fClosed) pass('תצוגה 13 — שאלת המשך אחת נענתה והשדה נסגר');
+        else fail('תצוגה 13 — שדה ההמשך נשאר פתוח אחרי תשובת ההמשך (צ\'אט)');
+      }
     } catch (_) {
       fail('תצוגה 13 — התשובה לא הוצגה: ' + (await page.evaluate(() => document.querySelector('#askA')?.innerText || '')));
     }
