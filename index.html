@@ -593,22 +593,45 @@ body{
    עיצובית חדשה — רק שני דברים שלא היו: בלוק מתקפל, וכרטיס חסם
    בגוון "אדמיניסטרטיבי" שאינו אחד משלושת הגוונים של מנוע הגלאים. */
 #view-exec details.card,
-#view-principals details.card{padding:0;}
+#view-principals details.card,
+#view-forecast details.card{padding:0;}
 #view-exec details.card > summary,
-#view-principals details.card > summary{
+#view-principals details.card > summary,
+#view-forecast details.card > summary{
   list-style:none;cursor:pointer;padding:20px 24px;display:flex;
   align-items:baseline;gap:10px;user-select:none;}
 #view-exec details.card > summary::-webkit-details-marker,
-#view-principals details.card > summary::-webkit-details-marker{display:none;}
+#view-principals details.card > summary::-webkit-details-marker,
+#view-forecast details.card > summary::-webkit-details-marker{display:none;}
 #view-exec details.card > summary:hover .card-title,
-#view-principals details.card > summary:hover .card-title{color:var(--primary);}
+#view-principals details.card > summary:hover .card-title,
+#view-forecast details.card > summary:hover .card-title{color:var(--primary);}
 #view-exec details.card > summary .ex-cv,
-#view-principals details.card > summary .ex-cv{font-size:12px;color:var(--muted);
+#view-principals details.card > summary .ex-cv,
+#view-forecast details.card > summary .ex-cv{font-size:12px;color:var(--muted);
   transition:transform .18s;flex-shrink:0;}
 #view-exec details[open].card > summary .ex-cv,
-#view-principals details[open].card > summary .ex-cv{transform:rotate(-90deg);}
+#view-principals details[open].card > summary .ex-cv,
+#view-forecast details[open].card > summary .ex-cv{transform:rotate(-90deg);}
 #view-exec details.card > .ex-in,
-#view-principals details.card > .ex-in{padding:0 24px 22px;}
+#view-principals details.card > .ex-in,
+#view-forecast details.card > .ex-in{padding:0 24px 22px;}
+
+/* ── תצוגה 14: צפי מחזור (v89) ─────────────────────────────────
+   מוט מקווקו = צפי, מוט מלא = נמדד. אין שפה חדשה: `.cmp-*` הקיימות,
+   ועליהן סימן היעד `.cmp-nat` שכבר משמש את הרפרנס הארצי. */
+#view-forecast .fc-row{display:flex;align-items:center;gap:14px;padding:9px 0;}
+#view-forecast .fc-lbl{width:132px;flex-shrink:0;font-size:13px;font-weight:700;}
+#view-forecast .fc-lbl small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px;}
+#view-forecast .fc-bars{flex:1;min-width:0;position:relative;}
+#view-forecast .fc-bar{height:22px;border-radius:0 5px 5px 0;min-width:3px;background:var(--primary);}
+/* הצפי מפוספס ולא מקווקו: מסגרת מקווקוות על מילוי בהיר נעלמה על לבן (v90). */
+#view-forecast .fc-bar.est{background:repeating-linear-gradient(115deg,
+  rgba(106,62,156,.55) 0 7px, rgba(106,62,156,.16) 7px 14px);}
+#view-forecast .fc-val{font-size:14px;font-weight:900;white-space:nowrap;color:var(--primary-d);}
+#view-forecast .fc-val small{font-size:11px;font-weight:500;color:var(--muted);margin-inline-start:8px;}
+#view-forecast .fc-how{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:16px;
+  padding-top:13px;border-top:1px solid var(--border);}
 
 /* ── תצוגה 12: מפגש מנהלים ─────────────────────────────────────
    שעוני מד (חצי-דונאט של Chart.js) בתוך אריחי `.kpi` הקיימים — אין
@@ -1008,6 +1031,9 @@ body{
         </div>
         <div class="sb-item" data-view="ask" title="שאלה על הנתונים">
           <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10.5H9.6L5.6 19.2v-3.7H4z"/><path d="M10.1 8.9a1.9 1.9 0 1 1 2.7 1.7c-.6.3-.8.7-.8 1.3"/><path d="M12 13.4v.2"/></svg><span>שאלה על הנתונים</span>
+        </div>
+        <div class="sb-item" data-view="forecast" title="צפי מחזור">
+          <svg class="sb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 19.5V4"/><path d="M3.5 19.5H21"/><path d="M6.4 15.2l4-3.4 3 2.4"/><path d="M13.4 14.2l5.4-4.6" stroke-dasharray="3 2.5"/><path d="M15.6 8.9h3.4v3.2"/></svg><span>צפי מחזור</span>
         </div>
       </div>
     </div>
@@ -1793,6 +1819,18 @@ body{
       <div class="page-meta" id="prMeta"></div>
     </div>
     <div id="prBody"></div>
+  </section>
+
+  <!-- 14 — צפי מחזור (v89) -->
+  <section class="view" id="view-forecast">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">צפי מחזור</h1>
+        <p class="page-sub" id="fcSub">—</p>
+      </div>
+      <div class="page-meta" id="fcMeta"></div>
+    </div>
+    <div id="fcBody"></div>
   </section>
 
   <!-- 13 — שאלה על הנתונים (v83). הטקסט הסטטי כאן הוא מה ש-verify קורא:
@@ -6468,6 +6506,7 @@ function switchView(viewId){
   if(viewId==='cities') renderCities();
   if(viewId==='principals') renderPrincipals();
   if(viewId==='ask') renderAsk();
+  if(viewId==='forecast') renderForecast();
 }
 document.querySelectorAll('.sb-item[data-view]').forEach(item=>{
   item.addEventListener('click', ()=> switchView(item.dataset.view));
@@ -6522,7 +6561,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v88';
+const BUILD = 'v91';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6832,6 +6871,180 @@ function withPeriod(key, fn, filter){
 // סדר כרונולוגי מפורש — לא הסתמכות על סדר המפתחות ב-ALLDATA
 function periodsSorted(){
   return Object.keys(ALLDATA).map(k=> ALLDATA[k]).sort((a,b)=> (a.year-b.year)||(a.half-b.half));
+}
+
+// ════════════════════════════════════════════════════════════════
+// VIEW 14: צפי מחזור (v89)
+// ────────────────────────────────────────────────────────────────
+// **לא קו מגמה.** תשע נקודות רשמיות אינן בסיס לאקסטרפולציה, ובמדד שקפץ
+// 2.5 נק׳ בשנה קו כזה מתפרק בשנה הבאה. במקום זאת: המחזור עצמו. שכבת יא׳
+// של היום היא שכבת יב׳ של השנה הבאה, ו-י׳ של היום היא יב׳ בעוד שנתיים.
+// **שיעור השמירה נמדד** — אותם מחזורים בשתי דגימות סוף-שנה — ולא מונח.
+//
+// אפס נוסחאות חדשות למניה ולמכנה: `cityTotal` דרך `withPeriod`,
+// `cityDenomAlt`/`cityDenomByName` למכנה. **המכנה הוא מצבת השכבה של אותו
+// מחזור** (י׳ של היום נמדד במצבת של י׳ היום), כי זה המכנה שנוסע איתו.
+const FC_MIN_BASE = 10;      // בסיס קטן מזה הוא רעש; בית ספר כזה נופל לשיעור העירוני
+
+// שיעורי השמירה העירוניים, נמדדים משתי דגימות סוף-השנה האחרונות.
+function fcRates(){
+  const yp = yyPeriods();
+  if(!yp.pair || yp.pair.length < 2 || !yp.exact) return null;
+  const A = yp.pair[0], B = yp.pair[1];
+  const ht = (key, gi)=> withPeriod(key, ()=> cityTotal(gi));
+  const a10 = ht(A.key, 0), a11 = ht(A.key, 1);
+  const b11 = ht(B.key, 1), b12 = ht(B.key, 2);
+  if(!a10 || !a11) return null;
+  // **שיעור מעל 100% אינו מוכפל קדימה.** הוא קיים (בית ספר שהוסיף זכאים
+  // בתוך המחזור), אבל הכפלתו לשנתיים היא אקסטרפולציה של חריגה: 105%
+  // בריבוע הופך ל-110% ומייצר צפי מנופח. המדידה מוצגת, ההיטל מוגבל ל-1.
+  const cap = r => Math.min(1, r);
+  return { A, B, yearB: ALLDATA[B.key].year,
+           r10: b11/a10, r11: b12/a11,           // י׳→יא׳ · יא׳→יב׳ (כפי שנמדד)
+           p10: cap(b11/a10), p11: cap(b12/a11), // מה שמוכפל קדימה
+           capped: (b11/a10 > 1) || (b12/a11 > 1),
+           base10: a10, base11: a11, got11: b11, got12: b12 };
+}
+
+// שלוש נקודות: יב׳ היום (נמדד) · צפי לשנה הבאה · צפי לשנתיים.
+function fcCity(){
+  const R = fcRates(); if(!R) return null;
+  const cur = ALLDATA[CURRENT_PERIOD];
+  const gr = g => { const gi = GRADES.indexOf(g);
+    const den = cityDenomAlt(g), stu = cityDenomByName(g);
+    return { ht: cityTotal(gi), den: den || stu, onMatz: den != null }; };
+  const now = gr('יב'), c11 = gr('יא'), c10 = gr('י');
+  if(!now.den || !c11.den || !c10.den) return null;
+  const pt = (ht, c, year)=> ({ ht: Math.round(ht), den: c.den, onMatz: c.onMatz,
+    pct: c.den ? ht/c.den*100 : null, year, label: hebYearName(year) });
+  return {
+    R, target: (CITIES[RANK_TGT-1] || {}).tech || null,
+    now: pt(now.ht, now, cur ? cur.year : R.yearB),
+    y1:  pt(c11.ht * R.p11, c11, (cur? cur.year : R.yearB) + 1),
+    y2:  pt(c10.ht * R.p10 * R.p11, c10, (cur? cur.year : R.yearB) + 2),
+    from11: c11.ht, from10: c10.ht
+  };
+}
+
+// לכל בית ספר: שיעור השמירה שלו כשהבסיס מספיק, אחרת העירוני (מסומן).
+function fcSchools(R){
+  const at = (key, name, g)=> withPeriod(key, ()=>{
+    const s = SCHOOLS.find(x=> x.name === name); const r = s && s.grades[g];
+    return r ? r[4] : null;
+  });
+  return SCHOOLS.filter(s=> s.grades['י'] || s.grades['יא']).map(s=>{
+    const a11 = at(R.A.key, s.name, 'יא');
+    const own = (a11 != null && a11 >= FC_MIN_BASE) ? (s.grades['יב'] ? s.grades['יב'][4] : 0) / a11 : null;
+    const rate = own != null ? own : R.r11;            // המדידה, לתצוגה
+    const pr  = Math.min(1, rate);                     // ההיטל, מוגבל (ראה fcRates)
+    const pr10 = own != null ? pr : R.p10;             // אין בסיס נפרד לי׳→יא׳ ברמת בית ספר
+    const now = s.grades['יב'] ? s.grades['יב'][4] : null;
+    const h11 = s.grades['יא'] ? s.grades['יא'][4] : null;
+    const h10 = s.grades['י']  ? s.grades['י'][4]  : null;
+    return { name: s.name, note: badge(s), own: own != null, rate,
+      now, y1: h11 != null ? Math.round(h11 * pr) : null,
+      y2: h10 != null ? Math.round(h10 * pr10 * pr) : null };
+  }).map(x=> Object.assign(x, { chg: (x.y2 != null && x.now != null) ? x.y2 - x.now : null }))
+    .sort((a,b)=> (b.chg == null ? -1e9 : b.chg) - (a.chg == null ? -1e9 : a.chg));
+}
+
+function renderForecast(){
+  const box = document.getElementById('fcBody');
+  const c = fcCity();
+  document.getElementById('fcMeta').innerHTML = '';
+  if(!c){
+    document.getElementById('fcSub').textContent = '—';
+    box.innerHTML = '<div class="insight warn"><div class="insight-t">אין בסיס לצפי</div>' +
+      '<div class="insight-b">הצפי דורש <strong>שתי דגימות סוף-שנה</strong> של אותם מחזורים, ושכבות י׳–יב׳ בתקופה הנבחרת. ' +
+      'הוסף טאב נוסף בגיליון דרך <strong>⚙ מקור הנתונים</strong>.</div></div>';
+    return;
+  }
+  const { R } = c;
+  document.getElementById('fcSub').innerHTML =
+    `לפי הרשומים היום, ושיעור השמירה שנמדד בין <strong>${R.A.label}</strong> ל-<strong>${R.B.label}</strong>. ` +
+    `<span class="alt-num">צפי, לא תחזית: אין כאן הנחה על מי שטרם נרשם.</span>`;
+
+  // ── שלושת המוטות. סקאלה משותפת, וסימן היעד עליהם. ──
+  const pts = [c.now, c.y1, c.y2];
+  const scale = Math.max(...pts.map(p=> p.pct), c.target || 0) * 1.16;
+  const w = v => Math.max(1.5, Math.min(100, v/scale*100));
+  const row = (p, est, cap, first)=> `
+    <div class="fc-row">
+      <div class="fc-lbl">${p.label}${cap? `<small>${cap}</small>` : ''}</div>
+      <div class="fc-bars">
+        ${c.target != null ? `<div class="cmp-nat" style="right:${w(c.target).toFixed(1)}%;">${first? `<span>היעד ${ntPc(c.target)}</span>` : ''}</div>` : ''}
+        <div class="cmp-track">
+          <div class="fc-bar${est? ' est' : ''}" style="width:${w(p.pct).toFixed(1)}%"></div>
+          <div class="fc-val">${ntPc(p.pct)}<small>· ${num(p.ht)} זכאים</small></div>
+        </div>
+      </div>
+    </div>`;
+
+  // המסקנה נגזרת: האם והיכן הצפי חוצה את היעד.
+  const gap2 = c.target != null ? c.y2.pct - c.target : null;
+  const lede = c.target == null ? ''
+    : gap2 >= 0
+      ? `בקצב הזה שכבת <strong>${c.y2.label}</strong> חוצה את היעד (${ntPc(c.target)}) ב-<strong>${signed(gap2)} נק׳</strong>.`
+      : `בקצב הזה נשארים <strong>${signed(gap2)} נק׳</strong> מהיעד (${ntPc(c.target)}) גם ב-${c.y2.label} — כ-${num(Math.ceil(Math.abs(gap2)/100 * c.y2.den))} זכאים.`;
+
+  box.innerHTML = `
+    <div class="card">
+      <div class="card-head"><div>
+        <div class="card-title">שכבת יב׳ — היום ובשנתיים הבאות</div>
+        <div class="card-sub">${lede}</div>
+      </div></div>
+      ${row(c.now, false, 'נמדד', true)}
+      ${row(c.y1,  true,  `מ-${num(c.from11)} ביא׳ היום`)}
+      ${row(c.y2,  true,  `מ-${num(c.from10)} בי׳ היום`)}
+      <div class="fc-how">
+        <strong>איך חושבנו.</strong> אותם מחזורים בשתי דגימות סוף-שנה:
+        י׳ ${R.A.label} → יא׳ ${R.B.label} שמרו <strong>${(R.r10*100).toFixed(0)}%</strong>
+        (${num(R.base10)} ← ${num(R.got11)}), ויא׳ → יב׳ שמרו <strong>${(R.r11*100).toFixed(0)}%</strong>
+        (${num(R.base11)} ← ${num(R.got12)}). הצפי מכפיל את הרשומים היום בשיעורים האלה.
+        המכנה הוא ${c.y2.onMatz ? 'מצבת השכבה של אותו מחזור' : 'סכום שורות בתי הספר (אין מצבת)'}.${
+          R.capped ? ' שיעור שנמדד מעל 100% מוגבל ל-100% בהיטל, כדי לא להכפיל צמיחה בתוך מחזור.' : ''}<br>
+        <strong>המגבלה.</strong> מחזור אחד נמדד, וכל שנת דגימה נוספת תחדד את השיעור.
+        הצפי מניח שהרשומים היום ישלימו גם 5 יח״ל אנגלית — רכיב שאינו נדגם בנפרד בגיליון.
+      </div>
+    </div>
+    ${execCard('fcsch', 'הצפי לפי בית ספר',
+      'ממוינת לפי השינוי הצפוי בין היום ל-' + c.y2.label + '. שיעור השמירה הוא של בית הספר עצמו כשהבסיס מספיק, אחרת העירוני.',
+      fcTable(R, c))}`;
+}
+
+// כמו `deltaCell`, אבל ביחידות תלמידים: "‎+33" ולא "‎+33.0".
+function fcChg(d){
+  const col = d === 0 ? '#5f6368' : d > 0 ? '#137333' : '#c5221f';
+  const arw = d === 0 ? '' : (d > 0 ? '▲ ' : '▼ ');
+  return `<span style="font-weight:900;color:${col};">${arw}${d>=0?'+':'−'}${Math.abs(d)}</span>`;
+}
+
+function fcTable(R, c){
+  const rows = fcSchools(R);
+  const sum2 = rows.reduce((a,x)=> a + (x.y2 || 0), 0);
+  const cell = v => v == null ? '<span style="color:var(--muted);">—</span>' : num(v);
+  return `<div style="overflow-x:auto;"><table class="tbl"><thead><tr>
+      <th style="cursor:default;">בית ספר</th>
+      <th style="cursor:default;text-align:center;">יב׳ היום</th>
+      <th style="cursor:default;text-align:center;">צפי ${c.y1.label}</th>
+      <th style="cursor:default;text-align:center;">צפי ${c.y2.label}</th>
+      <th style="cursor:default;text-align:center;">שינוי</th>
+      <th style="cursor:default;text-align:center;">שיעור שמירה <i class="ti" data-tip="מה נשמר מהשכבה הקודמת לזו שאחריה, נמדד בין שתי דגימות סוף-השנה. בסיס קטן מ-${FC_MIN_BASE} תלמידים נופל לשיעור העירוני ומסומן ★.">i</i></th>
+    </tr></thead><tbody>
+    ${rows.map(r=> `<tr>
+      <td class="nm">${r.name}${r.note}</td>
+      <td style="text-align:center;color:var(--muted);">${cell(r.now)}</td>
+      <td style="text-align:center;">${cell(r.y1)}</td>
+      <td style="text-align:center;font-weight:700;">${cell(r.y2)}</td>
+      <td style="text-align:center;">${r.chg == null ? '<span style="color:var(--muted);">—</span>' : fcChg(r.chg)}</td>
+      <td style="text-align:center;color:var(--muted);font-size:12px;">${(r.rate*100).toFixed(0)}%${r.own? '' : ' ★'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>
+    <div class="cmp-note">★ = שיעור עירוני, כשאין לבית הספר בסיס מדידה משלו.
+      שיעור מעל 100% (בית ספר שהוסיף זכאים בתוך המחזור) מוצג כפי שנמדד, אבל בחישוב הצפי הוא מוגבל ל-100%.
+      <strong>סכום העמודה (${num(sum2)}) אינו הצפי העירוני (${num(c.y2.ht)})</strong>, ובכוונה: השיעור העירוני
+      מודד את העיר כמכלול וסופג גם מעבר בין בתי ספר ויציאה מהעיר, בעוד שכל בית ספר כאן נמדד מול עצמו.
+      המספרים הם <strong>זכאים</strong>, לא אחוזים: שכבה קטנה יכולה להוסיף מעט זכאים ולהזיז את האחוז שלה הרבה.</div>`;
 }
 
 // ════════════════════════════════════════════════════════════════
