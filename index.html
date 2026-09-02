@@ -893,7 +893,15 @@ body{
   padding:10px 22px;cursor:pointer;background:var(--primary);color:#fff;}
 .ask-row .p:disabled{opacity:.5;cursor:default;}
 .ask-hint{font-size:11px;color:var(--muted);}
-.ask-ex{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+/* הדוגמאות מקופלות ואפורות (v88): עזרה, לא הכפתור הראשי. */
+.ask-exw{flex-basis:100%;margin-top:2px;}
+.ask-exw summary{font-size:11px;color:var(--muted);cursor:pointer;list-style:none;user-select:none;}
+.ask-exw summary::before{content:'▸ ';}
+.ask-exw[open] summary::before{content:'▾ ';}
+.ask-exw summary::-webkit-details-marker{display:none;}
+.ask-ex{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.ask-ex .qc{font-weight:500;font-size:11.5px;color:var(--muted);background:transparent;border-color:var(--border);}
+.ask-ex .qc:hover{color:var(--primary-d);border-color:var(--primary);}
 #askA .insight-b{white-space:normal;}
 /* התשובה מגיעה כ-Markdown מצומצם ומומרת ב-`askMd` (v85). */
 .ask-md p{margin:0 0 8px;}
@@ -1793,17 +1801,17 @@ body{
     <div class="page-head">
       <div>
         <h1 class="page-title">שאלה על הנתונים</h1>
-        <p class="page-sub">שאלה חופשית על מה שיש בדשבורד: בתי ספר, שכבות, מקצועות, מגדר, עתיד טק, ההשוואה לארצי ולרשויות אחרות, וכל התקופות שנטענו. הדף מחשב בעצמו חבילה של מספרים ושולח אותה עם השאלה; Claude מנסח את התשובה מתוך החבילה בלבד, מצטט את המספרים ואומר כשנתון חסר. זו תשובה של מודל ולא מקור: לאימות, התצוגה שאליה התשובה מפנה.</p>
+        <p class="page-sub">שאלה חופשית על נתוני הדשבורד, בכל התקופות שנטענו. התשובה מנוסחת מתוך המספרים שהדף מחשב, ואינה מקור: לאימות, התצוגה שאליה היא מפנה.</p>
       </div>
       <div class="page-meta" id="askMeta"></div>
     </div>
     <div class="card">
-      <textarea id="askQ" maxlength="500" placeholder="לדוגמה: באילו בתי ספר הפיזיקה ירדה ביב׳ אבל עלתה בי׳?"></textarea>
+      <textarea id="askQ" maxlength="500" placeholder="מה תרצה לדעת?"></textarea>
       <div class="ask-row">
         <button class="p" id="askBtn">שאל</button>
-        <span class="ask-hint" id="askHint">Ctrl+Enter שולח · עד 500 תווים</span>
+        <span class="ask-hint" id="askHint">Ctrl+Enter שולח</span>
+        <details class="ask-exw"><summary>דוגמאות לשאלות</summary><div class="ask-ex" id="askEx"></div></details>
       </div>
-      <div class="ask-ex" id="askEx"></div>
       <div class="insight" id="askA" style="display:none;">
         <div class="insight-t">—</div>
         <div class="insight-b">—</div>
@@ -1812,7 +1820,7 @@ body{
            ושאלה ראשית חדשה מאפסת הכל. -->
       <div id="askF" style="display:none;">
         <textarea id="askFQ" class="ask-fq" maxlength="500" placeholder="שאלת המשך על התשובה (אחת בלבד)"></textarea>
-        <div class="ask-row"><button class="p s" id="askFBtn">שאל המשך</button><span class="ask-hint">שאלת המשך נשלחת יחד עם השאלה והתשובה הקודמות</span></div>
+        <div class="ask-row"><button class="p s" id="askFBtn">שאל המשך</button></div>
       </div>
       <div class="insight" id="askA2" style="display:none;">
         <div class="insight-t">—</div>
@@ -6514,7 +6522,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v87';
+const BUILD = 'v88';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6954,8 +6962,7 @@ function renderAsk(){
     hint.textContent = 'כתובת השירות טרם הוגדרה (ASK_URL). ראה ask/README.md.';
   }
   document.getElementById('askSrc').textContent =
-    `החבילה שנשלחת: ${periods.length} תקופות · ${SCHOOLS.length} בתי ספר בתקופה ${DATA_LABEL || ''} · הסדרות הרשמיות של חולון והארצי · ${CITY_DATA.length} רשויות (${CITY_YEAR}). ` +
-    `השירות לא שומר שאלות ולא תשובות.`;
+    `נשלח: ${periods.length} תקופות · ${SCHOOLS.length} בתי ספר · ${CITY_DATA.length} רשויות. השירות לא שומר שאלות.`;
 
   if(!ASK_WIRED){
     ASK_WIRED = true;
@@ -7055,7 +7062,7 @@ async function askSend(followUp){
     document.getElementById('askA2').style.display = 'none';
     document.getElementById('askFQ').value = '';
   }
-  askShow('', 'מנתח', 'השאלה והחבילה נשלחו. תשובה בדרך כלל תוך 10–30 שניות.', false, null, boxId);
+  askShow('', 'מנתח', 'תשובה תוך 10–30 שניות.', false, null, boxId);
   try{
     const body = { question: q, payload: JSON.parse(askJson(buildAskPayload())) };
     if(followUp) body.prior = { question: ASK_Q, answer: ASK_TXT.askA };
