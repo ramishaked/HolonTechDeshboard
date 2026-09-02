@@ -485,6 +485,18 @@ async function browserRun() {
       fail(`תצוגה 14 — צפי מתמטיקה 5 בכרטיס ${fs.ma5y2} מול חישוב עצמאי ${fs.expY2}`);
     else if (fs.dom !== fs.n) fail(`תצוגה 14 — ${fs.n} מקצועות בחישוב אבל ${fs.dom} שורות בטבלה`);
     else pass(`תצוגה 14 — כרטיס המקצועות: ${fs.n} מקצועות · צפי מתמטיקה 5 = ${fs.ma5y2}`);
+    // מתג המכנה (v93): לחיצה על "סה״כ עירוני" מחליפה מכנה, מורידה את
+    // סימן היעד, ומוחזרת למצבת בסוף כדי לא לזהם בדיקות שאחרי.
+    await page.click('#fcDenomSeg button[data-d="city"]');
+    await page.waitForTimeout(150);
+    const fd = await page.evaluate("(function(){\n  var stu = cityDenomByName('\u05d9');\n  var c = fcCity();\n  var expPct = c.y2.den === stu ? (c.y2.ht / stu * 100) : null;\n  var tgtGone = !document.querySelector('#fcBody .cmp-nat');\n  var howCity = (document.querySelector('#fcBody .fc-how').textContent || '').indexOf('\u05dc\u05e4\u05d9 \u05d4\u05de\u05ea\u05d2') >= 0;\n  return { den: c.y2.den, stu: stu, pct: c.y2.pct, expPct: expPct, tgtGone: tgtGone, howCity: howCity };\n})()");
+    if (fd.den !== fd.stu) fail(`תצוגה 14 — במתג "סה״כ עירוני" המכנה ${fd.den} ולא ${fd.stu}`);
+    else if (Math.abs(fd.pct - fd.expPct) > 0.05) fail(`תצוגה 14 — אחוז הצפי ${fd.pct} אינו תואם למכנה העירוני`);
+    else if (!fd.tgtGone) fail('תצוגה 14 — סימן היעד מוצג גם על המכנה העירוני');
+    else if (!fd.howCity) fail('תצוגה 14 — "איך חושבנו" לא מציין את המכנה שנבחר במתג');
+    else pass('תצוגה 14 — מתג המכנה: עירוני מחליף מכנה ומוריד את סימן היעד');
+    await page.click('#fcDenomSeg button[data-d="matz"]');
+    await page.waitForTimeout(120);
   }
 
   // לחיצה אמיתית על הכפתור — רק כשיש כתובת שירות. ה-route למעלה עונה.
