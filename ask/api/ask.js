@@ -9,6 +9,8 @@
 //   ANTHROPIC_API_KEY   חובה.
 //   ALLOWED_ORIGIN      רשות. ברירת מחדל: https://ramishaked.github.io
 //   ASK_MODEL           רשות. ברירת מחדל: claude-opus-5
+//   ANTHROPIC_WORKSPACE_ID  נדרש רק למפתח "identity-linked": ה-API דורש
+//                       אז את מזהה ה-workspace (wrkspc_...) בכותרת.
 
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -79,7 +81,8 @@ export default async function handler(req, res){
   const data = JSON.stringify(payload);
   if(data.length > MAX_BODY)   return res.status(413).json({ error: 'חבילת הנתונים גדולה מדי' });
 
-  const client = new Anthropic();
+  const client = new Anthropic(process.env.ANTHROPIC_WORKSPACE_ID
+    ? { defaultHeaders: { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } } : {});
   // החבילה יושבת ב-system אחרי ההגדרות, עם נקודת מטמון: השאלה השנייה
   // באותו סשן משלמת רק על עצמה.
   const base = {

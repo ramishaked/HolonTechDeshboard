@@ -14,6 +14,10 @@
    - `ANTHROPIC_API_KEY` — חובה. אף אחד מלבדך לא צריך לראות אותו.
    - `ALLOWED_ORIGIN` — רשות. ברירת מחדל `https://ramishaked.github.io`.
    - `ASK_MODEL` — רשות. ברירת מחדל `claude-opus-5`.
+   - `ANTHROPIC_WORKSPACE_ID` — רק אם המפתח הוא "identity-linked" (ה-API
+     עונה אז `anthropic-workspace-id is required`). המזהה בקונסול של
+     Anthropic: Settings → Workspaces → ה-workspace שבו נוצר המפתח,
+     מתחיל ב-`wrkspc_`.
 3. Redeploy אחרי הוספת המשתנים.
 4. בקונסול של Anthropic: **מגבלת הוצאה חודשית** לארגון. זו רשת הבטחון
    האמיתית; מגבלת הקצב שבקוד היא per-מופע ולכן חלקית.
