@@ -6561,7 +6561,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v91';
+const BUILD = 'v92';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6879,7 +6879,7 @@ function periodsSorted(){
 // **לא קו מגמה.** תשע נקודות רשמיות אינן בסיס לאקסטרפולציה, ובמדד שקפץ
 // 2.5 נק׳ בשנה קו כזה מתפרק בשנה הבאה. במקום זאת: המחזור עצמו. שכבת יא׳
 // של היום היא שכבת יב׳ של השנה הבאה, ו-י׳ של היום היא יב׳ בעוד שנתיים.
-// **שיעור השמירה נמדד** — אותם מחזורים בשתי דגימות סוף-שנה — ולא מונח.
+// **שיעור השמירה נמדד** (אותם מחזורים בשתי דגימות סוף-שנה), לא מונח.
 //
 // אפס נוסחאות חדשות למניה ולמכנה: `cityTotal` דרך `withPeriod`,
 // `cityDenomAlt`/`cityDenomByName` למכנה. **המכנה הוא מצבת השכבה של אותו
@@ -6948,6 +6948,63 @@ function fcSchools(R){
     .sort((a,b)=> (b.chg == null ? -1e9 : b.chg) - (a.chg == null ? -1e9 : a.chg));
 }
 
+// אותו חישוב, לפי מקצוע: `citySubjectByGrade` (הנוסחה הקיימת) דרך
+// `withPeriod`, אותו קלמפ. מקצוע בלי נתונים אינו מוצג, לא מרפדים.
+function fcSubjects(R){
+  const cur = CURRENT_PERIOD;
+  const by = (key, idx)=> withPeriod(key, ()=> citySubjectByGrade(idx));
+  return [
+    { name:'מתמטיקה 5 יח׳',  idx:3, color:COL.ma },
+    { name:'פיזיקה',          idx:2, color:COL.ph },
+    { name:'מדעי המחשב',      idx:1, color:COL.cs }
+  ].map(sub=>{
+    const a = by(R.A.key, sub.idx), b = by(R.B.key, sub.idx), n = by(cur, sub.idx);
+    if(!a[0] || !a[1] || !(n[0] + n[1] + n[2])) return null;
+    const r10 = b[1]/a[0], r11 = b[2]/a[1];
+    const p10 = Math.min(1, r10), p11 = Math.min(1, r11);
+    return Object.assign(sub, { r10, r11,
+      now: n[2], y1: Math.round(n[1] * p11), y2: Math.round(n[0] * p10 * p11) });
+  }).filter(Boolean);
+}
+
+function fcSubjCard(R, c){
+  const rows = fcSubjects(R);
+  if(!rows.length) return '';
+  // תא ערך: המספר, ובסוגריים האחוז מהמצבת של מחזור המקור.
+  const den = { now: cityDenomAlt('יב'), y1: cityDenomAlt('יא'), y2: cityDenomAlt('י') };
+  const cell = (v, d, strong)=> `<td style="text-align:center;${strong? 'font-weight:700;':''}">${num(v)}` +
+    (d ? ` <span class="alt-num">(${(v/d*100).toFixed(1)}%)</span>` : '') + `</td>`;
+  // המשפט נגזר: המעבר הדולף ביותר מבין ששת השיעורים שנמדדו.
+  const legs = rows.flatMap(r=> [{ n:r.name, leg:'י׳→יא׳', v:r.r10 }, { n:r.name, leg:'יא׳→יב׳', v:r.r11 }]);
+  const worst = legs.reduce((a,x)=> x.v < a.v ? x : a);
+  const best  = legs.reduce((a,x)=> x.v > a.v ? x : a);
+  return `
+    <div class="card">
+      <div class="card-head"><div>
+        <div class="card-title">הצפי לפי מקצוע · 5 יח״ל</div>
+        <div class="card-sub">אותם שיעורי שמירה, נמדדים לכל מקצוע בנפרד. הדליפה הגדולה:
+          <strong>${worst.n} ${worst.leg}</strong> (${(worst.v*100).toFixed(0)}%) ·
+          השמירה הגבוהה: <strong>${best.n} ${best.leg}</strong> (${(Math.min(1,best.v)*100).toFixed(0)}%${best.v>1? ', נמדד מעל 100%':''}).</div>
+      </div></div>
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr>
+        <th style="cursor:default;">מקצוע</th>
+        <th style="cursor:default;text-align:center;">יב׳ היום</th>
+        <th style="cursor:default;text-align:center;">צפי ${c.y1.label}</th>
+        <th style="cursor:default;text-align:center;">צפי ${c.y2.label}</th>
+        <th style="cursor:default;text-align:center;">שמירה י׳→יא׳ · יא׳→יב׳</th>
+      </tr></thead><tbody>
+      ${rows.map(r=> `<tr>
+        <td class="nm"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${r.color};margin-inline-end:7px;vertical-align:0;"></i>${r.name}</td>
+        ${cell(r.now, den.now)}${cell(r.y1, den.y1)}${cell(r.y2, den.y2, true)}
+        <td style="text-align:center;color:var(--muted);font-size:12px;"><bdi>${(r.r10*100).toFixed(0)}%</bdi> · <bdi>${(r.r11*100).toFixed(0)}%</bdi></td>
+      </tr>`).join('')}
+      </tbody></table></div>
+      <div class="cmp-note">בסוגריים: אחוז ממצבת השכבה של אותו מחזור. פיזיקה ומדעי המחשב חופפים
+        (תלמיד יכול ללמוד את שניהם), ולכן אין לסכם אותם; המדד עצמו בכרטיס שמעל.
+        מתמטיקה 5 היא תנאי הסף, ולכן הפער בינה לבין המדד הוא מאגר הפוטנציאל.</div>
+    </div>`;
+}
+
 function renderForecast(){
   const box = document.getElementById('fcBody');
   const c = fcCity();
@@ -6985,12 +7042,12 @@ function renderForecast(){
   const lede = c.target == null ? ''
     : gap2 >= 0
       ? `בקצב הזה שכבת <strong>${c.y2.label}</strong> חוצה את היעד (${ntPc(c.target)}) ב-<strong>${signed(gap2)} נק׳</strong>.`
-      : `בקצב הזה נשארים <strong>${signed(gap2)} נק׳</strong> מהיעד (${ntPc(c.target)}) גם ב-${c.y2.label} — כ-${num(Math.ceil(Math.abs(gap2)/100 * c.y2.den))} זכאים.`;
+      : `בקצב הזה נשארים <strong>${signed(gap2)} נק׳</strong> מהיעד (${ntPc(c.target)}) גם ב-${c.y2.label}: כ-${num(Math.ceil(Math.abs(gap2)/100 * c.y2.den))} זכאים.`;
 
   box.innerHTML = `
     <div class="card">
       <div class="card-head"><div>
-        <div class="card-title">שכבת יב׳ — היום ובשנתיים הבאות</div>
+        <div class="card-title">שכבת יב׳: היום ובשנתיים הבאות</div>
         <div class="card-sub">${lede}</div>
       </div></div>
       ${row(c.now, false, 'נמדד', true)}
@@ -7004,9 +7061,10 @@ function renderForecast(){
         המכנה הוא ${c.y2.onMatz ? 'מצבת השכבה של אותו מחזור' : 'סכום שורות בתי הספר (אין מצבת)'}.${
           R.capped ? ' שיעור שנמדד מעל 100% מוגבל ל-100% בהיטל, כדי לא להכפיל צמיחה בתוך מחזור.' : ''}<br>
         <strong>המגבלה.</strong> מחזור אחד נמדד, וכל שנת דגימה נוספת תחדד את השיעור.
-        הצפי מניח שהרשומים היום ישלימו גם 5 יח״ל אנגלית — רכיב שאינו נדגם בנפרד בגיליון.
+        הצפי מניח שהרשומים היום ישלימו גם 5 יח״ל אנגלית, רכיב שאינו נדגם בנפרד בגיליון.
       </div>
     </div>
+    ${fcSubjCard(R, c)}
     ${execCard('fcsch', 'הצפי לפי בית ספר',
       'ממוינת לפי השינוי הצפוי בין היום ל-' + c.y2.label + '. שיעור השמירה הוא של בית הספר עצמו כשהבסיס מספיק, אחרת העירוני.',
       fcTable(R, c))}`;

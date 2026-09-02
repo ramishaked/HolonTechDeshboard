@@ -478,6 +478,14 @@ async function browserRun() {
   else if (!fc.closed) fail('תצוגה 14 — אקורדיאון בתי הספר פתוח בברירת מחדל');
   else if (fc.overCap) fail(`תצוגה 14 — ${fc.overCap} בתי ספר עם היטל שלא הוגבל ל-100%`);
   else pass(`תצוגה 14 — צפי ${fc.y1}/${fc.y2} זכאים · ${fc.nSch} בתי ספר · האקורדיאון סגור`);
+  if (!fc.skip) {
+    // כרטיס המקצועות (v92): מתמטיקה 5 מוצלבת מול חישוב עצמאי מהשורות.
+    const fs = await page.evaluate("(function(){\n  var c = fcCity(); if(!c) return {skip:true};\n  var subs = fcSubjects(c.R);\n  // \u05d4\u05e6\u05dc\u05d1\u05d4 \u05e2\u05e6\u05de\u05d0\u05d9\u05ea \u05e9\u05dc \u05de\u05ea\u05de\u05d8\u05d9\u05e7\u05d4 5 \u05de\u05d4\u05e9\u05d5\u05e8\u05d5\u05ea \u05d4\u05d2\u05d5\u05dc\u05de\u05d9\u05d5\u05ea.\n  var yp = yyPeriods(), A = yp.pair[0].key, B = yp.pair[1].key, cur = CURRENT_PERIOD;\n  function raw(key, g){ return ALLDATA[key].schools.reduce(function(a,s){\n    var r = s.grades[g]; return a + (r ? r[3] : 0); }, 0); }\n  var p10 = Math.min(1, raw(B,'\u05d9\u05d0')/raw(A,'\u05d9')), p11 = Math.min(1, raw(B,'\u05d9\u05d1')/raw(A,'\u05d9\u05d0'));\n  var expY2 = Math.round(raw(cur,'\u05d9') * p10 * p11);\n  var ma5 = subs.filter(function(x){ return x.idx === 3; })[0];\n  var rowsInDom = document.querySelectorAll('#fcBody .card:nth-of-type(2) tbody tr').length;\n  return { n: subs.length, ma5y2: ma5 ? ma5.y2 : null, expY2: expY2, dom: rowsInDom };\n})()");
+    if (fs.ma5y2 == null || Math.abs(fs.ma5y2 - fs.expY2) > 1)
+      fail(`תצוגה 14 — צפי מתמטיקה 5 בכרטיס ${fs.ma5y2} מול חישוב עצמאי ${fs.expY2}`);
+    else if (fs.dom !== fs.n) fail(`תצוגה 14 — ${fs.n} מקצועות בחישוב אבל ${fs.dom} שורות בטבלה`);
+    else pass(`תצוגה 14 — כרטיס המקצועות: ${fs.n} מקצועות · צפי מתמטיקה 5 = ${fs.ma5y2}`);
+  }
 
   // לחיצה אמיתית על הכפתור — רק כשיש כתובת שירות. ה-route למעלה עונה.
   if (ask.url) {
