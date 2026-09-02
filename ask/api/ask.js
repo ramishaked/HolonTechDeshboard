@@ -80,22 +80,31 @@ export default async function handler(req, res){
   if(data.length > MAX_BODY)   return res.status(413).json({ error: 'חבילת הנתונים גדולה מדי' });
 
   const client = new Anthropic();
+  // החבילה יושבת ב-system אחרי ההגדרות, עם נקודת מטמון: השאלה השנייה
+  // באותו סשן משלמת רק על עצמה.
+  const base = {
+    model: MODEL,
+    max_tokens: 2000,
+    output_config: { effort: 'medium' },
+    system: [
+      { type: 'text', text: SYSTEM },
+      { type: 'text', text: 'חבילת הנתונים:\n' + data, cache_control: { type: 'ephemeral' } }
+    ],
+    messages: [{ role: 'user', content: question }]
+  };
   try{
-    // החבילה יושבת ב-system אחרי ההגדרות, עם נקודת מטמון: השאלה השנייה
-    // באותו סשן משלמת רק על עצמה. fallbacks="default": סירוב של מסנן
-    // הבטיחות (נדיר בשאלות על נתוני חינוך) נענה ממודל חלופי באותה קריאה.
-    const r = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 2000,
-      output_config: { effort: 'medium' },
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      system: [
-        { type: 'text', text: SYSTEM },
-        { type: 'text', text: 'חבילת הנתונים:\n' + data, cache_control: { type: 'ephemeral' } }
-      ],
-      messages: [{ role: 'user', content: question }]
-    });
+    // fallbacks="default": סירוב של מסנן הבטיחות (נדיר בשאלות על נתוני
+    // חינוך) נענה ממודל חלופי באותה קריאה. הפרמטר הוא beta; אם הארגון או
+    // המודל דוחים אותו ב-400, הבקשה חוזרת בלעדיו.
+    let r;
+    try{
+      r = await client.beta.messages.create(Object.assign({}, base,
+        { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }));
+    }catch(e){
+      if(!(e instanceof Anthropic.BadRequestError)) throw e;
+      console.error('ask: fallbacks rejected, retrying without:', e.message);
+      r = await client.messages.create(base);
+    }
     if(r.stop_reason === 'refusal')
       return res.status(200).json({ answer: 'המודל סירב לענות על השאלה הזו.', usage: r.usage });
     const answer = r.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
@@ -106,9 +115,11 @@ export default async function handler(req, res){
       model: r.model
     });
   }catch(e){
+    // ההודעה של ה-API מוחזרת כמו שהיא: היא מה שצריך כדי לתקן, ואין בה סוד.
+    console.error('ask:', e && e.status, e && e.message);
     if(e instanceof Anthropic.AuthenticationError) return res.status(500).json({ error: 'מפתח ה-API אינו תקף' });
     if(e instanceof Anthropic.RateLimitError)      return res.status(429).json({ error: 'השירות עמוס. נסה שוב בעוד רגע.' });
-    if(e instanceof Anthropic.APIError)            return res.status(502).json({ error: `שגיאת API (${e.status})` });
-    return res.status(502).json({ error: 'השירות לא הגיב' });
+    if(e instanceof Anthropic.APIError)            return res.status(502).json({ error: `שגיאת API (${e.status}): ${e.message}` });
+    return res.status(502).json({ error: 'השירות לא הגיב: ' + (e && e.message || e) });
   }
 }
