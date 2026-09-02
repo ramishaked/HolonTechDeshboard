@@ -377,12 +377,12 @@ body{
 #view-exec .ex-kpis .st-sub{font-size:11px;margin-top:4px;line-height:1.5;}
 /* אריח ההתקדמות (v79): טבלה זעירה — שורה למדד, עמודה לשנה, ועמודת שינוי.
    שני האחוזים גלויים, בלי מלל. */
-#view-exec .ex-kpis .ex-prog{display:grid;grid-template-columns:auto 1fr 1fr auto;column-gap:10px;row-gap:3px;align-items:baseline;margin-top:2px;}
+#view-exec .ex-kpis .ex-prog{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;column-gap:6px;row-gap:3px;align-items:baseline;margin-top:2px;}
 #view-exec .ex-kpis .ex-prog-h{font-size:11px;color:var(--muted);}
-#view-exec .ex-kpis .ex-prog-l{font-size:12px;color:var(--muted);white-space:nowrap;}
-#view-exec .ex-kpis .ex-prog-a{font-size:18px;font-weight:700;color:var(--muted);letter-spacing:-0.3px;}
-#view-exec .ex-kpis .ex-prog .st-num{font-size:22px;letter-spacing:-0.3px;}
-#view-exec .ex-kpis .ex-prog .ex-chip{margin-inline-start:0;vertical-align:0;}
+#view-exec .ex-kpis .ex-prog-l{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#view-exec .ex-kpis .ex-prog-a{font-size:15px;font-weight:700;color:var(--muted);letter-spacing:-0.3px;}
+#view-exec .ex-kpis .ex-prog .st-num{font-size:20px;letter-spacing:-0.3px;}
+#view-exec .ex-kpis .ex-prog .ex-chip{margin-inline-start:0;vertical-align:0;font-size:11px;letter-spacing:-0.2px;}
 /* חץ כיוון נגזר — לעולם לא צרוב (§9.1) */
 .ex-chip{font-size:11.5px;font-weight:900;margin-inline-start:6px;white-space:nowrap;vertical-align:4px;}
 .ex-chip.up{color:#137333;}
@@ -403,6 +403,8 @@ body{
 .yy-num.new{color:var(--primary);}
 .yy-arrow{font-size:26px;color:var(--border);font-weight:900;}
 .yy-badge{text-align:center;}
+/* המקרא מיושר לתחילת המוטות (רוחב התווית + הרווח של .cmp-row). */
+.fnl-key.yy-key{margin:4px 132px 2px 0;}
 
 /* שורת השוואה — שני מוטות אופקיים, ערך בקצה */
 .cmp-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
@@ -1529,6 +1531,7 @@ body{
           </div>
         </div>
         <div class="yy-head" id="yyHead"></div>
+        <div class="fnl-key yy-key" id="yyKey"></div>
         <div id="yyGrades"></div>
         <div class="insight" id="yyMeaning">
           <div class="insight-t">—</div>
@@ -4379,6 +4382,11 @@ function renderYYIndex(A, B){
   });
   const scale = Math.max(...vals.flatMap(v=> [v.o, v.n]).filter(v=> v != null), NAT_LAST.tech, 1) * 1.12;
 
+  // מקרא הצבעים של המוטות — כתום = התקופה הקודמת, סגול = הנוכחית (v80).
+  document.getElementById('yyKey').innerHTML =
+    `<span><i style="background:var(--accent)"></i>${A.label}</span>` +
+    `<span><i style="background:var(--primary)"></i>${B.label}</span>`;
+
   document.getElementById('yyGrades').innerHTML = vals.map(v=>
     // רפרנס ארצי רק על יב׳ — המדד הארצי מודד בוגרים, ואין לו מקבילה בי׳/יא׳
     cmpRow('שכבה ' + v.g + '׳', null, v.o, v.n, scale, v.g === 'יב' ? NAT_LAST.tech : null, false)
@@ -5310,10 +5318,10 @@ function execBottomLine(c){
       sub:`חולון ${ntPc(c.me.tech)} · ארצי ${NATIONAL}%` },
     // ההתקדמות משנה לשנה (v78→v79, החליף את אריח היעד לתשפ״ט בבקשת
     // המשתמש): טבלה זעירה — שני האחוזים והשינוי לכל מדד, בלי מלל.
-    ...(prog ? [{ cls:'c3', lbl:`ההתקדמות מ${prog.from} ל${prog.to} · יב׳`,
+    ...(prog ? [{ cls:'c3', lbl:`ההתקדמות מ${prog.from} ל${prog.to} · יב׳ (${prog.onMatz ? 'מצבת' : 'ללא מצבת'})`,
       grid: { head: [prog.from, prog.to],
               rows: prog.rows.map(r=> ({ l:r.l, a: ntPc(r.from), b: ntPc(r.to), chip: chip(r.to - r.from) })) },
-      sub: prog.onMatz ? 'מכנה המצבת של משרד החינוך' : 'ללא מצבת, סכום בתי הספר' }] : []),
+      sub: '' }] : []),
     { cls:'c1', lbl:'שלושת המובילים · מדד משוקלל י׳–יב׳',
       num: top3.length ? ntPc(top3[0].pct) : '—',
       den: top3.length ? ` ${top3[0].name}` : '',
@@ -5341,7 +5349,7 @@ function execBottomLine(c){
       ${t.grid ? `<div class="ex-prog"><span></span><span class="ex-prog-h">${t.grid.head[0]}</span><span class="ex-prog-h">${t.grid.head[1]}</span><span></span>` +
                  t.grid.rows.map(r=> `<span class="ex-prog-l">${r.l}</span><span class="ex-prog-a">${r.a}</span><span class="st-num">${r.b}</span><span>${r.chip || ''}</span>`).join('') + `</div>`
                : `<div><span class="st-num">${t.num}</span>${t.den? `<span class="st-den">${t.den}</span>`:''}${t.chip || ''}</div>`}
-      <div class="st-sub">${t.sub}</div>
+      ${t.sub ? `<div class="st-sub">${t.sub}</div>` : ''}
     </div>`).join('') + `</div>`;
 }
 
@@ -6412,7 +6420,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v79';
+const BUILD = 'v80';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
