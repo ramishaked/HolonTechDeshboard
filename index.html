@@ -254,6 +254,7 @@ body{
 .subj-num.ph{color:var(--bad);}
 .subj-num.ma{color:var(--good);}
 .subj-trend{font-size:11px;color:var(--muted);}
+.subj-pct{font-size:14px;font-weight:700;color:var(--muted);}
 
 /* School cards */
 .school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
@@ -405,6 +406,7 @@ body{
 .yy-badge{text-align:center;}
 /* המקרא מיושר לתחילת המוטות (רוחב התווית + הרווח של .cmp-row). */
 .fnl-key.yy-key{margin:4px 132px 2px 0;}
+.fnl-key.yy-key.tbl-key{margin:0 0 8px;}
 
 /* שורת השוואה — שני מוטות אופקיים, ערך בקצה */
 .cmp-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
@@ -774,7 +776,8 @@ body{
 .fn-stages{flex:1;display:flex;align-items:center;gap:0;}
 .fn-stage{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
 .fn-bar{height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-  color:#fff;font-weight:900;font-size:15px;min-width:50px;padding:0 10px;}
+  color:#fff;font-weight:900;font-size:15px;min-width:50px;padding:0 10px;white-space:nowrap;}
+.fn-bar small{font-size:11px;font-weight:700;opacity:.9;margin-inline-start:4px;}
 .fn-glabel{font-size:11px;color:var(--muted);font-weight:700;}
 .fn-girls{font-size:10px;color:#ad1457;font-weight:700;background:#fce4ec;border-radius:6px;padding:1px 6px;margin-top:2px;}
 .fn-arrow{display:flex;flex-direction:column;align-items:center;padding:0 6px;color:var(--bad);
@@ -1109,7 +1112,7 @@ body{
       <div class="card-head">
         <div>
           <div class="card-title">המקצועות לפי שכבה</div>
-          <div class="card-sub">מדד הטק (סגול) לצד המקצועות שמרכיבים אותו — מספרים מוחלטים, שלוש השכבות באותה דגימה</div>
+          <div class="card-sub">מדד הטק (סגול) לצד המקצועות שמרכיבים אותו — מספרים מוחלטים ובסוגריים האחוז מהשכבה, שלוש השכבות באותה דגימה</div>
         </div>
       </div>
       <div class="chart-box tall">
@@ -1547,6 +1550,7 @@ body{
             <div class="card-sub">לומדי המקצוע כאחוז מכלל תלמידי י׳–יב׳. אלה המקצועות שמרכיבים את מדד הטק.</div>
           </div>
         </div>
+        <div class="fnl-key yy-key" id="yyKeySubj"></div>
         <div id="yySubjects"></div>
         <div id="yyPotential"></div>
         <div class="cmp-note" id="yyNatNote"></div>
@@ -1560,13 +1564,14 @@ body{
             <div class="card-sub" id="yySchoolSub">—</div>
           </div>
         </div>
+        <div class="fnl-key yy-key tbl-key" id="yyKeySch"></div>
         <div style="overflow-x:auto;">
           <table class="tbl">
             <thead>
               <tr>
                 <th style="cursor:default;">בית ספר</th>
-                <th style="cursor:default;text-align:center;" id="yyThOld">—</th>
-                <th style="cursor:default;text-align:center;" id="yyThNew">—</th>
+                <th style="cursor:default;text-align:center;color:#b8560c;" id="yyThOld">—</th>
+                <th style="cursor:default;text-align:center;color:var(--primary);" id="yyThNew">—</th>
                 <th style="cursor:default;text-align:center;">שינוי <i class="ti" data-tip="ההפרש בנקודות אחוז. מחושב רק על השכבות שקיימות לבית הספר בשתי הדגימות — אחרת שכבה שנוספה הייתה נראית כמו זינוק.">i</i></th>
                 <th style="cursor:default;text-align:center;">שכבות בהשוואה</th>
               </tr>
@@ -2313,9 +2318,14 @@ function renderOverview(){
 // ════════════════════════════════════════════════════════════════
 function renderSubjects(){
   const cs=citySubjectByGrade(1), ph=citySubjectByGrade(2), ma=citySubjectByGrade(3);
-  document.getElementById('csTotal').textContent = cs.reduce((a,b)=>a+b,0);
-  document.getElementById('phTotal').textContent = ph.reduce((a,b)=>a+b,0);
-  document.getElementById('maTotal').textContent = ma.reduce((a,b)=>a+b,0);
+  // לצד המספר המוחלט גם האחוז מכלל תלמידי י׳–יב׳ (v81) — אותו מכנה של
+  // כרטיס "מקצועות הבסיס" בהתפתחות המדד, דרך `cityStudents`.
+  const denAll = GRADES.reduce((t,_,i)=> t + cityStudents(i), 0);
+  const numPct = arr => { const n = arr.reduce((a,b)=>a+b,0);
+    return `${n}${denAll ? ` <span class="subj-pct">(${(n/denAll*100).toFixed(1)}%)</span>` : ''}`; };
+  document.getElementById('csTotal').innerHTML = numPct(cs);
+  document.getElementById('phTotal').innerHTML = numPct(ph);
+  document.getElementById('maTotal').innerHTML = numPct(ma);
   // המגמה מחושבת על **אחוזים** ולא על מספרים — אותה הגדרה בדיוק שבה משתמשים
   // ה-KPI העירוני ו-`schoolDropPct`. על מספרים היא סופגת גם את ההפרש בגודל
   // השכבות, וזו בדיוק ההטיה שכרטיס "אפקט המשפך" נועד להפריד. `citySubjPctAtGrade`
@@ -2335,6 +2345,10 @@ function renderSubjects(){
   // המילוי בוטל יחד עם הקיטוע: על ציר שאינו מאופס גודל השטח כבר אינו
   // פרופורציונלי לערך. `backgroundColor` נשאר — הוא צובע את ריבועי הלגנדה.
   const sjAx = niceAxis([].concat(htByGrade, cs, ph, ma), 8);
+  // אחוז המקצוע מהשכבה לצד המספר המוחלט (v81). `citySubjPctAtGrade` עובדת
+  // על אינדקס ALL_GRADES, ולכן י׳ = 3.
+  const sjPc = (gi, idx, dec)=>{ const p = citySubjPctAtGrade(gi + 3, idx); return p == null ? '' : ` (${p.toFixed(dec)}%)`; };
+  const sjLbl = idx => (v, ctx)=> v + sjPc(ctx.dataIndex, idx, 0);
   charts.subjectsChart = new Chart(document.getElementById('subjectsChart'), {
     type:'line',
     data:{ labels: GRADES.map(g=>'שכבה '+g),
@@ -2349,13 +2363,13 @@ function renderSubjects(){
             formatter:(v,ctx)=> v+' ('+cityPct(ctx.dataIndex).toFixed(0)+'%)'}},
         {label:'מדעי המחשב', data:cs, borderColor:COL.cs, backgroundColor:'rgba(26,115,232,0.08)',
           borderWidth:3, pointRadius:7, pointBackgroundColor:COL.cs, fill:false, tension:0.3, order:1,
-          datalabels:{anchor:'end',align:'top',color:COL.cs,font:hf2(),formatter:v=>v}},
+          datalabels:{anchor:'end',align:'top',color:COL.cs,font:hf2(),formatter:sjLbl(1)}},
         {label:'פיזיקה', data:ph, borderColor:COL.ph, backgroundColor:'rgba(232,66,53,0.07)',
           borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ph, fill:false, tension:0.3, order:2,
-          datalabels:{anchor:'end',align:'bottom',color:COL.ph,font:hf2(),formatter:v=>v}},
+          datalabels:{anchor:'end',align:'bottom',color:COL.ph,font:hf2(),formatter:sjLbl(2)}},
         {label:'מתמטיקה 5 יח"ל', data:ma, borderColor:COL.ma, backgroundColor:'rgba(52,168,83,0.07)',
           borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ma, fill:false, tension:0.3, order:3,
-          borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:v=>v}}
+          borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:sjLbl(3)}}
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
       // הנקודות הקיצוניות יושבות עכשיו על קצות הציר ולא באמצעו, והתוויות
@@ -2365,7 +2379,7 @@ function renderSubjects(){
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=> ctx.datasetIndex===0
             ? 'מדד טק: '+ctx.parsed.y+' ('+cityPct(ctx.dataIndex).toFixed(1)+'%)'
-            : ctx.dataset.label+': '+ctx.parsed.y }}},
+            : ctx.dataset.label+': '+ctx.parsed.y + sjPc(ctx.dataIndex, [0,1,2,3][ctx.datasetIndex], 1) }}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
                y:{beginAtZero:false, min:sjAx.lo, max:sjAx.hi,
                   ticks:{stepSize:sjAx.step,font:HF,color:'#5f6368'},grid:{color:GC}} } }
@@ -2406,10 +2420,11 @@ function renderSubjects(){
     const gPct = girlsByGrade(sub);
     const stage = (val, gIdx)=>{
       const wpct = (val/maxV)*100;
+      const p = citySubjPctAtGrade(gIdx + 3, sub.subIdx);      // % מהשכבה (v81)
       const g = gPct[gIdx];
       const gLine = g==null ? '' : `<div class="fn-girls">♀ ${g.toFixed(0)}%</div>`;
       return `<div class="fn-stage" style="flex:${Math.max(wpct,15)};">
-        <div class="fn-bar" style="background:${sub.color};width:100%;">${val}</div>
+        <div class="fn-bar" style="background:${sub.color};width:100%;">${val}${p == null ? '' : ` <small>(${p.toFixed(0)}%)</small>`}</div>
         <div class="fn-glabel">שכבה ${GRADES[gIdx]}</div>
         ${gLine}
       </div>`;
@@ -3925,6 +3940,13 @@ function yyPeriods(){
   return { pair: all, exact: false };
 }
 
+// מקרא הצבעים של ההשוואה — כתום = התקופה הקודמת, סגול = הנוכחית (v80–v81).
+// אותו מקרא בשלושת הכרטיסים: המדד, המקצועות ובתי הספר.
+function yyKeyHtml(A, B){
+  return `<span><i style="background:var(--accent)"></i>${A.label}</span>` +
+         `<span><i style="background:var(--primary)"></i>${B.label}</span>`;
+}
+
 // ─── שורת השוואה: שני מוטות אופקיים, ערך בקצה ───────────────────
 // nat = ערך ארצי לרפרנס (או null). scale = הערך שממנו מנרמלים את הרוחב.
 function cmpRow(label, sub, oldV, newV, scale, nat, invert){
@@ -4382,10 +4404,7 @@ function renderYYIndex(A, B){
   });
   const scale = Math.max(...vals.flatMap(v=> [v.o, v.n]).filter(v=> v != null), NAT_LAST.tech, 1) * 1.12;
 
-  // מקרא הצבעים של המוטות — כתום = התקופה הקודמת, סגול = הנוכחית (v80).
-  document.getElementById('yyKey').innerHTML =
-    `<span><i style="background:var(--accent)"></i>${A.label}</span>` +
-    `<span><i style="background:var(--primary)"></i>${B.label}</span>`;
+  document.getElementById('yyKey').innerHTML = yyKeyHtml(A, B);
 
   document.getElementById('yyGrades').innerHTML = vals.map(v=>
     // רפרנס ארצי רק על יב׳ — המדד הארצי מודד בוגרים, ואין לו מקבילה בי׳/יא׳
@@ -4432,6 +4451,7 @@ function renderYYSubjects(A, B){
   ].map(r=> Object.assign(r, { o: trSubjPct(A.key, r.idx), n: trSubjPct(B.key, r.idx) }));
 
   const scale = Math.max(...rows.flatMap(r=> [r.o, r.n]).filter(v=> v != null), 1) * 1.12;
+  document.getElementById('yyKeySubj').innerHTML = yyKeyHtml(A, B);
   document.getElementById('yySubjects').innerHTML =
     rows.map(r=> cmpRow(r.lbl, 'מתוך כלל תלמידי י׳–יב׳', r.o, r.n, scale, null, false)).join('');
 
@@ -4502,6 +4522,7 @@ function renderYYSchools(A, B){
   document.getElementById('yyMetaN').textContent = cmp.length;
   document.getElementById('yyThOld').textContent = A.label;
   document.getElementById('yyThNew').textContent = B.label;
+  document.getElementById('yyKeySch').innerHTML = yyKeyHtml(A, B);
 
   const up = cmp.filter(r=> r.d > 1).length;
   const dn = cmp.filter(r=> r.d < -1).length;
@@ -4516,8 +4537,8 @@ function renderYYSchools(A, B){
     cmp.map(r=> `
       <tr>
         <td class="nm">${r.name}${r.note? `<span style="font-size:10px;font-weight:700;background:var(--accent-l);color:#a04a10;padding:2px 7px;border-radius:7px;margin-right:6px;">${r.note}</span>`:''}</td>
-        <td style="text-align:center;color:var(--muted);">${r.a.toFixed(1)}%</td>
-        <td style="text-align:center;font-weight:700;">${r.b.toFixed(1)}%</td>
+        <td style="text-align:center;color:#b8560c;">${r.a.toFixed(1)}%</td>
+        <td style="text-align:center;font-weight:700;color:var(--primary);">${r.b.toFixed(1)}%</td>
         <td style="text-align:center;">${cell(r)}</td>
         <td style="text-align:center;color:var(--muted);font-size:12px;">${r.grades.map(g=> g+'׳').join(', ')}</td>
       </tr>`).join('') +
@@ -6420,7 +6441,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v80';
+const BUILD = 'v81';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
