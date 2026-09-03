@@ -3290,6 +3290,35 @@ const CITY_DETECTORS = [
     action: ()=> 'לעקוב אחרי בוגרי קבוצות עתיד טק שמית לתוך י׳, ולבדוק מי מהם לא נרשם למסלול — ולמה. זו קבוצה שכבר סומנה כבעלת פוטנציאל.' },
 
   // 9. בתי ספר חלקיים מחוץ לדירוג — יורה רק כשמשקלם מהותי
+  // 9ב. צינור צר עם דפנות חזקות — מקצוע מדעי שמי שמגיע בו ליא׳ כמעט
+  // תמיד מסיים, אבל הכניסה והמעבר מי׳ ליא׳ הם החסם. נגזר: המקצוע נבחר
+  // לפי הדפוס (היום פיזיקה, מחר אולי מדמ"ח), והשיעורים דרך נוסחאות
+  // תצוגת הצפי (`fcRates`/`fcSubjects`) — לא נוסחה מקבילה. בלי שתי
+  // דגימות סוף-שנה הגלאי אינו נדלק.
+  { id:'narrowPipe', kind:'structural', tag:'צינור צר, דפנות חזקות',
+    test(){
+      const R = fcRates(); if(!R) return null;
+      const KEEP = 0.9, GAP = 0.10;                 // שמירה גבוהה בסוף, פער מול ההתחלה
+      const hit = fcSubjects(R)
+        .filter(x=> x.idx !== 3)                    // המדעים — שער המדד; מתמטיקה נמדדת בגלאי השער
+        .filter(x=> x.r11 >= KEEP && (x.r11 - x.r10) >= GAP)
+        .map(x=> Object.assign({ lost: Math.max(0, Math.round(x.base10 - x.got11)) }, x))
+        .sort((a,b)=> b.lost - a.lost)[0];
+      if(!hit || !hit.lost) return null;
+      return { s: hit, A: R.A, B: R.B };
+    },
+    cost: ev=> ev.s.lost,
+    title: ev=> `${ev.s.name}: הבעיה בכניסה, לא בהתמדה`,
+    body: ev=> `המדד דורש מתמטיקה 5 ועוד מדע, ו${ev.s.name} היא צינור צר עם דפנות חזקות: `+
+      `מ-<strong>${num(ev.s.base10)}</strong> שנכנסו בי׳ ${fcShort(ev.A.label)} הגיעו <strong>${num(ev.s.got11)}</strong> ליא׳ `+
+      `(${(ev.s.r10*100).toFixed(0)}%), אבל מיא׳ ליב׳ נשארו <strong>${(Math.min(1,ev.s.r11)*100).toFixed(0)}%</strong>`+
+      `${ev.s.r11>1? ' (נמדד אף מעל 100%)' : ''}. `+
+      `כמעט כל האבדן — <strong>${num(ev.s.lost)} תלמידים</strong> — במעבר אחד, מי׳ ליא׳. `+
+      `מי שעובר אותו, מסיים.`,
+    action: ev=> `הרחבת הכניסה ל${ev.s.name} בי׳ והחזקת התלמידים עד יא׳ מיתרגמות כמעט אחד `+
+      `לאחד לזכאים ביב׳ — אחרי יא׳ השמירה ${(Math.min(1,ev.s.r11)*100).toFixed(0)}%. `+
+      `המוקד: שיחות השיבוץ למגמות בסוף י׳.` },
+
   { id:'partialBlindSpot', kind:'structural', tag:'נקודה עיוורת',
     test(c){
       const partials = SCHOOLS.filter(s=> s.partial && hasGrade(s,0));
@@ -6548,7 +6577,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v100';
+const BUILD = 'v101';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6961,6 +6990,7 @@ function fcSubjects(R){
     const r10 = b[1]/a[0], r11 = b[2]/a[1];
     const p10 = Math.min(1, r10), p11 = Math.min(1, r11);
     return Object.assign(sub, { r10, r11,
+      base10: a[0], got11: b[1], base11: a[1], got12: b[2],   // המחזור שנמדד (לגלאי הצינור)
       now: n[2], y1: Math.round(n[1] * p11), y2: Math.round(n[0] * p10 * p11) });
   }).filter(Boolean);
 }
