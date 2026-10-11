@@ -28,7 +28,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Heebo', 'Arial H
 .mt-fill { height: 100%; width: 0; border-radius: 999px; transition: width .6s ease-out; }
 .mt-city .mt-fill { background: var(--accent); }
 .mt-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.mt-tile { background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--k); border-radius: 16px; padding: 14px 16px; display: grid; gap: 2px; box-shadow: 0 2px 8px rgba(42,26,77,.06); }
+.mt-tile { color: var(--text); background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--k); border-radius: 16px; padding: 14px 16px; display: grid; gap: 2px; box-shadow: 0 2px 8px rgba(42,26,77,.06); }
 .mt-tile .n { font-weight: 900; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .mt-tile .l { color: var(--muted); font-size: 14px; font-weight: 500; }
 .k-done { --k: var(--good); } .k-prog { --k: var(--warn); } .k-none { --k: #b9b0c9; } .k-bad { --k: var(--bad); }
@@ -123,7 +123,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Heebo', 'Arial H
 <script>
 (function () {
   'use strict';
-  const BUILD = 1;
+  const BUILD = 2;
   const ALL = ['ז', 'ח', 'ט', 'י', 'יא', 'יב'];
   const MID = ['ז', 'ח', 'ט'];
   const HIGH = ['י', 'יא', 'יב'];
