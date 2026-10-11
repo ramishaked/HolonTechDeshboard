@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מעקב הזנות מדד טק</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap">
+<style>
+:root { --primary:#6a3e9c; --primary-d:#4a2972; --primary-l:#ede1f7; --accent:#f47b20; --good:#34a853; --warn:#fbbc04; --bad:#e84235; --bg:#f5f3f8; --card:#ffffff; --border:#e0d8eb; --text:#1f1530; --muted:#6a6080; color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Heebo', 'Arial Hebrew', Arial, sans-serif; font-size: 15px; }
+.mt { max-width: 72rem; margin-inline: auto; padding: 28px 24px 40px; display: grid; gap: 20px; }
+.mt-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.mt h1 { font-weight: 900; font-size: 28px; margin: 0; color: var(--primary-d); text-wrap: balance; }
+.mt-lead { color: var(--muted); margin: 6px 0 0; font-size: 15px; line-height: 1.5; }
+.mt-refresh { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.mt-btn { font: inherit; font-weight: 700; font-size: 14px; color: var(--primary-d); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.mt-btn:hover { border-color: var(--primary); }
+.mt-btn:focus-visible { outline: 3px solid var(--primary-l); outline-offset: 2px; }
+.mt-btn[disabled] { opacity: .6; cursor: default; }
+.mt-city { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-d) 100%); color: #fff; border-radius: 16px; padding: 22px 24px; display: grid; gap: 14px; box-shadow: 0 6px 20px rgba(74,41,114,.18); }
+.mt-city-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; justify-content: space-between; }
+.mt-big { font-weight: 900; font-size: 56px; line-height: 1; font-variant-numeric: tabular-nums; }
+.mt-big-label { font-size: 14px; font-weight: 500; opacity: .88; }
+.mt-city .mt-track { height: 14px; border-radius: 999px; background: rgba(255,255,255,.22); overflow: hidden; }
+.mt-fill { height: 100%; width: 0; border-radius: 999px; transition: width .6s ease-out; }
+.mt-city .mt-fill { background: var(--accent); }
+.mt-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.mt-tile { background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--k); border-radius: 16px; padding: 14px 16px; display: grid; gap: 2px; box-shadow: 0 2px 8px rgba(42,26,77,.06); }
+.mt-tile .n { font-weight: 900; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mt-tile .l { color: var(--muted); font-size: 14px; font-weight: 500; }
+.k-done { --k: var(--good); } .k-prog { --k: var(--warn); } .k-none { --k: #b9b0c9; } .k-bad { --k: var(--bad); }
+.mt-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(42,26,77,.06); }
+.mt-card h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; color: var(--primary-d); }
+.mt-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 14px; }
+.mt-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.mt-table th { text-align: right; font-weight: 700; color: var(--muted); font-size: 13px; padding: 8px 10px; border-bottom: 2px solid var(--primary-l); }
+.mt-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.mt-table tbody tr:last-child td { border-bottom: none; }
+.mt-table tbody tr:hover td { background: #faf7fd; }
+.mt-school a { color: var(--primary-d); font-weight: 700; text-decoration: none; }
+.mt-school a:hover { color: var(--primary); text-decoration: underline; }
+.mt-prog { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mt-prog .mt-track { flex: 1; height: 10px; border-radius: 999px; background: var(--primary-l); overflow: hidden; }
+.mt-prog .pct { min-width: 3.2rem; text-align: left; font-weight: 700; }
+.mt-pill { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.mt-pill.done { background: #e3f4e8; color: #1e7b3a; }
+.mt-pill.prog { background: #fff4d1; color: #8a6400; }
+.mt-pill.none { background: #efecf3; color: var(--muted); }
+.mt-pill.bad { background: #fde4e2; color: #b3261e; }
+.mt-pill.na { background: #efecf3; color: #b3261e; }
+.mt-muted { color: var(--muted); }
+.mt-foot { color: var(--muted); font-size: 13px; margin: 0; line-height: 1.6; }
+.mt-alert { background: #fde4e2; color: #b3261e; border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .mt-fill { transition: none; } }
+@media (max-width: 760px) { .mt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .mt { padding: 18px 16px 28px; gap: 16px; }
+  .mt h1 { font-size: 22px; }
+  .mt-big { font-size: 44px; }
+  .mt-city { padding: 18px; }
+  .mt-tile { padding: 12px; } .mt-tile .n { font-size: 26px; }
+  .mt-card { padding: 16px; }
+  .mt-table thead { display: none; }
+  .mt-table, .mt-table tbody { display: block; }
+  .mt-table tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name state" "prog prog" "grades grades"; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .mt-table tbody tr:last-child { border-bottom: none; }
+  .mt-table td { display: block; padding: 0; border: none; }
+  .mt-table td:nth-child(1) { grid-area: name; font-size: 16px; }
+  .mt-table td:nth-child(2) { grid-area: prog; }
+  .mt-table td:nth-child(3) { grid-area: grades; font-size: 13px; }
+  .mt-table td:nth-child(4) { grid-area: state; }
+  .mt-table td:nth-child(3)::before { content: 'שכבות שהושלמו: '; }
+}
+</style>
+</head>
+<body>
+<main class="mt">
+  <header class="mt-head">
+    <div>
+      <h1>מעקב הזנות מדד טק תשפ"ז</h1>
+      <p class="mt-lead" id="takeaway">טוען נתונים מגיליונות בתי הספר</p>
+    </div>
+    <div class="mt-refresh">
+      <span id="updated"></span>
+      <button class="mt-btn" id="refresh" type="button">רענון</button>
+    </div>
+  </header>
+
+  <div class="mt-alert" id="alert" hidden></div>
+
+  <section class="mt-city" aria-label="סיכום עירוני">
+    <div class="mt-city-top">
+      <div>
+        <div class="mt-big-label">השלמת הזנה עירונית</div>
+        <div class="mt-big" id="city-pct">-</div>
+      </div>
+      <div class="mt-big-label" id="city-cells"></div>
+    </div>
+    <div class="mt-track"><div class="mt-fill" id="city-bar"></div></div>
+    <div class="mt-tiles">
+      <div class="mt-tile k-done"><span class="n" id="t-done">-</span><span class="l">השלימו</span></div>
+      <div class="mt-tile k-prog"><span class="n" id="t-prog">-</span><span class="l">בתהליך</span></div>
+      <div class="mt-tile k-none"><span class="n" id="t-none">-</span><span class="l">לא התחילו</span></div>
+      <div class="mt-tile k-bad"><span class="n" id="t-bad">-</span><span class="l">עם שגיאות</span></div>
+    </div>
+  </section>
+
+  <section class="mt-card">
+    <h2>מצב לפי בית ספר</h2>
+    <p class="mt-note">אחוז התאים שמולאו מתוך התאים הנדרשים: כמות תלמידים, פיזיקה 5, מדעי המחשב 5, מתמטיקה 5, אנגלית 5 וזכאות, בנים ובנות, בכל שכבה שקיימת בבית הספר. לחיצה על שם בית הספר פותחת את הגיליון שלו.</p>
+    <table class="mt-table">
+      <thead><tr><th>בית ספר</th><th>התקדמות</th><th>שכבות שהושלמו</th><th>סטטוס</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+
+  <p class="mt-foot">הנתונים נקראים ישירות מגיליונות ההזנה של בתי הספר בכל פתיחה, ומתרעננים אוטומטית כל 2 דקות. השכבות של כל בית ספר נלקחו מקובץ העיר של תשפ"ו.</p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const BUILD = 1;
+  const ALL = ['ז', 'ח', 'ט', 'י', 'יא', 'יב'];
+  const MID = ['ז', 'ח', 'ט'];
+  const HIGH = ['י', 'יא', 'יב'];
+  // שכבות לפי שורת "כמות תלמידים" בקובץ העיר של תשפ"ו
+  const SCHOOLS = [
+    { name: 'אורט', id: '1tahg1sQT4S7OM05Ytcz217Gohen2iy-_vyU2T1AuVhg', grades: ALL },
+    { name: 'אילון', id: '1X4lw-SHCOVPjFcNmTsfF6ENZWf1zmQYG07IanFYGLpI', grades: ALL },
+    { name: 'אלון', id: '1iRRRiPxbqiLpTJUGsNBJTZk_55hTFGvDdtki5mO8yvY', grades: MID },
+    { name: 'ארן', id: '1LE4Ch1v4ZFkXuOkQeilfiur9bwtrE7rZRBls3q5RXS4', grades: MID },
+    { name: 'הייטק היי', id: '1n4fMJ3t0TVU5_bM_UEEONGkVsIEGFLXwFPklcPru0uU', grades: ALL },
+    { name: 'הרצוג', id: '1X8w82kxlhFGzk5RUYxkxO7v9VE4A6tNMF3iUye8lTsE', grades: ALL },
+    { name: 'יבנה', id: '1hDOE35k6sw9FHIVZu8KXT0R-5_L3HSfp5O7vPqLsGy8', grades: ALL },
+    { name: 'יונתן', id: '16fvWkkVHbKQ6Ur6ndI-sw8e47WNEt1p7iBMMYOQIKKg', grades: MID },
+    { name: 'נבון', id: '1SQRpfXWyd8HdrymR6dojEwYwe1sBCKGx31iNRBLqcSA', grades: ALL },
+    { name: 'עתידים', id: '1ahSyjY9TOl4K3yZJdzjWs9vinyr1-IDw5nVb1hs1wC8', grades: ALL },
+    { name: 'קוגל', id: '1llkQPM9aUhTYj7OgdzeOVsxqj1aj49cT0nrustsjp0Y', grades: ALL },
+    { name: 'קציר', id: '1biysQ_Dyp31QsgfQbudUyREO2zHncsFSXX9CQLtbobo', grades: ALL },
+    { name: 'הראל', id: '1CGF1zbgnwq87aYQ2Nzu_0Af3UuT-MbNy9GLRJw1XK7o', grades: ALL },
+    { name: 'קרית שרת', id: '1p8PFTqJeRgFpOkGzP4_YKnRhDfGANVQdH8j4RgPymmA', grades: HIGH }
+  ];
+  // שורות C8:AL16 בלשונית "הזנה": 0 כמות · 1 פיזיקה 5 · 2 מדמ"ח 5 · 3 מתמ' 3 · 4 מתמ' 4 · 5 מתמ' 5 · 6 אנגלית 5 · 7 עתיד טק · 8 זכאות
+  const REQ_ROWS = [0, 1, 2, 5, 6, 8];
+  const COUNT_ROW = 0;
+  const REFRESH_MS = 120000;
+  const TIMEOUT_MS = 20000;
+
+  const $ = (id) => document.getElementById(id);
+  const pctFmt = (x) => Math.round(x * 100) + '%';
+
+  function loadSheet(id) {
+    return new Promise((resolve, reject) => {
+      const cb = 'hz_' + Math.random().toString(36).slice(2);
+      const s = document.createElement('script');
+      const done = () => { clearTimeout(timer); try { delete window[cb]; } catch (e) { window[cb] = undefined; } s.remove(); };
+      const timer = setTimeout(() => { done(); reject(new Error('timeout')); }, TIMEOUT_MS);
+      window[cb] = (d) => {
+        done();
+        if (!d || d.status === 'error' || !d.table) reject(new Error('sheet error'));
+        else resolve(d.table);
+      };
+      s.onerror = () => { done(); reject(new Error('network')); };
+      s.src = 'https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:json;responseHandler:' + cb +
+        '&sheet=' + encodeURIComponent('הזנה') + '&range=C8:AL16&headers=0&_=' + Date.now();
+      document.head.appendChild(s);
+    });
+  }
+
+  // table.rows[r].c[col] → מספר או null. עמודה = 6*שכבה + (0 בנים | 1 בנות)
+  function cell(table, r, col) {
+    const row = table.rows && table.rows[r];
+    const c = row && row.c && row.c[col];
+    if (!c || c.v === null || c.v === undefined || c.v === '') return null;
+    const n = Number(c.v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function summarize(school, table) {
+    let filled = 0, errors = 0, done = 0;
+    school.grades.forEach((g) => {
+      const k = ALL.indexOf(g) * 6;
+      let f = 0;
+      REQ_ROWS.forEach((r) => { if (cell(table, r, k) !== null) f++; if (cell(table, r, k + 1) !== null) f++; });
+      const cb = cell(table, COUNT_ROW, k), cg = cell(table, COUNT_ROW, k + 1);
+      for (let r = 1; r <= 8; r++) {
+        const b = cell(table, r, k), gl = cell(table, r, k + 1);
+        if (b !== null && cb !== null && b > cb) errors++;
+        if (gl !== null && cg !== null && gl > cg) errors++;
+      }
+      filled += f;
+      if (f === REQ_ROWS.length * 2) done++;
+    });
+    const expected = school.grades.length * REQ_ROWS.length * 2;
+    const pct = expected ? filled / expected : 0;
+    const state = errors > 0 ? 'יש שגיאות' : filled === 0 ? 'לא התחיל' : pct >= 1 ? 'הושלם' : 'בתהליך';
+    return { school: school.name, id: school.id, filled, expected, pct, done, gradesTotal: school.grades.length, errors, state };
+  }
+
+  const ORDER = { 'אין גישה': -1, 'יש שגיאות': 0, 'בתהליך': 1, 'לא התחיל': 2, 'הושלם': 3 };
+  const pillCls = (s) => ({ 'הושלם': 'done', 'יש שגיאות': 'bad', 'בתהליך': 'prog', 'לא התחיל': 'none', 'אין גישה': 'na' })[s];
+  const barColor = (s) => s === 'הושלם' ? 'var(--good)' : s === 'יש שגיאות' ? 'var(--bad)' : s === 'בתהליך' ? 'var(--accent)' : '#b9b0c9';
+
+  function render(results) {
+    const ok = results.filter((r) => r.state !== 'אין גישה');
+    const failed = results.length - ok.length;
+    const filled = ok.reduce((s, r) => s + r.filled, 0);
+    const expected = results.reduce((s, r) => s + r.expected, 0);
+    const n = (st) => results.filter((r) => r.state === st).length;
+    const cityPct = expected ? filled / expected : 0;
+
+    $('city-pct').textContent = pctFmt(cityPct);
+    $('city-bar').style.width = Math.min(1, cityPct) * 100 + '%';
+    $('city-cells').textContent = filled.toLocaleString('he-IL') + ' מתוך ' + expected.toLocaleString('he-IL') + ' תאים נדרשים מולאו';
+    $('t-done').textContent = n('הושלם');
+    $('t-prog').textContent = n('בתהליך');
+    $('t-none').textContent = n('לא התחיל');
+    $('t-bad').textContent = n('יש שגיאות');
+
+    let t = n('הושלם') + ' מתוך ' + results.length + ' בתי ספר השלימו את ההזנה';
+    t += n('לא התחיל') ? ', ו-' + n('לא התחיל') + ' עוד לא התחילו.' : '.';
+    if (n('יש שגיאות')) t += ' ב-' + n('יש שגיאות') + ' יש ערכים שצריך לבדוק.';
+    $('takeaway').textContent = t;
+
+    const alert = $('alert');
+    alert.hidden = !failed;
+    alert.textContent = failed ? failed + ' גיליונות לא נטענו. ודאו שהגיליונות משותפים ב"כל מי שיש לו את הקישור" ונסו לרענן.' : '';
+
+    const tbody = $('rows');
+    tbody.replaceChildren();
+    results.slice().sort((a, b) => (ORDER[a.state] - ORDER[b.state]) || (b.pct - a.pct) || a.school.localeCompare(b.school, 'he'))
+      .forEach((r) => {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.className = 'mt-school';
+        const a = document.createElement('a');
+        a.href = 'https://docs.google.com/spreadsheets/d/' + r.id + '/edit';
+        a.target = '_blank'; a.rel = 'noopener'; a.textContent = r.school;
+        td1.appendChild(a);
+        const td2 = document.createElement('td');
+        const wrap = document.createElement('div'); wrap.className = 'mt-prog';
+        const track = document.createElement('div'); track.className = 'mt-track';
+        const fill = document.createElement('div'); fill.className = 'mt-fill';
+        fill.style.background = barColor(r.state);
+        track.appendChild(fill);
+        const pct = document.createElement('span'); pct.className = 'pct';
+        pct.textContent = r.state === 'אין גישה' ? '-' : pctFmt(r.pct);
+        wrap.append(track, pct); td2.appendChild(wrap);
+        const td3 = document.createElement('td'); td3.className = 'mt-muted';
+        td3.textContent = r.state === 'אין גישה' ? '-' : r.done + ' מתוך ' + r.gradesTotal;
+        const td4 = document.createElement('td');
+        const pill = document.createElement('span'); pill.className = 'mt-pill ' + pillCls(r.state); pill.textContent = r.state;
+        td4.appendChild(pill);
+        tr.append(td1, td2, td3, td4);
+        tbody.appendChild(tr);
+        requestAnimationFrame(() => { fill.style.width = Math.min(1, r.pct) * 100 + '%'; });
+      });
+
+    $('updated').textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) + ' · v' + BUILD;
+  }
+
+  let busy = false;
+  async function refresh() {
+    if (busy) return;
+    busy = true;
+    const btn = $('refresh');
+    btn.disabled = true; btn.textContent = 'טוען';
+    const results = await Promise.all(SCHOOLS.map((s) =>
+      loadSheet(s.id).then((table) => summarize(s, table)).catch(() => ({
+        school: s.name, id: s.id, filled: 0, expected: s.grades.length * REQ_ROWS.length * 2, pct: 0,
+        done: 0, gradesTotal: s.grades.length, errors: 0, state: 'אין גישה'
+      }))));
+    render(results);
+    btn.disabled = false; btn.textContent = 'רענון';
+    busy = false;
+  }
+
+  $('refresh').addEventListener('click', refresh);
+  refresh();
+  setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+})();
+</script>
+</body>
+</html>
