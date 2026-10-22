@@ -142,7 +142,7 @@ if (browser) {
     const rp = await openPage(browser, real);
     const v0 = await rp.page.locator('.kpi .v').first().innerText().catch(() => '');
     const v2 = await rp.page.locator('.kpi .v').nth(2).innerText().catch(() => '');
-    v0.includes('82.1') && v2.includes('14.6') ? pass('data.json האמיתי: חולון זכאות 82.1%, בגרות טק 14.6%') : fail(`data.json האמיתי: "${v0}" "${v2}"`);
+    v0.includes('82.1') && v2.includes('14.8') ? pass('data.json האמיתי: חולון זכאות 82.1%, בגרות טק 14.8% (תיקון ידני)') : fail(`data.json האמיתי: "${v0}" "${v2}"`);
     const hn = await rp.page.locator('#heroNote').innerText();
     hn.includes('22.10.2026') ? pass('data.json האמיתי: תאריך האיסוף מוצג') : fail('תאריך האיסוף חסר: ' + hn);
     for (const g of ['cluster', 'size', 'region']) {
