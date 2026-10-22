@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-/* ── שליפת אבחון: נתוני השנה מול ההיסטוריה, לכל הרשויות ─────────────────
+/* ── שליפת אבחון: שורות ההיסטוריה הגולמיות של מדדי הליבה, לכל הרשויות ─────────────────
    למה: באתר שקיפות בחינוך בעמוד חולון כתוב "זכאות לבגרות טק" 14.8, וב-data.json
-   (שנשלף מ-rashutHistory) יש 14.6. כדי לדעת אם זה חריג בודד או שיטתי, שולפים את
-   נקודת הקצה של השנה (/api/data/rashut/?semelRashut=...&year=...) לכל הרשויות,
-   וגם את הארצי, ושומרים את כל האובייקטים שיש בהם Var_id (בלי תלות במבנה).
+   (שנשלף מ-rashutHistory) יש 14.6. נקודת הקצה של השנה (rashut?year=) אינה מכילה
+   נתוני בגרות כלל (נבדק 22.10). החשד: ב-rashutHistory יש כמה שורות לאותו
+   (מדד, כיתה, שנה) עם Entity_id שונה, ו-series() ב-eduCollect שומרת רק אחת.
+   הסקריפט שומר את כל השורות הגולמיות של מדדי הליבה, לכל הרשויות.
    חייב לרוץ ממחשב ישראלי (האתר חוסם חו"ל), כמו refresh-data.mjs.
 
    שימוש:  node tools/probe-year.mjs [--headed] [--years 2025,2024]
@@ -40,24 +41,25 @@ await page.exposeFunction('__prog', m => process.stdout.write('\r  ' + String(m)
 
 const out = await page.evaluate(async ({ years }) => {
   const g = async u => { for (let t = 0; t < 3; t++) { try { const r = await fetch(u, { headers: { Accept: 'application/json' } }); if (r.ok) return await r.json(); if (r.status === 404) return null; } catch {} await new Promise(r => setTimeout(r, 400 * (t + 1))); } return null; };
-  // כל אובייקט שיש לו Var_id, בכל עומק, עם הנתיב שבו נמצא
+  // כל אובייקט שיש לו Var_id, בכל עומק, עם הנתיב שבו נמצא וכל השדות שלו (Class_Id, Entity_id ועוד)
   const vars = (o, p = '', acc = []) => {
     if (Array.isArray(o)) o.forEach((x, i) => vars(x, p + '[' + i + ']', acc));
     else if (o && typeof o === 'object') { if ('Var_id' in o) acc.push({ path: p.replace(/\[\d+\]/g, '[]'), ...o }); else for (const [k, v] of Object.entries(o)) vars(v, p + '.' + k, acc); }
     return acc;
   };
+  const CORE = new Set(['ACHUZ_ZAKAIM', 'ACHUZ_ZAKAIM_MITZTYEN', 'ACHUZ_ZAKAIM_BG_TECH_ANG5', 'ACHUZ_ANGLIT_5YL', 'ACHUZ_MATEM_5YL']);
   const lists = await g('/api/data/lists');
   const rash = Object.values(lists.infoLists).filter(x => +x.Mode === 2).map(x => ({ s: +x.Semel, n: String(x.Shem || '').trim() }));
-  const res = { collectedAt: new Date().toISOString(), years, rawKeys: {}, rawHolon: {}, national: {}, rashuyot: {} };
-  for (const y of years) {
-    const n = await g('/api/data/national/?year=' + y); res.national[y] = n && vars(n);
-    const h = await g('/api/data/rashut/?semelRashut=66001&year=' + y); res.rawKeys[y] = h && Object.keys(h); res.rawHolon[y] = h;
-  }
+  const res = { collectedAt: new Date().toISOString(), years, holonHistoryRaw: null, holonHistoryTopKeys: null, rashuyot: {} };
+  // חולון: כל תשובת ההיסטוריה הגולמית (כל המפתחות, כל השורות)
+  const hh = await g('/api/data/rashutHistory/?semelRashut=66001');
+  res.holonHistoryTopKeys = hh && Object.keys(hh); res.holonHistoryRaw = hh;
   let i = 0, done = 0;
   const work = async () => { while (i < rash.length) { const r = rash[i++];
-    const o = { n: r.n };
-    for (const y of years) { const d = await g('/api/data/rashut/?semelRashut=' + r.s + '&year=' + y); o[y] = d && vars(d); }
-    res.rashuyot[r.s] = o; window.__prog(++done + ' מתוך ' + rash.length); } };
+    const d = await g('/api/data/rashutHistory/?semelRashut=' + r.s);
+    // כל השורות של מדדי הליבה, בכל Class_Id וכל Entity_id, לשנים שביקשנו. בלי איחוד ובלי "האחרונה מנצחת"
+    res.rashuyot[r.s] = { n: r.n, rows: d ? vars(d).filter(x => CORE.has(x.Var_id) && years.includes(+x.year)) : null };
+    window.__prog(++done + ' מתוך ' + rash.length); } };
   await Promise.all(Array.from({ length: 6 }, work));
   return res;
 }, { years });
