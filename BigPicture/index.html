@@ -109,7 +109,9 @@ td.sorted { background: #f8f4fc; }
 .pill[aria-pressed="true"] .si path.on { fill: #fff; }
 .cell2 { display: inline-flex; flex-direction: column; gap: 1px; align-items: flex-start; }
 .cell2 .cv { display: inline-flex; gap: 6px; align-items: center; }
-.cell2 small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.cell2 small { color: var(--muted); font-size: 12.5px; font-weight: 700; }
+.cell2 small.up { color: var(--good-d); }
+.cell2 small.dn { color: var(--bad-d); }
 td { padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 tr.me td { background: var(--accent-l); font-weight: 700; }
 tr.nat td { color: var(--muted); font-style: normal; background: #faf8fc; }
@@ -133,7 +135,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (max-width: 360px) { .mrow-h .mchips { font-size: 12px; gap: 3px 8px; } .mrow-h .mv { font-size: 24px; } }
+@media (max-width: 360px) { .mc .l1 { display: none; } .mc .l2 { display: inline; } .mrow-h .mchips { font-size: 12px; gap: 3px 6px; } .mc .dd { font-size: 11px; } .mrow-h .mv { font-size: 24px; } }
 @media (max-width: 380px) { .kpis { grid-template-columns: 1fr; } .kpi .spark { height: 28px; } }
 @media (max-width: 600px) {
   .wrap { padding: 16px 16px 28px; gap: 16px; }
@@ -170,7 +172,12 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 .mrow-h .mchips { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 12px; margin-top: 3px; font-size: 13px; color: var(--muted); }
 .mc { white-space: nowrap; }
 .mc i { font-style: normal; }
+.mc .l2 { display: none; }
 .mc b { color: var(--text); font-weight: 700; }
+.mc .dd { font-size: 12px; font-weight: 700; margin-inline-start: 2px; }
+.mc .dd.up { color: var(--good-d); }
+.mc .dd.dn { color: var(--bad-d); }
+.mb { color: var(--muted); font-size: 12.5px; margin-inline-start: 4px; }
 .mc .tr { margin-inline-start: 3px; }
 .mrow:not(.nat) .mrow-h:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 12px; }
 .mdet { padding: 2px 10px 12px; display: grid; gap: 2px; }
@@ -239,7 +246,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 12;
+const BUILD = 14;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -516,13 +523,14 @@ function renderTable(list) {
   const cell = (r, v) => {
     const a = val(r, v, Y()), ref = base === 'nat' ? natVal(v, Y()) : val(r, v, PY());
     const d = a != null && ref != null ? a - ref : null;
-    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small>${chg(d, rel(a, ref))}</small>` : ''}</span></td>`;
+    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small class="${kindOf(d)}">${chg(d, rel(a, ref))}</small>` : ''}</span></td>`;
   };
   const natRow = natOn() ? `<tr class="nat"><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
     const a = natVal(v, Y()), b = natVal(v, PY()), d = base === 'yoy' && a != null && b != null ? a - b : null;
-    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small>${chg(d, rel(a, b))}</small>` : base === 'nat' ? '<small>בסיס ההשוואה</small>' : ''}</span></td>`; }).join('')}</tr>` : '';
+    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small class="${kindOf(d)}">${chg(d, rel(a, b))}</small>` : base === 'nat' ? '<small>בסיס ההשוואה</small>' : ''}</span></td>`; }).join('')}</tr>` : '';
   /* מובייל: רשימת דירוג. המדד הממוין בגדול, שאר המדדים בשורה קטנה, והקשה פותחת פירוט מלא */
   const SHORT = { ACHUZ_ZAKAIM: 'זכאות', ACHUZ_ZAKAIM_MITZTYEN: 'מצטיינת', ACHUZ_ZAKAIM_BG_TECH_ANG5: 'בגרות טק', ACHUZ_ANGLIT_5YL: 'אנגלית 5', ACHUZ_MATEM_5YL: 'מתמטיקה 5' };
+  const SHORT2 = { ACHUZ_ZAKAIM: 'זכאות', ACHUZ_ZAKAIM_MITZTYEN: 'מצטיינת', ACHUZ_ZAKAIM_BG_TECH_ANG5: 'טק', ACHUZ_ANGLIT_5YL: 'אנגל׳ 5', ACHUZ_MATEM_5YL: 'מתמ׳ 5' };   // למסכים צרים מאוד
   const others = CORE.filter(x => x.v !== key);
   const cc = (d, rr) => d == null ? '<span class="na">אין</span>' : `<span class="cc"><span class="c1">${tri(d)}<span class="n">${sgn(d)}</span> נק׳</span>${rr != null ? `<small class="n">(${sgn(rr)}%)</small>` : ''}</span>`;
   const mrow = (r, i, isNat) => {
@@ -531,9 +539,9 @@ function renderTable(list) {
     const a = get(key), ref = refv(key), d = a != null && ref != null ? a - ref : null;
     const open = !isNat && S.openRows.has(+r.s);
     const chips = others.map(({ v }) => { const x = get(v), rf = refv(v), dd = x != null && rf != null ? x - rf : null;
-      return `<span class="mc"><i>${SHORT[v]}</i> <b class="n">${x != null ? x.toFixed(1) + '%' : '-'}</b>${dd != null ? tri(dd) : ''}</span>`; }).join('');
+      return `<span class="mc"><i><span class="l1">${SHORT[v]}</span><span class="l2">${SHORT2[v]}</span></i> <b class="n">${x != null ? x.toFixed(1) + '%' : '-'}</b>${dd != null ? `${tri(dd)}<span class="n dd ${kindOf(dd)}">${sgn(dd)}</span>` : ''}</span>`; }).join('');
     const head = `<span class="rk n">${isNat ? '' : i + 1}</span><span class="mn">${isNat ? 'ממוצע ארצי' : esc(r.n)}</span><span class="mv">${fmt(a)}</span>
-      <span class="md">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}${chg(d, rel(a, ref))}</span>` : isNat && base === 'nat' ? '<span class="na">בסיס ההשוואה</span>' : ''}</span>
+      <span class="md">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}${chg(d, rel(a, ref))}</span> <span class="mb">${base === 'nat' ? 'מול הארצי' : 'מ' + hebYear(PY())}</span>` : isNat && base === 'nat' ? '<span class="na">בסיס ההשוואה</span>' : ''}</span>
       ${isNat ? '' : '<svg class="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1.5 1.5 L6 6 L10.5 1.5"/></svg>'}
       <span class="mchips">${chips}</span>`;
     const det = isNat ? '' : `<div class="mdet" ${open ? '' : 'hidden'}>
@@ -551,7 +559,7 @@ function renderTable(list) {
     <div class="ctl"><span class="ctl-l">שינוי מול</span>
       <button type="button" class="pill" data-tb="yoy" aria-pressed="${base === 'yoy'}">${hebYear(PY())}</button>
       <button type="button" class="pill" data-tb="nat" aria-pressed="${base === 'nat'}" ${natOn() ? '' : 'disabled title="ההשוואה לארצי רק על כלל י״ב"'}>הממוצע הארצי</button>
-      <span class="na">נקודות אחוז, ובסוגריים שיעור שינוי יחסי</span></div>
+      <span class="na">מתחת לכל ערך: השינוי מול ${base === 'nat' ? 'הממוצע הארצי' : hebYear(PY())}, בנקודות אחוז ובסוגריים כשיעור יחסי</span></div>
     <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}${key === v ? sortIcon(dir) : ''}</button>`).join('')}</div>
     ${mlist}
     <div class="tbl-wrap tbl-core"><table>
