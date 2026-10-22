@@ -39,6 +39,12 @@ button, input, select { font: inherit; }
 .hero-note { font-size: 13px; opacity: .85; margin: 0; }
 .linkbtn { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
 .linkbtn:hover { background: rgba(255,255,255,.24); }
+dialog.about { border: 0; border-radius: 14px; padding: 22px 24px; max-width: 460px; width: calc(100% - 32px); direction: rtl; text-align: right; box-shadow: 0 20px 60px rgba(0,0,0,.35); font: inherit; color: inherit; }
+dialog.about::backdrop { background: rgba(10,20,40,.55); }
+dialog.about h2 { margin: 0 0 10px; font-size: 20px; }
+dialog.about p { margin: 0 0 10px; line-height: 1.65; font-size: 15px; }
+dialog.about .ab-foot { display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 14px; }
+dialog.about button { border: 1px solid #c9d1de; background: #fff; border-radius: 999px; padding: 7px 16px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; }
 
 /* כרטיסים */
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(42,26,77,.06); min-width: 0; }
@@ -219,6 +225,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
         <label class="sr" for="citySel" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">רשות</label>
         <select id="citySel" aria-label="בחירת רשות"></select>
         <button type="button" class="linkbtn" id="copyLink" title="קישור שנפתח ישר על הרשות הזו">העתקת קישור לרשות</button>
+        <button type="button" class="linkbtn" id="aboutBtn">אודות</button>
         <div class="seg" role="group" aria-label="אוכלוסיית המדידה">
           <button type="button" data-pop="12">כלל תלמידי י״ב</button>
           <button type="button" data-pop="120">ללא חינוך מיוחד</button>
@@ -227,6 +234,17 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
     </div>
     <p class="hero-note" id="heroNote"></p>
   </header>
+
+  <dialog class="about" id="aboutDlg" aria-labelledby="aboutTtl">
+    <h2 id="aboutTtl">אודות התמונה החינוכית</h2>
+    <p>הדף מציג את מדדי הליבה של התמונה החינוכית של משרד החינוך (זכאות לבגרות, מצטיינות, בגרות טק, אנגלית 5 ומתמטיקה 5) לכל רשות, עם שינוי מהשנה הקודמת, השוואה לממוצע הארצי והשוואה לרשויות לפי אשכול, היקף ואזור.</p>
+    <p>הנתונים נלקחו מאתר השקיפות של משרד החינוך (shkifut.education.gov.il) ומתעדכנים פעם בשנה.</p>
+    <p>הדף פותח על ידי רמי שקד, כשירות לרשויות.</p>
+    <div class="ab-foot">
+      <a href="https://www.ramishaked.com/" target="_blank" rel="noopener">ramishaked.com</a>
+      <button type="button" id="aboutClose">סגירה</button>
+    </div>
+  </dialog>
 
   <div id="content"></div>
 
@@ -721,6 +739,12 @@ function addCustom() {
 }
 let wasNarrow = window.innerWidth < 600;
 window.addEventListener('resize', () => { const n = window.innerWidth < 600; if (D && n !== wasNarrow) { wasNarrow = n; render(); } });
+(() => {
+  const dlg = $('#aboutDlg');
+  $('#aboutBtn').addEventListener('click', () => dlg.showModal());
+  $('#aboutClose').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+})();
 $('#copyLink').addEventListener('click', async () => {
   const url = cityLink(), b = $('#copyLink'), t0 = 'העתקת קישור לרשות';
   try { await navigator.clipboard.writeText(url); b.textContent = 'הקישור הועתק'; }
