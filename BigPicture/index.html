@@ -31,6 +31,7 @@ button, input, select { font: inherit; }
 .seg { display: inline-flex; background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px; gap: 2px; }
 .seg button { border: 0; background: transparent; color: #fff; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 500; font-size: 14px; }
 .seg button[aria-pressed="true"] { background: #fff; color: var(--primary-d); font-weight: 700; }
+.seg button[disabled] { opacity: .45; cursor: default; }
 .hero-note { font-size: 13px; opacity: .85; margin: 0; }
 
 /* כרטיסים */
@@ -170,7 +171,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   <section class="card">
     <details class="upd" id="upd">
       <summary>עדכון הנתונים ממשרד החינוך</summary>
-      <p class="lede" style="margin-top:10px">הדף טוען את הנתונים בעצמו מהאתר של משרד החינוך, בדפדפן של מי שפותח אותו. אם יש קובץ data.json בתיקייה הזו, הוא נטען ראשון והדף נפתח מהר יותר. את הקובץ אוספים פעם בשנה, בדפדפן שיושב בישראל, כי האתר חוסם שרתים בחו״ל.</p>
+      <p class="lede" style="margin-top:10px">הדף נפתח מקובץ הנתונים data.json שבתיקייה, שנאסף מאתר משרד החינוך. האתר חוסם שרתים בחו״ל ולא מתיר קריאה מדומיין אחר, ולכן את הקובץ מרעננים פעם בשנה, בדפדפן שיושב בישראל, כשמתפרסמת תמונה חינוכית חדשה.</p>
       <ol class="steps">
         <li>גוררים את הכפתור הכתום לסרגל הסימניות: <a class="bm" id="bmLink" href="#">איסוף התמונה החינוכית</a></li>
         <li>פותחים את <a href="https://shkifut.education.gov.il/home" target="_blank" rel="noopener">shkifut.education.gov.il</a> ולוחצים על הסימנייה. בפינת המסך מופיעה התקדמות, ובסוף יורד הקובץ <code>data.json</code>.</li>
@@ -190,7 +191,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 4;
+const BUILD = 5;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -206,6 +207,8 @@ const OTHER_NAMES = {
   ACHUZ_ZAK_TECH_KLALI:'זכאות טכנולוגית', ACHUZ_ZAK_TECH_33:'זכאות טכנולוגית מצטיינת',
   ACHUZ_ZAK_TECH_21_31_32_33:'זכאות טכנולוגית לטכנאים והנדסאים',
 };
+// קודי מחוז גיאוגרפי (CODE_MACHOZ_GEOGRAFI) כפי שהם באתר, מאומתים מול הנתונים האמיתיים
+const DISTRICT_NAMES = { 1:'ירושלים', 2:'צפון', 3:'חיפה', 4:'מרכז', 5:'תל אביב', 6:'דרום' };
 const DEFAULT_CITY = 66001;          // חולון. כל רשות אחרת: ?city=סמל או בבורר
 const MIN12 = 200;                   // סף ברירת מחדל: רשויות קטנות מזיזות אחוז בקלות
 const SIZE_BAND = 0.25;              // "היקף דומה" = ±25%, כמו POP_BAND בדשבורד הראשי
@@ -288,13 +291,13 @@ function enrich() {
   const isInt10 = v => Number.isInteger(+v) && +v >= 1 && +v <= 10 && v !== '' && v != null;
   for (const r of R) {
     const k = r.k || {};
-    let key = findKey(k, /ESHKOL|ASHKOL|ESHCOL|CLUSTER|SOCIO|MADAD_?(KALKALI|LAMAS)/i, isInt10);
+    let key = findKey(k, /SOTSYO|SOCIO|ESHKOL|ASHKOL|ESHCOL|CLUSTER|MADAD_?(KALKALI|LAMAS)/i, isInt10);
     if (key) { r.cluster = +k[key]; r.clusterSrc = 'api'; det.cluster = det.cluster || key; }
     else if (clF.has(norm(r.n))) { r.cluster = clF.get(norm(r.n)); r.clusterSrc = 'fallback'; }
     key = findKey(k, /MACHOZ|MAHOZ|MEHOZ|MECHOZ|DISTRICT/i, v => v != null && v !== '');
     if (key) {
       const raw = k[key];
-      r.district = /^\d+$/.test(String(raw)) ? (dist.get(String(raw)) || `מחוז ${raw}`) : String(raw).replace(/^מחוז\s*/, '');
+      r.district = /^\d+$/.test(String(raw)) ? (DISTRICT_NAMES[+raw] || dist.get(String(raw)) || `מחוז ${raw}`) : String(raw).replace(/^מחוז\s*/, '');
       det.district = det.district || key;
     } else if (rgF.has(norm(r.n))) { r.district = rgF.get(norm(r.n)); r.districtSrc = 'fallback'; }
     key = findKey(k, /TALMIDIM_12$/i, v => +v > 0);
@@ -548,7 +551,9 @@ function render() {
   const st = D.partialState, busy = st && st.done < st.total;
   $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '');
   $('#heroCtl').hidden = false;
-  document.querySelectorAll('[data-pop]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)));
+  const has120 = !!c.h?.['120'];
+  if (!has120 && S.pop === '120') S.pop = '12';
+  document.querySelectorAll('[data-pop]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)); if (b.dataset.pop === '120') { b.disabled = !has120; b.title = has120 ? '' : 'אין נתון ללא חינוך מיוחד לרשות הזו'; } });
   $('#citySel').value = String(S.city);
   $('#content').innerHTML = `<div style="display:grid;gap:20px">${renderCore()}${renderCompare()}
     ${renderTrend()}${renderGeneral()}${renderOther()}</div>
@@ -623,10 +628,10 @@ $('#copyCode').addEventListener('click', async () => {
 
 /* ── איסוף הנתונים ─────────────────────────────────────────────────
    eduCollect הוא הליבה, והיא רצה בשני מקומות:
-   1. כשהדף נפתח: ישירות מהדפדפן של מי שפותח אותו (base = כתובת האתר).
-      הדפדפן יושב בישראל, ולכן מקבל מהאתר את מה שהוא חוסם משרתים בחו״ל
-      (נבדק 22.10.2026: 403 מהענן ומ-GitHub Actions). זה תלוי בכך שהאתר
-      מתיר קריאה מדומיין אחר (CORS); אם לא, הדף נופל ל-data.json.
+   1. כשאין data.json: ניסיון לקרוא ישירות מהדפדפן של מי שפותח את הדף
+      (base = כתובת האתר). לפי הסשן שבנה את EducationPicture2025 האתר אינו
+      מתיר קריאה מדומיין אחר (CORS), ולכן זה גיבוי שצפוי להיכשל מ-github.io.
+      הנתיב הרגיל הוא data.json שבתיקייה.
    2. כסימנייה בתוך האתר עצמו (base ריק), שמורידה data.json לשמירה בריפו.
    נקודות הקצה והשדות: מדריך הגישה לשקיפות בחינוך.
    emit(data, {done, total}) נקרא ברגע שיש חולון והארצי, ואחר כך כל 20 רשויות,
@@ -648,7 +653,7 @@ async function eduCollect(base, say, emit, first) {
   const num = x => { if (x == null || x === '') return null; const n = +String(x).replace(',', '.'); return isFinite(n) ? n : null; };
   const SKIP = new Set(['year', 'Class_Id', 'Entity_id', 'Var_id', 'Var_Id_Heb']);
   const valOf = row => {
-    for (const k of ['ACHUZ_RASHUTI', 'ACHUZ_ARZI', 'ACHUZ']) if (k in row) return num(row[k]);
+    for (const k of ['ACHUZ_RASHUTI', 'ACHUZ_ARTZI', 'ACHUZ_ARZI', 'ACHUZ']) if (k in row) return num(row[k]);
     for (const k of Object.keys(row)) if (!SKIP.has(k) && /ACHUZ|VALUE|ERECH/i.test(k)) return num(row[k]);
     return null;
   };

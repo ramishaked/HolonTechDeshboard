@@ -33,6 +33,7 @@ const CITIES = [
   [26200, 'קריית אונו', 1], [94000, 'יהוד-מונוסון', 2], [85000, 'רמלה', 2], [70000, 'לוד', 2], [11111, 'מועצה קטנה', 2],
 ];
 const DIST = { 1: 'תל אביב', 2: 'מרכז', 3: 'חיפה', 4: 'דרום', 5: 'ירושלים' };
+const MACHOZ_CODE = { 1: 5, 2: 4, 3: 3, 4: 6, 5: 1 };      // לקודים האמיתיים של האתר
 const VARS = ['ACHUZ_ZAKAIM', 'ACHUZ_ZAKAIM_MITZTYEN', 'ACHUZ_ZAKAIM_BG_TECH_ANG5', 'ACHUZ_ANGLIT_5YL', 'ACHUZ_ANGLIT_4YL',
   'ACHUZ_MATEM_5YL', 'ACHUZ_MATEM_4YL', 'ACHUZ_ZAK_TECH_KLALI', 'ACHUZ_ZAK_TECH_33', 'ACHUZ_ZAK_TECH_21_31_32_33'];
 const HEB = { ACHUZ_ZAKAIM: 'זכאות לבגרות', ACHUZ_ZAKAIM_MITZTYEN: 'בגרות מצטיינת', ACHUZ_ZAKAIM_BG_TECH_ANG5: 'בגרות טק' };
@@ -69,7 +70,7 @@ function api(url) {
   if (u.pathname === '/api/data/national/') {
     const rows = [];
     for (const v of VARS) for (const y of YEARS) rows.push({ year: y, Class_Id: 12, Var_id: v, Var_Id_Heb: HEB[v] || v,
-      ACHUZ_ARZI: NAT[y]?.[v] ?? +(BASE[v] + (y - 2020) * .4).toFixed(1) });
+      ACHUZ_ARTZI: NAT[y]?.[v] ?? +(BASE[v] + (y - 2020) * .4).toFixed(1) });
     // שנת 2026 עוד לא פורסמה: שאילתה עליה מחזירה היסטוריה עד 2025
     return { nationalHistory: { arziAkavish: rows } };
   }
@@ -78,7 +79,7 @@ function api(url) {
     const s = +q.get('semelRashut'), c = CITIES.find(x => x[0] === s), r = rnd(s + 7);
     const n12 = s === 66001 ? 2400 : s === 11111 ? 60 : Math.round(500 + r() * 4000);
     return { rashutKlali: [{ SEMEL_RASHUT: s, TALMIDIM_12: n12, TALMIDIM_TECHNOLOGI: s === 66001 ? 47.7 : +(r() * 60).toFixed(1),
-      MDD_SAL_ISHI: +(r() * 5).toFixed(1), SEMEL_MACHOZ: c[2], ESHKOL_LAMAS: s === 66001 ? 7 : 5 + (s % 4) }], shichvot: [{ a: 1 }, { a: 2 }] };
+      MDD_SAL_ISHI: +(r() * 5).toFixed(1), TALMIDIM: n12 * 4, CODE_MACHOZ_GEOGRAFI: MACHOZ_CODE[c[2]], MATSAV_SOTSYOEKONOMI: s === 66001 ? 7 : 5 + (s % 4) }], shichvot: [{ a: 1 }, { a: 2 }] };
   }
   return null;
 }
@@ -186,6 +187,32 @@ if (browser) {
   if (SHOT) { await page.selectOption('#citySel', '66001'); await page.click('.pill[data-g="cluster"]'); await page.screenshot({ path: path.join(process.env.SHOT_DIR || os.tmpdir(), 'bp-desktop.png'), fullPage: true }); }
   errors.length ? errors.forEach(e => fail('שגיאת קונסול: ' + e)) : pass('קונסול נקי');
   await page.close();
+
+  // data.json האמיתי שבריפו: נטען ישר, בלי כלום מהרשת
+  const realPath = path.resolve(HERE, '..', 'BigPicture', 'data.json');
+  if (fs.existsSync(realPath)) {
+    const real = JSON.parse(fs.readFileSync(realPath, 'utf8'));
+    const rp = await openPage(browser, real);
+    const v0 = await rp.page.locator('.kpi .v').first().innerText().catch(() => '');
+    const v2 = await rp.page.locator('.kpi .v').nth(2).innerText().catch(() => '');
+    v0.includes('82.1') && v2.includes('14.6') ? pass('data.json האמיתי: חולון זכאות 82.1%, בגרות טק 14.6%') : fail(`data.json האמיתי: "${v0}" "${v2}"`);
+    const hn = await rp.page.locator('#heroNote').innerText();
+    hn.includes('22.10.2026') ? pass('data.json האמיתי: תאריך האיסוף מוצג') : fail('תאריך האיסוף חסר: ' + hn);
+    for (const g of ['cluster', 'size', 'region']) {
+      await rp.page.click(`.pill[data-g="${g}"]`);
+      const n = await rp.page.locator('.bar').count(), hh = await rp.page.locator('section.card h2').first().innerText();
+      n >= 5 ? pass(`data.json האמיתי, קבוצה ${g}: ${n} רשויות · ${hh.split('·').pop().trim()}`) : fail(`data.json האמיתי, קבוצה ${g}: ${n} רשויות`);
+    }
+    await rp.page.click('.pill[data-g="cluster"]');
+    (await rp.page.locator('.mini .v').first().innerText()).includes('מתוך') ? pass('data.json האמיתי: דירוג חולון באשכול 7 מוצג') : fail('דירוג חסר');
+    const d120 = await rp.page.locator('[data-pop="120"]').isDisabled();
+    !d120 ? pass('חולון: מתג "ללא חינוך מיוחד" פעיל') : fail('המתג מנוטרל לחולון');
+    await rp.page.selectOption('#citySel', String(real.rashuyot.find(r => r.n.startsWith('ראשון')).s));
+    (await rp.page.locator('[data-pop="120"]').isDisabled()) ? pass('רשות בלי נתוני חנ״מ: המתג מנוטרל, בלי תצוגה ריקה') : fail('המתג פעיל לרשות בלי נתונים');
+    (await rp.page.locator('.kpi .v').first().innerText()).match(/\d/) ? pass('ראשון לציון נטענת עם נתונים') : fail('ראשון לציון ריקה');
+    rp.errors.forEach(e => fail('data.json האמיתי, שגיאה: ' + e));
+    await rp.page.close();
+  } else fail('BigPicture/data.json חסר');
 
   for (const w of [320, 360, 390, 768]) {
     const mob = await openPage(browser, data, { width: w, height: 844 });
