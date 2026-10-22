@@ -299,7 +299,7 @@ th.rkc { color: var(--muted); }
 
 <script>
 'use strict';
-const BUILD = 27;
+const BUILD = 28;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -607,7 +607,7 @@ function renderTable(list) {
     const open = !isNat && S.openRows.has(+r.s);
     const chips = others.map(({ v }) => { const x = get(v);
       return `<span class="mc"><i><span class="l1">${SHORT[v]}</span><span class="l2">${SHORT2[v]}</span></i> <b class="n">${x != null ? x.toFixed(1) + '%' : '-'}</b>${!isNat && RK[v](r) ? ` <span class="rkm n">#${RK[v](r).n}</span>` : ''}</span>`; }).join('');
-    const head = `<span class="rk n">${isNat ? '' : i + 1}</span><span class="mn">${isNat ? 'ממוצע ארצי' : esc(r.n)}</span><span class="mv">${fmt(a)}</span>
+    const head = `<span class="rk n">${isNat ? '' : (RK[key](r)?.n ?? '')}</span><span class="mn">${isNat ? 'ממוצע ארצי' : esc(r.n)}</span><span class="mv">${fmt(a)}</span>
       <span class="md">${dy != null ? `<span class="mb">${hebYear(PY())}</span><span class="chip ${kindOf(dy)}">${tri(dy)}${chg(dy, rel(a, b))}</span>` : ''}</span>
       <span class="md">${dn != null ? `<span class="mb">ארצי</span><span class="chip ${kindOf(dn)}">${tri(dn)}${chg(dn, rel(a, n))}</span>` : ''}</span>
       ${isNat ? '' : '<svg class="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1.5 1.5 L6 6 L10.5 1.5"/></svg>'}
@@ -629,7 +629,7 @@ function renderTable(list) {
     ${mlist}
     <div class="tbl-wrap tbl-core"><table>
       <thead><tr><th class="rkc" title="מקום בקבוצה לפי ${label(key)}">#</th><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
-      <tbody>${rows.map((r, i) => `<tr class="${r === c ? 'me' : ''}"><td class="rkc"><span class="n">${i + 1}</span></td><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
+      <tbody>${rows.map((r, i) => `<tr class="${r === c ? 'me' : ''}"><td class="rkc"><span class="n">${RK[key](r)?.n ?? ''}</span></td><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
   </section>`;
 }
@@ -773,7 +773,7 @@ function exportXlsx() {
     });
     return out;
   };
-  const rows = [title, note, h1, h2, ...sorted.map((r, i) => dataRow(r.n, i + 1, v => val(r, v, Y()), v => val(r, v, PY()), r === c, false, r))];
+  const rows = [title, note, h1, h2, ...sorted.map(r => dataRow(r.n, rankOf(r, key), v => val(r, v, Y()), v => val(r, v, PY()), r === c, false, r))];
   if (nat) rows.push(dataRow('ממוצע ארצי (כלל י״ב)', null, v => natVal(v, Y()), v => natVal(v, PY()), false, true, null));
   const widths = [14, 24, ...CORE.flatMap(() => [11, 10, 11, 13, 12, ...(nat ? [14] : [])])];
   const sheet1 = xl.sheet(rows, { widths, merges, freeze: [2, 4], heights: { 0: 24, 1: 32, 2: 22, 3: 44 } });
