@@ -169,8 +169,8 @@ if (browser) {
     // שתי ההשוואות יחד בכל תא, בלי בורר: מול שנה שעברה ומול הארצי
     {
       const lines = await rp.page.locator('tbody tr.me td').nth(1).locator('small').allInnerTexts();
-      lines.length === 2 && lines[0].includes('-1.7') && lines[0].includes('(-2.0%)') && lines[1].includes('+4.2') && lines[1].includes('(+5.4%)')
-        ? pass(`הטבלה: בתא אחד גם מול תשפ״ד (${lines[0].replace(/\s+/g, ' ')}) וגם מול הארצי (${lines[1].replace(/\s+/g, ' ')})`) : fail('תא בטבלה: ' + JSON.stringify(lines));
+      lines.length === 3 && /^מקום \s*\d+\s*מתוך\s*\d+/.test(lines[0].replace(/\s+/g, ' ').trim()) && lines[1].includes('-1.7') && lines[1].includes('(-2.0%)') && lines[2].includes('+4.2') && lines[2].includes('(+5.4%)')
+        ? pass(`הטבלה: בתא אחד גם מול תשפ״ד (${lines[1].replace(/\s+/g, ' ')}) וגם מול הארצי (${lines[2].replace(/\s+/g, ' ')}), ומקום בקבוצה (${lines[0].replace(/\s+/g, ' ')})`) : fail('תא בטבלה: ' + JSON.stringify(lines));
       const { cells, two } = await rp.page.evaluate(() => { const tds = [...document.querySelector('.tbl-core').querySelectorAll('tbody tr:not(.nat) td:not(.h)')]; return { cells: tds.length, two: tds.filter(td => td.querySelectorAll('small.dl').length === 2 || td.querySelector('.cv .na')).length }; });
       two === cells && cells > 100 ? pass(`כל ${cells} התאים מציגים שתי השוואות`) : fail(`תאים עם שתי השוואות: ${two} מתוך ${cells}`);
       (await rp.page.locator('[data-tb]').count()) === 0 ? pass('הבורר "שינוי מול" הוסר') : fail('הבורר עדיין קיים');
