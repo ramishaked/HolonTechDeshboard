@@ -23,6 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mergeEduPic } from './edupic.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -91,7 +92,15 @@ await page.exposeFunction('__prog', m => process.stdout.write('\r  ' + String(m)
 log('אוסף נתונים (כדקה עד שלוש)');
 raw = await page.evaluate(async ({ src, focus }) => {
   const collect = new Function(src + '\nreturn eduCollect;')();
-  return JSON.stringify(await collect('', m => window.__prog(m), null, focus));
+  const data = await collect('', m => window.__prog(m), null, focus);
+  // נתוני השנה העדכנית מאותה בקשה שהעמוד הרשמי שולח (ראו tools/edupic.mjs)
+  const g = async u => { for (let t = 0; t < 3; t++) { try { const r = await fetch(u, { headers: { Accept: 'application/json' } }); if (r.ok) return await r.json(); if (r.status === 404) return null; } catch {} await new Promise(r => setTimeout(r, 400 * (t + 1))); } return null; };
+  const sem = data.rashuyot.map(r => r.s), pic = {}; let i = 0;
+  const work = async () => { while (i < sem.length) { const s = sem[i++]; const d = await g('/api/data/rashutEduPic/?semelRashut=' + s + '&year=' + data.year);
+    if (d) pic[s] = d.groups || d; window.__prog('rashutEduPic ' + Object.keys(pic).length + ' מתוך ' + sem.length); } };
+  await Promise.all(Array.from({ length: 6 }, work));
+  data.__edupic = pic;
+  return JSON.stringify(data);
 }, { src, focus: FOCUS }).catch(e => die('האיסוף נכשל: ' + String(e).split('\n')[0]));
 await browser.close();
 process.stdout.write('\n');
@@ -99,6 +108,7 @@ process.stdout.write('\n');
 
 /* ── ניקוי: רק מה שהדף קורא, כדי שהקובץ יישאר קטן והשינויים בגיט קריאים ── */
 const data = JSON.parse(raw);
+const eduPic = data.__edupic && Object.keys(data.__edupic).length ? data.__edupic : null; delete data.__edupic;
 const slim = o => { const out = {}; for (const [c, vs] of Object.entries(o || {})) { out[c] = {}; for (const [v, arr] of Object.entries(vs)) if (KEEP_VARS.has(v)) out[c][v] = arr; } return out; };
 data.national = slim(data.national);
 data.rashuyot = data.rashuyot.filter(r => Object.values(r.h).some(c => Object.keys(c).length)).map(r => ({
@@ -107,23 +117,14 @@ data.rashuyot = data.rashuyot.filter(r => Object.values(r.h).some(c => Object.ke
 data.note = `נשלף ישירות מ-${HOME} ב-${new Date().toISOString().slice(0, 10)} על ידי tools/refresh-data.mjs (הקוד של eduCollect שבדף).`;
 const yi = y => data.years.indexOf(y);
 
-/* ── תיקונים ידניים: BigPicture/overrides.json ───────────────────────
-   ערכים שנקבעו ידנית כי הם סותרים את מה שהאתר מציג (למשל חולון, בגרות טק 2025:
-   14.8 בעמוד, 14.6 ב-API). מוחלים אחרי כל רענון, כדי שלא יימחקו בשקט, ומודפסים.
-   כשהמקור יתברר, מוחקים את השורה מהקובץ. ראו CLAUDE.md, סעיף BigPicture. */
-data.overrides = [];
-try {
-  const ov = JSON.parse(fs.readFileSync(path.join(ROOT, 'BigPicture', 'overrides.json'), 'utf8'));
-  for (const o of ov) {
-    const arr = data.rashuyot.find(r => r.s === o.s)?.h?.[o.class]?.[o.var], i = yi(o.year);
-    if (!arr || i < 0) { log(`  ⚠ תיקון ידני לא הוחל (${o.name} ${o.var} ${o.year}): הרשות/המדד חסרים`); continue; }
-    const now = arr[i];
-    if (now === o.value) log(`  תיקון ידני ${o.name} ${o.var} ${o.year}: ה-API כבר נותן ${now}, אפשר למחוק את השורה מ-overrides.json`);
-    else if (now !== o.api) log(`  ⚠ תיקון ידני ${o.name} ${o.var} ${o.year}: ה-API השתנה (${o.api} ← ${now}). מחיל ${o.value} בכל זאת, כדאי לבדוק`.replace('←', 'הפך ל'));
-    arr[i] = o.value; data.overrides.push({ ...o, api: now });
-  }
-  if (ov.length) log(`הוחלו ${data.overrides.length} תיקונים ידניים מ-overrides.json`);
-} catch (e) { if (e.code !== 'ENOENT') die('overrides.json לא תקין: ' + e.message); }
+/* ── השנה העדכנית: rashutEduPic (כמו העמוד הרשמי), לא rashutHistory ───────
+   ב-rashutHistory נתוני 2025 היו ישנים (חולון בגרות טק 14.6 מול 14.8; 74 ערכים
+   ב-38 רשויות). ראו tools/edupic.mjs. בלי __edupic בקובץ הגולמי (--from של קובץ
+   ישן) הערכים נשארים מההיסטוריה, ומודפסת אזהרה. */
+if (eduPic) mergeEduPic(data, eduPic, log);
+else log('  ⚠ אין rashutEduPic בנתונים הגולמיים: ערכי ' + data.year + ' מההיסטוריה, ייתכן שאינם מעודכנים');
+delete data.overrides; delete data.edupic;
+if (eduPic) data.edupic = { source: '/api/data/rashutEduPic/', year: data.year, appliedAt: new Date().toISOString().slice(0, 10) };
 
 /* ── אימות ──────────────────────────────────────────────────────── */
 const bad = [];
