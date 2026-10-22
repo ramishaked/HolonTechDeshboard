@@ -299,7 +299,7 @@ th.rkc { color: var(--muted); }
 
 <script>
 'use strict';
-const BUILD = 26;
+const BUILD = 27;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -629,7 +629,7 @@ function renderTable(list) {
     ${mlist}
     <div class="tbl-wrap tbl-core"><table>
       <thead><tr><th class="rkc" title="מקום בקבוצה לפי ${label(key)}">#</th><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
-      <tbody>${rows.map((r, i) => `<tr class="${r === c ? 'me' : ''}"><td class="rkc n">${i + 1}</td><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
+      <tbody>${rows.map((r, i) => `<tr class="${r === c ? 'me' : ''}"><td class="rkc"><span class="n">${i + 1}</span></td><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
   </section>`;
 }
