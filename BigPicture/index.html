@@ -131,6 +131,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 360px) { .mrow-h .mchips { font-size: 12px; gap: 3px 8px; } .mrow-h .mv { font-size: 24px; } }
 @media (max-width: 380px) { .kpis { grid-template-columns: 1fr; } .kpi .spark { height: 28px; } }
 @media (max-width: 600px) {
   .wrap { padding: 16px 16px 28px; gap: 16px; }
@@ -141,21 +142,52 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   .bar .dl { display: none; }
   .pick input { min-width: 0; width: 100%; }
   .ctl-l { min-width: 100%; }
-  /* טבלאות: כרטיס לכל שורה, כותרת העמודה בתוך התא */
-  .mtab thead { display: none; }
-  .mtab, .mtab tbody, .mtab tr, .mtab td { display: block; }
-  .mtab tr { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 12px; padding: 12px 8px; border-bottom: 1px solid var(--border); }
-  .mtab td { border: 0; padding: 0; white-space: normal; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
-  .cell2 { align-items: flex-end; }
-  .mtab td::before { content: attr(data-l); color: var(--muted); font-size: 13px; font-weight: 500; }
-  .mtab td.h { grid-column: 1 / -1; font-weight: 700; font-size: 16px; }
-  .mtab td.h::before { content: none; }
-  .mtab tr.me, .mtab tr.nat { border-radius: 10px; }
-  .mtab tr.me { background: var(--accent-l); } .mtab tr.nat { background: #faf8fc; }
-  .mtab tr.me td, .mtab tr.nat td { background: transparent; }
   .sortbar { display: flex !important; }
 }
 .sortbar { display: none; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; align-items: center; }
+/* שורה סטטית (מדדים נוספים): בלי מספר דירוג ובלי פירוט */
+.mrow-h.st { grid-template-columns: minmax(0, 1fr) auto; cursor: default; }
+.mrow-h.st .mn { grid-column: 1; }
+.mrow-h.st .mv { grid-column: 2; }
+.mrow-h.st .md { grid-column: 1 / -1; }
+.mrow-h.st .mchips { grid-column: 1 / -1; }
+/* רשימת הדירוג של המובייל. בדסקטופ מוסתרת, והטבלה מוצגת */
+.mlist, .mob { display: none; }
+.mrow { border-bottom: 1px solid var(--border); }
+.mrow.me { background: var(--accent-l); border-radius: 12px; border-bottom-color: transparent; }
+.mrow.nat { background: #faf8fc; border-radius: 12px; border-bottom: 0; margin-top: 4px; }
+.mrow-h { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1.7rem minmax(0, 1fr) auto; gap: 3px 8px; align-items: baseline; width: 100%; padding: 12px 8px; cursor: pointer; }
+.mrow.nat .mrow-h { cursor: default; }
+.mrow-h .rk { grid-column: 1; text-align: center; font-size: 13px; color: var(--muted); }
+.mrow-h .mn { grid-column: 2; font-size: 17px; font-weight: 700; min-width: 0; }
+.mrow-h .mv { grid-column: 3; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.mrow-h .md { grid-column: 2; }
+.mrow-h .chev { grid-column: 3; justify-self: end; align-self: center; width: 14px; height: 10px; transition: transform .15s; }
+.mrow-h .chev path { fill: none; stroke: var(--primary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mrow-h[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.mrow-h .mchips { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 12px; margin-top: 3px; font-size: 13px; color: var(--muted); }
+.mc { white-space: nowrap; }
+.mc i { font-style: normal; }
+.mc b { color: var(--text); font-weight: 700; }
+.mc .tr { margin-inline-start: 3px; }
+.mrow:not(.nat) .mrow-h:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 12px; }
+.mdet { padding: 2px 10px 12px; display: grid; gap: 2px; }
+.mdet[hidden] { display: none; }
+.mdh, .mdr { display: grid; grid-template-columns: minmax(0, 1.25fr) 3.3rem minmax(0, 1.1fr) minmax(0, 1.1fr); gap: 4px 8px; align-items: center; font-size: 13px; }
+.mdh { color: var(--muted); font-size: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.mdr { padding: 5px 0; border-bottom: 1px dashed var(--border); }
+.mdr:last-child { border-bottom: 0; }
+.mdr .ml { font-weight: 500; }
+.mdr .mvv { font-weight: 700; }
+.cc { display: inline-flex; flex-direction: column; gap: 0; line-height: 1.25; }
+.cc .c1 { white-space: nowrap; }
+.cc small { color: var(--muted); font-size: 12px; }
+@media (max-width: 600px) {
+  .dsk, .tbl-core { display: none; }
+  .mob { display: inline; }
+  .mlist { display: block; margin-top: 6px; }
+  .sortbar .pill, .ctl .pill { padding: 5px 11px; font-size: 13px; }
+}
 @media print { body { background: #fff; } .upd, .ctl button:not([aria-pressed="true"]) { display: none; } .card, .kpi { box-shadow: none; } }
 </style>
 </head>
@@ -204,7 +236,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 7;
+const BUILD = 11;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -260,7 +292,7 @@ const dmy = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d
 
 /* ── מצב ───────────────────────────────────────────────────────── */
 let D = null, R = [], BY = new Map();
-const S = { city: DEFAULT_CITY, g: 'custom', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null, dir: -1, tb: 'yoy' };
+const S = { city: DEFAULT_CITY, g: 'custom', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null, dir: -1, tb: 'yoy', openRows: new Set() };
 
 function readHash() {
   const q = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
@@ -475,16 +507,40 @@ function renderTable(list) {
   const natRow = natOn() ? `<tr class="nat"><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
     const a = natVal(v, Y()), b = natVal(v, PY()), d = base === 'yoy' && a != null && b != null ? a - b : null;
     return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small>${chg(d, rel(a, b))}</small>` : base === 'nat' ? '<small>בסיס ההשוואה</small>' : ''}</span></td>`; }).join('')}</tr>` : '';
+  /* מובייל: רשימת דירוג. המדד הממוין בגדול, שאר המדדים בשורה קטנה, והקשה פותחת פירוט מלא */
+  const SHORT = { ACHUZ_ZAKAIM: 'זכאות', ACHUZ_ZAKAIM_MITZTYEN: 'מצטיינת', ACHUZ_ZAKAIM_BG_TECH_ANG5: 'בגרות טק', ACHUZ_ANGLIT_5YL: 'אנגלית 5', ACHUZ_MATEM_5YL: 'מתמטיקה 5' };
+  const others = CORE.filter(x => x.v !== key);
+  const cc = (d, rr) => d == null ? '<span class="na">אין</span>' : `<span class="cc"><span class="c1">${tri(d)}<span class="n">${sgn(d)}</span> נק׳</span>${rr != null ? `<small class="n">(${sgn(rr)}%)</small>` : ''}</span>`;
+  const mrow = (r, i, isNat) => {
+    const get = v => isNat ? natVal(v, Y()) : val(r, v, Y());
+    const refv = v => isNat ? (base === 'yoy' ? natVal(v, PY()) : null) : base === 'nat' ? natVal(v, Y()) : val(r, v, PY());
+    const a = get(key), ref = refv(key), d = a != null && ref != null ? a - ref : null;
+    const open = !isNat && S.openRows.has(+r.s);
+    const chips = others.map(({ v }) => { const x = get(v), rf = refv(v), dd = x != null && rf != null ? x - rf : null;
+      return `<span class="mc"><i>${SHORT[v]}</i> <b class="n">${x != null ? x.toFixed(1) + '%' : '-'}</b>${dd != null ? tri(dd) : ''}</span>`; }).join('');
+    const head = `<span class="rk n">${isNat ? '' : i + 1}</span><span class="mn">${isNat ? 'ממוצע ארצי' : esc(r.n)}</span><span class="mv">${fmt(a)}</span>
+      <span class="md">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}${chg(d, rel(a, ref))}</span>` : isNat && base === 'nat' ? '<span class="na">בסיס ההשוואה</span>' : ''}</span>
+      ${isNat ? '' : '<svg class="chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1.5 1.5 L6 6 L10.5 1.5"/></svg>'}
+      <span class="mchips">${chips}</span>`;
+    const det = isNat ? '' : `<div class="mdet" ${open ? '' : 'hidden'}>
+      <div class="mdh"><span></span><span>ערך</span><span>מול ${hebYear(PY())}</span>${natOn() ? '<span>מול הארצי</span>' : ''}</div>
+      ${CORE.map(({ v, t }) => { const x = val(r, v, Y()), y0 = val(r, v, PY()), n0 = natOn() ? natVal(v, Y()) : null;
+        return `<div class="mdr"><span class="ml">${t}</span><span class="mvv">${fmt(x)}</span>${cc(x != null && y0 != null ? x - y0 : null, rel(x, y0))}${natOn() ? cc(x != null && n0 != null ? x - n0 : null, rel(x, n0)) : ''}</div>`; }).join('')}
+    </div>`;
+    return `<div class="mrow${r === c ? ' me' : ''}${isNat ? ' nat' : ''}">${isNat ? `<div class="mrow-h">${head}</div>` : `<button type="button" class="mrow-h" data-open="${r.s}" aria-expanded="${open}">${head}</button>`}${det}</div>`;
+  };
+  const mlist = `<div class="mlist">${rows.map((r, i) => mrow(r, i, false)).join('')}${natOn() ? mrow(null, 0, true) : ''}</div>`;
   const th = ({ v, t }) => `<th class="${key === v ? 'sorted' : ''}" aria-sort="${key === v ? (dir < 0 ? 'descending' : 'ascending') : 'none'}"><button type="button" data-sort="${v}" title="מיון לפי ${t}">${t}${sortIcon(key === v ? dir : 0)}</button></th>`;
   return `<section class="card">
     <h2>כל מדדי הליבה בקבוצה</h2>
-    <p class="lede">ממוין לפי <b>${label(key)}</b>, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. לחיצה על כותרת עמודה ממיינת לפיה, ולחיצה נוספת הופכת את הכיוון.</p>
+    <p class="lede">ממוין לפי <b>${label(key)}</b>, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. <span class="dsk">לחיצה על כותרת עמודה ממיינת לפיה, ולחיצה נוספת הופכת את הכיוון.</span><span class="mob">זה המספר הגדול בכל שורה. הקשה על רשות פותחת פירוט מלא.</span></p>
     <div class="ctl"><span class="ctl-l">שינוי מול</span>
       <button type="button" class="pill" data-tb="yoy" aria-pressed="${base === 'yoy'}">${hebYear(PY())}</button>
       <button type="button" class="pill" data-tb="nat" aria-pressed="${base === 'nat'}" ${natOn() ? '' : 'disabled title="ההשוואה לארצי רק על כלל י״ב"'}>הממוצע הארצי</button>
       <span class="na">נקודות אחוז, ובסוגריים שיעור שינוי יחסי</span></div>
     <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}${key === v ? sortIcon(dir) : ''}</button>`).join('')}</div>
-    <div class="tbl-wrap"><table class="mtab">
+    ${mlist}
+    <div class="tbl-wrap tbl-core"><table>
       <thead><tr><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
       <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
@@ -498,17 +554,23 @@ function renderOther() {
   const keys = [...new Set([...Object.keys(OTHER_NAMES), ...Object.keys(c.h?.[S.pop] || {})])]
     .filter(v => !coreSet.has(v) && val(c, v, Y()) != null);
   if (!keys.length) return '';
+  const data = keys.map(v => ({ v, a: val(c, v, Y()), b: val(c, v, PY()), n: natOn() ? natVal(v, Y()) : null }));
+  const mlist = `<div class="mlist">${data.map(({ v, a, b, n }) => {
+    const d = a != null && b != null ? a - b : null, gap = a != null && n != null ? a - n : null;
+    return `<div class="mrow"><div class="mrow-h st"><span class="mn">${esc(label(v))}</span><span class="mv">${fmt(a)}</span>
+      <span class="md">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}${chg(d, rel(a, b))}</span> מ${hebYear(PY())}` : ''}</span>
+      <span class="md">${gap != null ? `<span class="chip ${kindOf(gap)}">${tri(gap)}${chg(gap, rel(a, n))}</span> מול הארצי` : ''}</span>
+      <span class="mchips">${b != null ? `<span class="mc"><i>${hebYear(PY())}</i> <b class="n">${b.toFixed(1)}%</b></span>` : ''}${n != null ? `<span class="mc"><i>ארצי</i> <b class="n">${n.toFixed(1)}%</b></span>` : ''}</span></div></div>`;
+  }).join('')}</div>`;
   return `<section class="card">
     <h2>מדדים נוספים</h2>
-    <p class="lede">${esc(c.n)}, ${hebYear(Y())} מול ${hebYear(PY())}${natOn() ? ' ומול הממוצע הארצי' : ''}.</p>
-    <div class="tbl-wrap"><table class="mtab">
+    <p class="lede">${esc(c.n)}, ${hebYear(Y())} מול ${hebYear(PY())}${natOn() ? ' ומול הממוצע הארצי' : ''}. השינוי בנקודות אחוז, ובסוגריים שיעור שינוי יחסי.</p>
+    ${mlist}
+    <div class="tbl-wrap tbl-core"><table>
       <thead><tr><th>מדד</th><th>${hebYear(Y())}</th><th>${hebYear(PY())}</th><th>שינוי</th>${natOn() ? '<th>ארצי</th><th>פער מהארצי</th>' : ''}</tr></thead>
-      <tbody>${keys.map(v => {
-        const a = val(c, v, Y()), b = val(c, v, PY()), n = natOn() ? natVal(v, Y()) : null;
-        return `<tr><td class="h">${esc(label(v))}</td><td data-l="${hebYear(Y())}">${fmt(a)}</td><td data-l="${hebYear(PY())}">${fmt(b)}</td>
-          <td data-l="שינוי"><span class="cell">${a != null && b != null ? `${tri(a - b)}<span class="n">${sgn(a - b)}</span>` : '<span class="na">אין</span>'}</span></td>
-          ${natOn() ? `<td data-l="ארצי">${fmt(n)}</td><td data-l="פער מהארצי">${a != null && n != null ? `<span class="n">${sgn(a - n)}</span>` : '<span class="na">אין</span>'}</td>` : ''}</tr>`;
-      }).join('')}</tbody>
+      <tbody>${data.map(({ v, a, b, n }) => `<tr><td>${esc(label(v))}</td><td>${fmt(a)}</td><td>${fmt(b)}</td>
+          <td><span class="cell">${a != null && b != null ? `${tri(a - b)}<span class="n">${sgn(a - b)}</span> נק׳ <span class="n">(${sgn(rel(a, b) ?? 0)}%)</span>` : '<span class="na">אין</span>'}</span></td>
+          ${natOn() ? `<td>${fmt(n)}</td><td>${a != null && n != null ? `<span class="n">${sgn(a - n)}</span> נק׳ <span class="n">(${sgn(rel(a, n) ?? 0)}%)</span>` : '<span class="na">אין</span>'}</td>` : ''}</tr>`).join('')}</tbody>
     </table></div>
   </section>`;
 }
@@ -590,6 +652,11 @@ document.addEventListener('click', e => {
   else if ('min' in t.dataset) { S.min = +t.dataset.min; render(); }
   else if (t.dataset.sort) { if ((S.sort || S.m) === t.dataset.sort) S.dir = -(S.dir || -1); else { S.sort = t.dataset.sort; S.dir = -1; } render(); }
   else if (t.dataset.tb) { S.tb = t.dataset.tb; render(); }
+  else if (t.dataset.open) {
+    const sm = +t.dataset.open, det = t.parentElement.querySelector('.mdet'), on = t.getAttribute('aria-expanded') !== 'true';
+    t.setAttribute('aria-expanded', String(on)); if (det) det.hidden = !on;
+    on ? S.openRows.add(sm) : S.openRows.delete(sm);
+  }
   else if (t.dataset.rm) { S.touched = true; S.custom = S.custom.filter(s => s !== +t.dataset.rm); render(); }
   else if (t.id === 'addBtn') addCustom();
 });

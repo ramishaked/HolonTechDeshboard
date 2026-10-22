@@ -220,6 +220,7 @@ if (browser) {
     // טבלה: חיווי מיון
     (await rp.page.locator('th[aria-sort="descending"]').count()) === 1 && (await rp.page.locator('td.sorted').count()) > 5 ? pass('הטבלה: עמודת המיון מסומנת (כותרת, חץ ותאים)') : fail('חיווי המיון חסר');
     (await rp.page.locator('.card .lede', { hasText: 'ממוין לפי' }).first().innerText()).includes('מהגבוה לנמוך') ? pass('הטבלה: משפט "ממוין לפי ... מהגבוה לנמוך"') : fail('משפט המיון חסר');
+    (await rp.page.locator('.mlist').first().isVisible()) === false && (await rp.page.locator('.tbl-core').first().isVisible()) ? pass('דסקטופ: טבלה מוצגת, רשימת המובייל מוסתרת') : fail('דסקטופ: תצוגה שגויה');
     await rp.page.click('th button[data-sort="ACHUZ_MATEM_5YL"]');
     (await rp.page.locator('th.sorted').innerText()).includes('מתמטיקה') ? pass('לחיצה על כותרת ממיינת ומעבירה את הסימון') : fail('המיון לא עבר');
     await rp.page.click('th button[data-sort="ACHUZ_MATEM_5YL"]');
@@ -248,12 +249,27 @@ if (browser) {
         clipped: [...document.querySelectorAll('.kpi, .card, .mini')].filter(e => e.scrollWidth - e.clientWidth > 1).length,
       }));
       r.page <= 0 && !r.clipped ? pass(`${w}px ${tag}: אין גלילה אופקית ואין תוכן חתוך`) : fail(`${w}px ${tag}: דף ${r.page}px, רכיבים חתוכים ${r.clipped}`);
-      if (w < 600) r.tables === 0 ? pass(`${w}px ${tag}: הטבלאות מוצגות ככרטיסים, בלי גלילה`) : fail(`${w}px ${tag}: ${r.tables} טבלאות גוללות`);
+      if (w < 600) r.tables === 0 ? pass(`${w}px ${tag}: אין טבלה שגוללת הצידה`) : fail(`${w}px ${tag}: ${r.tables} טבלאות גוללות`);
     };
     await mob.page.click('.pill[data-g="cluster"]'); await check('אשכול');
     await mob.page.click('.pill[data-g="custom"]'); await check('בחירה ידנית');
     if (w < 600) { await mob.page.click('.sortbar .pill[data-sort="ACHUZ_ANGLIT_5YL"]');
       (await mob.page.locator('.sortbar .pill[aria-pressed="true"]').innerText()).includes('אנגלית') ? pass(`${w}px: מיון מכפתורי המובייל`) : fail(`${w}px: מיון במובייל לא עבד`); }
+    if (w < 600) {
+      const vis = await mob.page.evaluate(() => ({ list: getComputedStyle(document.querySelector('.mlist')).display, tbl: getComputedStyle(document.querySelector('.tbl-core')).display }));
+      vis.list !== 'none' && vis.tbl === 'none' ? pass(`${w}px: רשימת דירוג במקום טבלה`) : fail(`${w}px: רשימה ${vis.list}, טבלה ${vis.tbl}`);
+      const rowsN = await mob.page.locator('.mrow-h[data-open]').count();
+      rowsN >= 5 ? pass(`${w}px: ${rowsN} שורות בדירוג`) : fail(`${w}px: ${rowsN} שורות`);
+      const big = await mob.page.locator('.mrow .mv').first().innerText(), sortedFirst = await mob.page.locator('.mrow-h[data-open]').first().innerText();
+      big.includes('%') && /\d/.test(sortedFirst) ? pass(`${w}px: בכל שורה המדד הממוין בגדול (${big.trim()})`) : fail(`${w}px: ערך גדול חסר`);
+      const first = mob.page.locator('.mrow-h[data-open]').first();
+      await first.click();
+      const cols = await mob.page.locator('.mdet:not([hidden]) .mdr').count();
+      cols === 5 && (await first.getAttribute('aria-expanded')) === 'true' ? pass(`${w}px: הקשה על רשות פותחת פירוט של 5 מדדים`) : fail(`${w}px: פירוט ${cols}`);
+      await first.click();
+      (await mob.page.locator('.mdet:not([hidden])').count()) === 0 ? pass(`${w}px: הקשה נוספת סוגרת`) : fail(`${w}px: הפירוט לא נסגר`);
+      await first.click();                                           // פתוח בזמן הצילום
+    }
     if (SHOT && w === 390) { await mob.page.click('.pill[data-g="cluster"]'); await mob.page.screenshot({ path: path.join(process.env.SHOT_DIR || os.tmpdir(), 'bp-mobile.png'), fullPage: true }); }
     mob.errors.forEach(e => fail(`${w}px, שגיאה: ` + e));
     await mob.page.close();
