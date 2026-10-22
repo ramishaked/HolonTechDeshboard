@@ -217,8 +217,13 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
   .hero-ctl, .upd, .pick, .sortbar, .quiet, .foot button, dialog, #copyLink { display: none !important; }
-  .ctl:not(:has(.pill[aria-pressed="true"])) { display: none; }
-  .ctl button:not([aria-pressed="true"]) { display: none; }
+  .ctl { display: none !important; }
+  .cmp-sum { grid-template-columns: repeat(4, minmax(0,1fr)) !important; margin: 4px 0 10px; }
+  .mini { padding: 6px 10px; } .mini .v { font-size: 20px; }
+  .bars { gap: 1px; } .bar { padding: 1px 6px; break-inside: avoid; }
+  tr { break-inside: avoid; }
+  .wrap { zoom: .7; }
+  #content > div { display: block !important; } #content > div > * { margin-bottom: 14px; }
   .mlist { display: none !important; }
   .tbl-core, .dsk { display: block !important; }
   .card, .kpi { box-shadow: none; break-inside: avoid; }
@@ -288,7 +293,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 22;
+const BUILD = 23;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
