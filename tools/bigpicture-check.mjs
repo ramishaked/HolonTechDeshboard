@@ -166,19 +166,16 @@ if (browser) {
     (await rp.page.locator('th.sorted').innerText()).includes('מתמטיקה') ? pass('לחיצה על כותרת ממיינת ומעבירה את הסימון') : fail('המיון לא עבר');
     await rp.page.click('th button[data-sort="ACHUZ_MATEM_5YL"]');
     (await rp.page.locator('th[aria-sort="ascending"]').count()) === 1 ? pass('לחיצה נוספת הופכת את כיוון המיון') : fail('הכיוון לא התהפך');
-    const cellYoy = await rp.page.locator('tr.me td').nth(1).locator('small').innerText();
-    cellYoy.includes('-1.7') && cellYoy.includes('(-2.0%)') ? pass(`הטבלה, שינוי מול שנה שעברה: ${cellYoy}`) : fail('תא בטבלה: ' + cellYoy);
-    await rp.page.click('[data-tb="nat"]');
-    const cellNat = await rp.page.locator('tr.me td').nth(1).locator('small').innerText();
-    cellNat.includes('+4.2') && cellNat.includes('(+5.4%)') ? pass(`הטבלה, שינוי מול הארצי: ${cellNat}`) : fail('תא בטבלה מול ארצי: ' + cellNat);
+    // שתי ההשוואות יחד בכל תא, בלי בורר: מול שנה שעברה ומול הארצי
     {
-      const snap = async () => (await rp.page.locator('tbody tr.me td small').allInnerTexts()).join('|');
-      const nat = await snap(); await rp.page.click('[data-tb="yoy"]'); const yoy = await snap();
-      const ups = (await rp.page.locator('tbody tr:not(.nat) td small').allInnerTexts()).length;
-      nat !== yoy && ups > 20 ? pass('הטבלה: החלפת "שינוי מול" משנה את מספרי השינוי בכל השורות, לא רק צבעים') : fail('מספרי השינוי לא השתנו עם הבורר');
-      (await rp.page.locator('.ctl .na', { hasText: 'מתחת לכל ערך' }).first().innerText()).includes('תשפ״ד') ? pass('הכיתוב מעל הטבלה מציין מול מה השינוי') : fail('כיתוב הבסיס חסר');
+      const lines = await rp.page.locator('tbody tr.me td').nth(1).locator('small').allInnerTexts();
+      lines.length === 2 && lines[0].includes('-1.7') && lines[0].includes('(-2.0%)') && lines[1].includes('+4.2') && lines[1].includes('(+5.4%)')
+        ? pass(`הטבלה: בתא אחד גם מול תשפ״ד (${lines[0].replace(/\s+/g, ' ')}) וגם מול הארצי (${lines[1].replace(/\s+/g, ' ')})`) : fail('תא בטבלה: ' + JSON.stringify(lines));
+      const { cells, two } = await rp.page.evaluate(() => { const tds = [...document.querySelector('.tbl-core').querySelectorAll('tbody tr:not(.nat) td:not(.h)')]; return { cells: tds.length, two: tds.filter(td => td.querySelectorAll('small.dl').length === 2 || td.querySelector('.cv .na')).length }; });
+      two === cells && cells > 100 ? pass(`כל ${cells} התאים מציגים שתי השוואות`) : fail(`תאים עם שתי השוואות: ${two} מתוך ${cells}`);
+      (await rp.page.locator('[data-tb]').count()) === 0 ? pass('הבורר "שינוי מול" הוסר') : fail('הבורר עדיין קיים');
+      (await rp.page.locator('.legend2').first().innerText()).includes('מול הממוצע הארצי') ? pass('כיתוב אחד מסביר את שתי השורות') : fail('כיתוב חסר');
     }
-    await rp.page.click('[data-tb="yoy"]');
     const d120 = await rp.page.locator('[data-pop="120"]').isDisabled();
     !d120 ? pass('חולון: מתג "ללא חינוך מיוחד" פעיל') : fail('המתג מנוטרל לחולון');
     // כל הרשויות מכילות עכשיו גם "ללא חנ״מ", היסטוריה ומדדים נוספים (לא רק חולון)
@@ -278,11 +275,13 @@ if (browser) {
       await first.click();
       (await mob.page.locator('.mdet:not([hidden])').count()) === 0 ? pass(`${w}px: הקשה נוספת סוגרת`) : fail(`${w}px: הפירוט לא נסגר`);
       {
-        const snapM = async () => (await mob.page.locator('.mrow.me, .mrow:not(.nat)').first().innerText()).replace(/\s+/g, ' ');
-        const a1 = await snapM(); await mob.page.locator('[data-tb="nat"]').click(); const a2 = await snapM(); await mob.page.locator('[data-tb="yoy"]').click();
-        const nums = s => (s.match(/[+-]?\d+\.\d/g) || []).join(' ');
-        nums(a1) !== nums(a2) && /[+-]\d/.test(a2) ? pass(`${w}px: במובייל המספרים (לא רק הצבעים) משתנים עם "שינוי מול"`) : fail(`${w}px: מובייל, המספרים לא השתנו: ${nums(a1)} | ${nums(a2)}`);
-        (await mob.page.locator('.mrow:not(.nat) .mc .dd').count()) >= 4 ? pass(`${w}px: בכל שורה מוצג שינוי גם למדדים הקטנים`) : fail(`${w}px: חסר שינוי במדדים הקטנים`);
+        const chips = await mob.page.locator('.mrow.me, .mrow:not(.nat)').first().locator('.md .chip').allInnerTexts();
+        chips.length === 2 && /[+-]\d/.test(chips[0]) && /[+-]\d/.test(chips[1]) && chips[0] !== chips[1]
+          ? pass(`${w}px: בכל שורה שני שבבים: מול שנה שעברה ומול הארצי`) : fail(`${w}px: שבבי השוואה: ${JSON.stringify(chips)}`);
+        const small = await mob.page.locator('.mrow:not(.nat)').first().locator('.mc i').evaluateAll(els => els.map(e => e.innerText.trim()));
+        small.length === 4 && small.every(x => x.length > 1) ? pass(`${w}px: למדדים הקטנים יש תוויות (${small.join(', ')})`) : fail(`${w}px: תוויות נעלמו: ${JSON.stringify(small)}`);
+        const labels = (await mob.page.locator('.mrow:not(.nat)').first().locator('.mb').allInnerTexts()).join(' ');
+        labels.includes('ארצי') && labels.includes('תשפ״ד') ? pass(`${w}px: השבבים מסומנים (תשפ״ד, ארצי)`) : fail(`${w}px: תוויות: ${labels}`);
       }
       await first.click();                                           // פתוח בזמן הצילום
     }
