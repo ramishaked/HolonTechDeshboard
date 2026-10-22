@@ -144,6 +144,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 .empty h2 { margin: 0 0 8px; }
 .foot { color: var(--muted); font-size: 13px; margin: 0; line-height: 1.7; }
 .foot a { color: var(--primary-d); }
+.quiet { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; opacity: .7; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
@@ -224,7 +225,6 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
       <div class="hero-ctl" id="heroCtl" hidden>
         <label class="sr" for="citySel" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">רשות</label>
         <select id="citySel" aria-label="בחירת רשות"></select>
-        <button type="button" class="linkbtn" id="copyLink" title="קישור שנפתח ישר על הרשות הזו">העתקת קישור לרשות</button>
         <button type="button" class="linkbtn" id="aboutBtn">אודות</button>
         <div class="seg" role="group" aria-label="אוכלוסיית המדידה">
           <button type="button" data-pop="12">כלל תלמידי י״ב</button>
@@ -267,11 +267,12 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   </section>
 
   <p class="foot" id="foot"></p>
+  <p class="foot" style="margin-top:6px"><button type="button" class="quiet" id="copyLink" title="קישור שנפתח ישר על הרשות הזו">העתקת קישור לרשות</button></p>
 </main>
 
 <script>
 'use strict';
-const BUILD = 19;
+const BUILD = 20;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
