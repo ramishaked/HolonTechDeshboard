@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-/* מחיל קובץ rashutEduPic שנשלף (tools/probe-page.mjs) על BigPicture/data.json, בלי רשת.
-   שימוש:  node tools/apply-edupic.mjs FILE [--dry]   (FILE: הפלט של tools/probe-page.mjs, probe-all.json.gz)
+/* מחיל קובץ rashutEduPic שנשלף על BigPicture/data.json, בלי רשת.
+   שימוש:  node tools/apply-edupic.mjs FILE [--dry]   (FILE: קובץ { rashuyot: { סמל: groups } } שנשלף מ-/api/data/rashutEduPic/)
    הלוגיקה ב-tools/edupic.mjs (משותפת עם refresh-data.mjs). */
 import fs from 'node:fs';
 import zlib from 'node:zlib';
