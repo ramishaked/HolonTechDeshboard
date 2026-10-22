@@ -17,6 +17,8 @@
      --headed     דפדפן גלוי (לאבחון)
      --out FILE   יעד אחר
      --mock       API מדומה במקום האתר (לבדיקות; tools/shkifut-mock.mjs)
+     --from FILE  בלי דפדפן: מעבד קובץ גולמי (הפלט של eduCollect) שנאסף בדפדפן
+                  ישראלי ועבר אל המחשב הזה. אותו ניקוי, אימות והשוואה.
 ─────────────────────────────────────────────────────────────────── */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,6 +55,11 @@ const html = fs.readFileSync(PAGE, 'utf8');
 const src = (html.match(/async function eduCollect\([^)]*\) \{[\s\S]*?\n\}\n/) || [])[0];
 if (!src) die('לא נמצאה eduCollect ב-BigPicture/index.html');
 
+let raw;
+if (argv.includes('--from')) {
+  raw = fs.readFileSync(path.resolve(argv[argv.indexOf('--from') + 1]), 'utf8');
+  log('מעבד קובץ גולמי: ' + argv[argv.indexOf('--from') + 1]);
+} else {
 let chromium;
 for (const pkg of [path.join(HERE, 'node_modules', 'playwright-core', 'index.mjs'), 'playwright-core', 'playwright']) {
   try { ({ chromium } = await import(pkg)); break; } catch { /* הבא */ }
@@ -82,12 +89,13 @@ await page.waitForTimeout(flag('--mock') ? 0 : 3000);
 await page.exposeFunction('__prog', m => process.stdout.write('\r  ' + String(m).padEnd(56)));
 
 log('אוסף נתונים (כדקה עד שלוש)');
-const raw = await page.evaluate(async ({ src, focus }) => {
+raw = await page.evaluate(async ({ src, focus }) => {
   const collect = new Function(src + '\nreturn eduCollect;')();
   return JSON.stringify(await collect('', m => window.__prog(m), null, focus));
 }, { src, focus: FOCUS }).catch(e => die('האיסוף נכשל: ' + String(e).split('\n')[0]));
 await browser.close();
 process.stdout.write('\n');
+}
 
 /* ── ניקוי: רק מה שהדף קורא, כדי שהקובץ יישאר קטן והשינויים בגיט קריאים ── */
 const data = JSON.parse(raw);
