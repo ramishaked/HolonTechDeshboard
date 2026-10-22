@@ -272,7 +272,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 20;
+const BUILD = 21;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -654,7 +654,7 @@ function render() {
   $('#title').textContent = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
   $('#subtitle').textContent = 'מדדי הבגרות, המגמה מהשנה שעברה וההשוואה לרשויות דומות';
   const st = D.partialState, busy = st && st.done < st.total;
-  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '') + (S.bad ? ` · לא נמצאה הרשות "${S.bad}", מוצגת חולון` : '');
+  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · פותח על ידי רמי שקד, כשירות לרשויות · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '') + (S.bad ? ` · לא נמצאה הרשות "${S.bad}", מוצגת חולון` : '');
   const cl = $('#copyLink'); if (cl) cl.dataset.url = cityLink();
   $('#heroCtl').hidden = false;
   const has120 = !!c.h?.['120'];
