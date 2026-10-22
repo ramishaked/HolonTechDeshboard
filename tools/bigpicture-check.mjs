@@ -158,7 +158,13 @@ if (browser) {
   chip.includes('-1.7') ? pass('שינוי מתשפ״ד: -1.7 (ירידה)') : fail(`שינוי בזכאות: "${chip}"`);
   (await page.locator('.kpi').count()) === 5 ? pass('חמישה מדדי ליבה') : fail('מספר אריחי הליבה שגוי');
   const bars = await page.locator('.bar').count(), me = await page.locator('.bar.me').count();
-  bars > 1 && me === 1 ? pass(`קבוצת אשכול: ${bars} רשויות, חולון מסומנת`) : fail(`מוטות: ${bars}, מסומנת: ${me}`);
+  bars === 10 && me === 1 ? pass('ברירת מחדל: בחירה ידנית, 10 ערים, חולון מסומנת') : fail(`ברירת מחדל: מוטות ${bars}, מסומנת ${me}`);
+  const names = (await page.locator('.bar .nm .t').allInnerTexts()).map(x => x.trim());
+  const want = ['חולון', 'בת ים', 'ראשון לציון', 'פתח תקווה', 'תל אביב', 'רמת גן', 'נתניה', 'אשדוד', 'רחובות', 'הרצליה'];
+  want.every(w => names.some(n => n.startsWith(w))) ? pass('ברירת המחדל כוללת את כל הערים שנקבעו, ועוד רחובות והרצליה') : fail('ערים חסרות: ' + want.filter(w => !names.some(n => n.startsWith(w))).join(', '));
+  (await page.locator('.pill[data-g="custom"][aria-pressed="true"]').count()) === 1 ? pass('"בחירה ידנית" היא הקבוצה הנבחרת') : fail('הקבוצה הנבחרת אינה בחירה ידנית');
+  (await page.locator('svg.trend, .card h2:has-text("לאורך השנים")').count()) === 0 ? pass('גרף "לאורך השנים" הוסר') : fail('גרף המגמה עדיין מוצג');
+  await page.click('.pill[data-g="cluster"]');
   const small = await page.locator('.bar .nm', { hasText: 'מועצה קטנה' }).count();
   small === 0 ? pass('סף 200 תלמידי י״ב מסנן רשות קטנה') : fail('רשות קטנה לא סוננה');
   for (const g of ['size', 'region', 'custom', 'cluster']) {
@@ -205,6 +211,25 @@ if (browser) {
     }
     await rp.page.click('.pill[data-g="cluster"]');
     (await rp.page.locator('.mini .v').first().innerText()).includes('מתוך') ? pass('data.json האמיתי: דירוג חולון באשכול 7 מוצג') : fail('דירוג חסר');
+    // שיעור שינוי יחסי באריחי הליבה: זכאות חולון 82.1 מול 83.8 (שנה קודמת) ומול 77.9 (ארצי)
+    const chips = await rp.page.locator('.kpi').first().locator('.chip').allInnerTexts();
+    chips[0]?.includes('-1.7') && chips[0].includes('(-2.0%)') ? pass(`אריח הזכאות מול שנה שעברה: ${chips[0].replace(/\s+/g, ' ')}`) : fail('שינוי יחסי מול שנה שעברה: ' + chips[0]);
+    chips[1]?.includes('+4.2') && chips[1].includes('(+5.4%)') ? pass(`אריח הזכאות מול הארצי: ${chips[1].replace(/\s+/g, ' ')}`) : fail('שינוי יחסי מול הארצי: ' + chips[1]);
+    const allRel = (await rp.page.locator('.kpi .chip').allInnerTexts()).every(x => /%\)/.test(x));
+    allRel ? pass('בכל חמשת האריחים מוצג שיעור שינוי יחסי, מול שנה שעברה ומול הארצי') : fail('חסר שיעור שינוי יחסי באריח');
+    // טבלה: חיווי מיון
+    (await rp.page.locator('th[aria-sort="descending"]').count()) === 1 && (await rp.page.locator('td.sorted').count()) > 5 ? pass('הטבלה: עמודת המיון מסומנת (כותרת, חץ ותאים)') : fail('חיווי המיון חסר');
+    (await rp.page.locator('.card .lede', { hasText: 'ממוין לפי' }).first().innerText()).includes('מהגבוה לנמוך') ? pass('הטבלה: משפט "ממוין לפי ... מהגבוה לנמוך"') : fail('משפט המיון חסר');
+    await rp.page.click('th button[data-sort="ACHUZ_MATEM_5YL"]');
+    (await rp.page.locator('th.sorted').innerText()).includes('מתמטיקה') ? pass('לחיצה על כותרת ממיינת ומעבירה את הסימון') : fail('המיון לא עבר');
+    await rp.page.click('th button[data-sort="ACHUZ_MATEM_5YL"]');
+    (await rp.page.locator('th[aria-sort="ascending"]').count()) === 1 ? pass('לחיצה נוספת הופכת את כיוון המיון') : fail('הכיוון לא התהפך');
+    const cellYoy = await rp.page.locator('tr.me td').nth(1).locator('small').innerText();
+    cellYoy.includes('-1.7') && cellYoy.includes('(-2.0%)') ? pass(`הטבלה, שינוי מול שנה שעברה: ${cellYoy}`) : fail('תא בטבלה: ' + cellYoy);
+    await rp.page.click('[data-tb="nat"]');
+    const cellNat = await rp.page.locator('tr.me td').nth(1).locator('small').innerText();
+    cellNat.includes('+4.2') && cellNat.includes('(+5.4%)') ? pass(`הטבלה, שינוי מול הארצי: ${cellNat}`) : fail('תא בטבלה מול ארצי: ' + cellNat);
+    await rp.page.click('[data-tb="yoy"]');
     const d120 = await rp.page.locator('[data-pop="120"]').isDisabled();
     !d120 ? pass('חולון: מתג "ללא חינוך מיוחד" פעיל') : fail('המתג מנוטרל לחולון');
     await rp.page.selectOption('#citySel', String(real.rashuyot.find(r => r.n.startsWith('ראשון')).s));
@@ -225,7 +250,7 @@ if (browser) {
       r.page <= 0 && !r.clipped ? pass(`${w}px ${tag}: אין גלילה אופקית ואין תוכן חתוך`) : fail(`${w}px ${tag}: דף ${r.page}px, רכיבים חתוכים ${r.clipped}`);
       if (w < 600) r.tables === 0 ? pass(`${w}px ${tag}: הטבלאות מוצגות ככרטיסים, בלי גלילה`) : fail(`${w}px ${tag}: ${r.tables} טבלאות גוללות`);
     };
-    await check('אשכול');
+    await mob.page.click('.pill[data-g="cluster"]'); await check('אשכול');
     await mob.page.click('.pill[data-g="custom"]'); await check('בחירה ידנית');
     if (w < 600) { await mob.page.click('.sortbar .pill[data-sort="ACHUZ_ANGLIT_5YL"]');
       (await mob.page.locator('.sortbar .pill[aria-pressed="true"]').innerText()).includes('אנגלית') ? pass(`${w}px: מיון מכפתורי המובייל`) : fail(`${w}px: מיון במובייל לא עבד`); }

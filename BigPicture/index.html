@@ -94,15 +94,26 @@ button, input, select { font: inherit; }
 .tbl-wrap { overflow-x: auto; margin-top: 8px; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th { text-align: right; font-weight: 700; color: var(--muted); font-size: 13px; padding: 8px 10px; border-bottom: 2px solid var(--primary-l); white-space: nowrap; }
-th button { all: unset; cursor: pointer; }
-th button:hover, th button[aria-pressed="true"] { color: var(--primary-d); text-decoration: underline; }
+th button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+th button:hover { color: var(--primary-d); }
+th.sorted { color: var(--primary-d); background: #f3ecfa; }
+th.sorted button { font-weight: 900; }
+td.sorted { background: #f8f4fc; }
+.si { width: 9px; height: 13px; flex: none; }
+.si path { fill: #cfc5de; }
+.si path.on { fill: var(--primary-d); }
+.pill[aria-pressed="true"] .si { margin-inline-start: 6px; vertical-align: -2px; }
+.pill[aria-pressed="true"] .si path { fill: rgba(255,255,255,.45); }
+.pill[aria-pressed="true"] .si path.on { fill: #fff; }
+.cell2 { display: inline-flex; flex-direction: column; gap: 1px; align-items: flex-start; }
+.cell2 .cv { display: inline-flex; gap: 6px; align-items: center; }
+.cell2 small { color: var(--muted); font-size: 12px; font-weight: 500; }
 td { padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 tr.me td { background: var(--accent-l); font-weight: 700; }
 tr.nat td { color: var(--muted); font-style: normal; background: #faf8fc; }
 td .cell { display: inline-flex; gap: 6px; align-items: center; }
 
 /* גרף מגמה */
-.trend { width: 100%; height: auto; display: block; }
 
 /* עדכון ונתונים */
 details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-d); font-size: 16px; }
@@ -120,6 +131,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 380px) { .kpis { grid-template-columns: 1fr; } .kpi .spark { height: 28px; } }
 @media (max-width: 600px) {
   .wrap { padding: 16px 16px 28px; gap: 16px; }
   .hero { padding: 18px; } .hero h1 { font-size: 23px; }
@@ -134,6 +146,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   .mtab, .mtab tbody, .mtab tr, .mtab td { display: block; }
   .mtab tr { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 12px; padding: 12px 8px; border-bottom: 1px solid var(--border); }
   .mtab td { border: 0; padding: 0; white-space: normal; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .cell2 { align-items: flex-end; }
   .mtab td::before { content: attr(data-l); color: var(--muted); font-size: 13px; font-weight: 500; }
   .mtab td.h { grid-column: 1 / -1; font-weight: 700; font-size: 16px; }
   .mtab td.h::before { content: none; }
@@ -191,7 +204,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 5;
+const BUILD = 6;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -212,7 +225,9 @@ const DISTRICT_NAMES = { 1:'ירושלים', 2:'צפון', 3:'חיפה', 4:'מר
 const DEFAULT_CITY = 66001;          // חולון. כל רשות אחרת: ?city=סמל או בבורר
 const MIN12 = 200;                   // סף ברירת מחדל: רשויות קטנות מזיזות אחוז בקלות
 const SIZE_BAND = 0.25;              // "היקף דומה" = ±25%, כמו POP_BAND בדשבורד הראשי
-const CUSTOM_DEFAULT = ['בת ים','ראשון לציון','רמת גן','פתח תקווה','רחובות','תל אביב'];
+// ברירת המחדל של "בחירה ידנית": הערים שנקבעו, ועוד שתיים שנבחרו: רחובות (עמית באשכול 7 ובגודל) והרצליה (עיר שאפתנית במרכז).
+// העיר המוצגת עצמה מוצגת תמיד ולכן מוסרת מהרשימה.
+const CUSTOM_DEFAULT = ['חולון','בת ים','ראשון לציון','פתח תקווה','תל אביב','רמת גן','נתניה','אשדוד','רחובות','הרצליה'];
 
 // גיבוי בלבד, כשבנתוני הרשות אין שדה אשכול: data/socio_sources.csv (עמודה F).
 const CLUSTER_FALLBACK = {'ירושלים':2,'תל אביב - יפו':8,'חיפה':7,'ראשון לציון':7,'פתח תקווה':7,'נתניה':6,'בני ברק':2,'אשדוד':5,'באר שבע':5,'חולון':7,'רמת גן':8,'בית שמש':2,'אשקלון':5,'רחובות':7,'בת ים':5,'הרצליה':8,'כפר סבא':8,'חדרה':6,'מודיעין-מכבים-רעות':9,'מודיעין עילית':1,'לוד':3,'רעננה':8,'רמלה':4,'ראש העין':7,'הוד השרון':9,'ביתר עילית':1,'קריית גת':4,'עפולה':5,'גבעתיים':9,'קריית אתא':6,'נהריה':6,'יבנה':7,'אילת':6,'עכו':4,'נס ציונה':8,'רמת השרון':9,'טבריה':3,'קריית מוצקין':7,'נתיבות':3,'כרמיאל':5,'קריית אונו':9,'קריית ביאליק':6,'קריית ים':5,'אור יהודה':5,'צפת':2,'מעלה אדומים':6,'דימונה':4,'אופקים':3,'שדרות':4,'יהוד-מונוסון':7,'טירת כרמל':6,'גבעת שמואל':8,'ערד':3,'מגדל העמק':4,'נשר':7,'גני תקווה':9,'קריית שמונה':5,'שוהם':9,'אריאל':6,'מזכרת בתיה':8,'מיתר':9,'כוכב יאיר - צור יגאל':9,'עומר':9,'להבים':9,'סביון':10,'כפר שמריהו':10};
@@ -225,6 +240,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const norm = s => String(s ?? '').replace(/[\s\-\u05BE\u2013"'\u05F4\u05F3.]/g, '').replace(/קריית/g, 'קרית').replace(/תלאביביפו/, 'תלאביב');
 const fmt = v => v == null ? '<span class="na">אין נתון</span>' : `<span class="n">${v.toFixed(1)}%</span>`;
 const sgn = d => `${d > 0 ? '+' : ''}${d.toFixed(1)}`;
+// שיעור שינוי יחסי: השינוי כאחוז מהערך שמולו (השנה הקודמת או הארצי)
+const rel = (a, b) => a != null && b != null && b > 0 ? (a - b) / b * 100 : null;
+const chg = (d, r) => d == null ? '' : `<span class="n">${sgn(d)}</span> נק׳${r != null ? ` <span class="n">(${sgn(r)}%)</span>` : ''}`;
 const kindOf = d => d == null ? null : Math.abs(d) < 0.05 ? 'eq' : d > 0 ? 'up' : 'dn';
 function tri(d) {
   const k = kindOf(d); if (!k) return '';
@@ -242,7 +260,7 @@ const dmy = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d
 
 /* ── מצב ───────────────────────────────────────────────────────── */
 let D = null, R = [], BY = new Map();
-const S = { city: DEFAULT_CITY, g: 'cluster', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null };
+const S = { city: DEFAULT_CITY, g: 'custom', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null, dir: -1, tb: 'yoy' };
 
 function readHash() {
   const q = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
@@ -369,11 +387,12 @@ function renderCore() {
     return `<button type="button" class="kpi" data-m="${v}" aria-pressed="${S.m === v}">
       <span class="l">${t}</span>
       <span class="v">${fmt(a)}</span>
-      <span class="row">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}<span class="n">${sgn(d)}</span></span> מ${hebYear(PY())}` : '<span class="na">אין השוואה לשנה הקודמת</span>'}</span>
-      <span class="row">${n != null ? `ארצי ${fmt(n)} · <span class="n" style="color:${gap >= 0 ? 'var(--good-d)' : 'var(--bad-d)'};font-weight:700">${sgn(gap)}</span>` : natOn() ? '' : 'השוואה לארצי רק על כלל י״ב'}</span>
+      <span class="row">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}${chg(d, rel(a, b))}</span> מ${hebYear(PY())} <span class="n">(${b.toFixed(1)}%)</span>` : '<span class="na">אין השוואה לשנה הקודמת</span>'}</span>
+      <span class="row">${gap != null ? `<span class="chip ${kindOf(gap)}">${tri(gap)}${chg(gap, rel(a, n))}</span> מול הארצי <span class="n">(${n.toFixed(1)}%)</span>` : natOn() ? '' : '<span class="na">השוואה לארצי רק על כלל י״ב</span>'}</span>
       ${spark(v)}
     </button>`;
-  }).join('')}</div>`;
+  }).join('')}</div>
+  <p class="foot" style="margin:-6px 0 0">השינוי מוצג בנקודות אחוז, ובסוגריים כשיעור שינוי יחסי: השינוי כאחוז מהערך שמולו, שנה קודמת או ארצי.</p>`;
 }
 
 function renderCompare() {
@@ -406,10 +425,10 @@ function renderCompare() {
   return `<h2 class="sec-title">השוואה לרשויות דומות</h2>
   <section class="card">
     <div class="ctl"><span class="ctl-l">קבוצה</span>
+      ${gp('custom', 'בחירה ידנית')}
       ${gp('cluster', cx.cluster ? `אשכול ${cx.cluster}` : 'אשכול', !cx.cluster)}
       ${gp('size', 'היקף דומה', !cx.size)}
       ${gp('region', 'אזור', !cx.district)}
-      ${gp('custom', 'בחירה ידנית')}
     </div>
     <div class="ctl"><span class="ctl-l">מדד</span>
       ${CORE.map(({ v, t }) => `<button type="button" class="pill" data-m="${v}" aria-pressed="${m === v}">${t}</button>`).join('')}
@@ -436,73 +455,42 @@ function renderCompare() {
   ${renderTable(list)}`;
 }
 
+const sortIcon = dir => `<svg class="si" viewBox="0 0 10 14" aria-hidden="true"><path class="${dir > 0 ? 'on' : ''}" d="M5 1 L9 6 H1 Z"/><path class="${dir < 0 ? 'on' : ''}" d="M5 13 L9 8 H1 Z"/></svg>`;
 function renderTable(list) {
-  const c = city(), key = S.sort || S.m;
-  const rows = list.slice().sort((a, b) => (val(b, key, Y()) ?? -1) - (val(a, key, Y()) ?? -1));
+  const c = city(), key = S.sort || S.m, dir = S.dir || -1;
+  if (!natOn() && S.tb === 'nat') S.tb = 'yoy';
+  const base = S.tb === 'nat' ? 'nat' : 'yoy';
+  const rows = list.slice().sort((a, b) => {
+    const va = val(a, key, Y()), vb = val(b, key, Y());
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return dir < 0 ? vb - va : va - vb;
+  });
   const cell = (r, v) => {
-    const a = val(r, v, Y()), b = val(r, v, PY());
-    return `<td data-l="${label(v)}"><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`;
+    const a = val(r, v, Y()), ref = base === 'nat' ? natVal(v, Y()) : val(r, v, PY());
+    const d = a != null && ref != null ? a - ref : null;
+    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small>${chg(d, rel(a, ref))}</small>` : ''}</span></td>`;
   };
   const natRow = natOn() ? `<tr class="nat"><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
-    const a = natVal(v, Y()), b = natVal(v, PY());
-    return `<td data-l="${label(v)}"><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`; }).join('')}</tr>` : '';
+    const a = natVal(v, Y()), b = natVal(v, PY()), d = base === 'yoy' && a != null && b != null ? a - b : null;
+    return `<td data-l="${label(v)}" class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}${d != null ? tri(d) : ''}</span>${d != null ? `<small>${chg(d, rel(a, b))}</small>` : base === 'nat' ? '<small>בסיס ההשוואה</small>' : ''}</span></td>`; }).join('')}</tr>` : '';
+  const th = ({ v, t }) => `<th class="${key === v ? 'sorted' : ''}" aria-sort="${key === v ? (dir < 0 ? 'descending' : 'ascending') : 'none'}"><button type="button" data-sort="${v}" title="מיון לפי ${t}">${t}${sortIcon(key === v ? dir : 0)}</button></th>`;
   return `<section class="card">
     <h2>כל מדדי הליבה בקבוצה</h2>
-    <p class="lede">אפשר למיין לפי כל אחד מהמדדים. המשולש מסמן עלייה או ירידה מ${hebYear(PY())}.</p>
-    <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}</button>`).join('')}</div>
+    <p class="lede">ממוין לפי <b>${label(key)}</b>, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. לחיצה על כותרת עמודה ממיינת לפיה, ולחיצה נוספת הופכת את הכיוון.</p>
+    <div class="ctl"><span class="ctl-l">שינוי מול</span>
+      <button type="button" class="pill" data-tb="yoy" aria-pressed="${base === 'yoy'}">${hebYear(PY())}</button>
+      <button type="button" class="pill" data-tb="nat" aria-pressed="${base === 'nat'}" ${natOn() ? '' : 'disabled title="ההשוואה לארצי רק על כלל י״ב"'}>הממוצע הארצי</button>
+      <span class="na">נקודות אחוז, ובסוגריים שיעור שינוי יחסי</span></div>
+    <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}${key === v ? sortIcon(dir) : ''}</button>`).join('')}</div>
     <div class="tbl-wrap"><table class="mtab">
-      <thead><tr><th>רשות</th>${CORE.map(({ v, t }) => `<th><button type="button" data-sort="${v}" aria-pressed="${key === v}">${t}</button></th>`).join('')}</tr></thead>
+      <thead><tr><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
       <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
   </section>`;
 }
 
-function renderTrend() {
-  const c = city(), m = S.m, ys = D.years;
-  const { list } = groupOf();
-  const grp = list.filter(r => r !== c);
-  const series = [
-    { n: c.n, col: 'var(--accent)', w: 3, dash: '', pts: ys.map(y => val(c, m, y)) },
-    ...(natOn() ? [{ n: 'ארצי', col: 'var(--nat)', w: 2, dash: '5 4', pts: ys.map(y => natVal(m, y)) }] : []),
-    ...(grp.length ? [{ n: 'ממוצע הקבוצה', col: 'var(--primary)', w: 2, dash: '2 3', pts: ys.map(y => {
-      const v = grp.map(r => val(r, m, y)).filter(x => x != null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; }) }] : []),
-  ];
-  const all = series.flatMap(s => s.pts).filter(x => x != null);
-  if (all.length < 2) return '';
-  const used = ys.map((y, i) => series.some(s => s.pts[i] != null));
-  const i0 = used.indexOf(true), i1 = used.lastIndexOf(true);
-  const narrow = window.innerWidth < 600;           // במובייל: viewBox צר, כדי שהטקסט לא יתכווץ לבלתי קריא
-  const W = narrow ? 380 : 720, H = narrow ? 260 : 280, L = 40, Rm = narrow ? 52 : 70, T = 16, B = 34;
-  let lo = Math.floor(Math.min(...all) / 5) * 5, hi = Math.ceil(Math.max(...all) / 5) * 5; if (hi === lo) hi = lo + 5;
-  const n = i1 - i0;
-  // ציר הזמן משמאל לימין (תקן גרפים), כמו גרפי Chart.js בדשבורד הראשי
-  const X = i => L + (n ? (i - i0) * (W - L - Rm) / n : (W - L - Rm) / 2);
-  const Yp = v => T + (hi - v) / (hi - lo) * (H - T - B);
-  const step = (hi - lo) > 30 ? 10 : 5;
-  let g = '';
-  for (let v = lo; v <= hi; v += step) g += `<line x1="${L}" x2="${W - Rm}" y1="${Yp(v)}" y2="${Yp(v)}" stroke="#ece6f3"/><text x="${L - 8}" y="${Yp(v) + 4}" text-anchor="end" font-size="12" fill="#6a6080">${v}%</text>`;
-  for (let i = i0; i <= i1; i++) if (!narrow || (i1 - i) % 2 === 0) g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" font-size="12" fill="#6a6080" direction="rtl">${hebYear(ys[i])}</text>`;
-  // תוויות הקצה: מרווח של 15px לפחות, כדי ששני קווים קרובים לא יתנגשו
-  const ends = series.map((s, k) => { const i = s.pts.map((v, j) => v != null && j >= i0 && j <= i1 ? j : -1).filter(j => j >= 0).pop(); return i == null ? null : { k, i, v: s.pts[i], y: Yp(s.pts[i]) + 4 }; }).filter(Boolean).sort((a, b) => a.y - b.y);
-  for (let j = 1; j < ends.length; j++) if (ends[j].y - ends[j - 1].y < 15) ends[j].y = ends[j - 1].y + 15;
-  const endY = new Map(ends.map(e => [e.k, e]));
-  const lines = series.map((s, k) => {
-    const p = s.pts.map((v, i) => v == null || i < i0 || i > i1 ? null : [X(i), Yp(v)]);
-    const d = p.filter(Boolean).map((q, k) => (k ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
-    const lastI = p.map((q, i) => q ? i : -1).filter(i => i >= 0).pop();
-    const dots = s.w === 3 ? p.filter(Boolean).map(q => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${s.col}"/>`).join('') : '';
-    const lastV = lastI != null ? s.pts[lastI] : null;
-    return `<path d="${d}" fill="none" stroke="${s.col}" stroke-width="${s.w}" stroke-dasharray="${s.dash}" stroke-linejoin="round"/>${dots}
-      ${lastV != null ? `<text x="${X(lastI) + 8}" y="${endY.get(k).y}" font-size="13" font-weight="700" fill="${s.col}" stroke="#fff" stroke-width="3" paint-order="stroke">${lastV.toFixed(1)}%</text>` : ''}`;
-  }).join('');
-  const legend = series.map(s => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="22" height="6" aria-hidden="true"><line x1="0" x2="22" y1="3" y2="3" stroke="${s.col}" stroke-width="${s.w}" stroke-dasharray="${s.dash}"/></svg>${esc(s.n)}</span>`).join('');
-  return `<section class="card">
-    <h2>${label(m)} לאורך השנים</h2>
-    <p class="lede">${esc(c.n)} מול ${natOn() ? 'הממוצע הארצי ו' : ''}ממוצע הקבוצה שנבחרה למעלה.</p>
-    <svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label(m)} לאורך השנים">${g}${lines}</svg>
-    <p class="legend">${legend}</p>
-  </section>`;
-}
 
 function renderOther() {
   const c = city();
@@ -556,7 +544,7 @@ function render() {
   document.querySelectorAll('[data-pop]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)); if (b.dataset.pop === '120') { b.disabled = !has120; b.title = has120 ? '' : 'אין נתון ללא חינוך מיוחד לרשות הזו'; } });
   $('#citySel').value = String(S.city);
   $('#content').innerHTML = `<div style="display:grid;gap:20px">${renderCore()}${renderCompare()}
-    ${renderTrend()}${renderGeneral()}${renderOther()}</div>
+    ${renderGeneral()}${renderOther()}</div>
     <datalist id="rList">${R.map(r => `<option value="${esc(r.n)}">`).join('')}</datalist>`;
   writeHash();
 }
@@ -596,11 +584,12 @@ function showEmpty(msg) {
 /* ── אירועים ───────────────────────────────────────────────────── */
 document.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t || !D) return;
-  if (t.dataset.m) { S.m = t.dataset.m; S.sort = null; render(); }
+  if (t.dataset.m) { S.m = t.dataset.m; S.sort = null; S.dir = -1; render(); }
   else if (t.dataset.g && !t.disabled) { S.g = t.dataset.g; render(); }
   else if (t.dataset.pop) { S.pop = t.dataset.pop; render(); }
   else if ('min' in t.dataset) { S.min = +t.dataset.min; render(); }
-  else if (t.dataset.sort) { S.sort = t.dataset.sort; render(); }
+  else if (t.dataset.sort) { if ((S.sort || S.m) === t.dataset.sort) S.dir = -(S.dir || -1); else { S.sort = t.dataset.sort; S.dir = -1; } render(); }
+  else if (t.dataset.tb) { S.tb = t.dataset.tb; render(); }
   else if (t.dataset.rm) { S.touched = true; S.custom = S.custom.filter(s => s !== +t.dataset.rm); render(); }
   else if (t.id === 'addBtn') addCustom();
 });
