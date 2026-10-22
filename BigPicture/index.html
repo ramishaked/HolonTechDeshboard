@@ -33,6 +33,8 @@ button, input, select { font: inherit; }
 .seg button[aria-pressed="true"] { background: #fff; color: var(--primary-d); font-weight: 700; }
 .seg button[disabled] { opacity: .45; cursor: default; }
 .hero-note { font-size: 13px; opacity: .85; margin: 0; }
+.linkbtn { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.linkbtn:hover { background: rgba(255,255,255,.24); }
 
 /* כרטיסים */
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(42,26,77,.06); min-width: 0; }
@@ -202,6 +204,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
       <div class="hero-ctl" id="heroCtl" hidden>
         <label class="sr" for="citySel" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">רשות</label>
         <select id="citySel" aria-label="בחירת רשות"></select>
+        <button type="button" class="linkbtn" id="copyLink" title="קישור שנפתח ישר על הרשות הזו">העתקת קישור לרשות</button>
         <div class="seg" role="group" aria-label="אוכלוסיית המדידה">
           <button type="button" data-pop="12">כלל תלמידי י״ב</button>
           <button type="button" data-pop="120">ללא חינוך מיוחד</button>
@@ -236,7 +239,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 11;
+const BUILD = 12;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -294,20 +297,31 @@ const dmy = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d
 let D = null, R = [], BY = new Map();
 const S = { city: DEFAULT_CITY, g: 'custom', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null, dir: -1, tb: 'yoy', openRows: new Set() };
 
+/* מצב הדף חי בכתובת, כדי שאפשר יהיה לשלוח קישור שנפתח ישר על רשות:
+   ?city=62000 (סמל) או ?city=בת ים (שם). נתמכים גם g, m, pop, min, c, וקישורים ישנים עם # */
 function readHash() {
-  const q = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
-  if (q.get('city')) S.city = +q.get('city');
-  if (q.get('g')) S.g = q.get('g');
+  const q = new URLSearchParams(location.search.slice(1));
+  new URLSearchParams(location.hash.slice(1)).forEach((v, k) => q.set(k, v));
+  const c = (q.get('city') || '').trim();
+  if (/^\d+$/.test(c)) S.city = +c; else if (c) S.cityName = c;
+  S.cityGiven = !!c;
+  if (q.get('g')) { S.g = q.get('g'); S.gGiven = true; }
   if (q.get('m')) S.m = q.get('m');
   if (q.get('pop')) S.pop = q.get('pop') === '120' ? '120' : '12';
   if (q.has('min')) S.min = +q.get('min') || 0;
   if (q.get('c')) { S.custom = q.get('c').split(',').map(Number).filter(Boolean); S.touched = true; }
 }
+// כתובת קצרה: רק מה ששונה מברירת המחדל
 function writeHash() {
-  const q = new URLSearchParams({ city: S.city, g: S.g, m: S.m, pop: S.pop, min: S.min });
-  if (S.custom) q.set('c', S.custom.join(','));
-  history.replaceState(null, '', '#' + q.toString());
+  const q = new URLSearchParams({ city: S.city });
+  if (!(S.city === DEFAULT_CITY && S.g === 'custom')) q.set('g', S.g);      // כדי שטעינה מחדש תשחזר את המצב
+  if (S.m !== CORE[0].v) q.set('m', S.m);
+  if (S.pop === '120') q.set('pop', '120');
+  if (S.min !== MIN12) q.set('min', S.min);
+  if (S.custom && S.touched) q.set('c', S.custom.join(','));
+  history.replaceState(null, '', location.pathname + '?' + q.toString());
 }
+const cityLink = () => `${location.origin}${location.pathname}?city=${S.city}`;
 
 /* ── נתונים ────────────────────────────────────────────────────── */
 // מבנה הקובץ: ראו shkifutCollector למטה. h[כיתה][מדד] = מערך מיושר ל-D.years.
@@ -599,7 +613,8 @@ function render() {
   $('#title').textContent = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
   $('#subtitle').textContent = 'מדדי הבגרות, המגמה מהשנה שעברה וההשוואה לרשויות דומות';
   const st = D.partialState, busy = st && st.done < st.total;
-  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '');
+  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '') + (S.bad ? ` · לא נמצאה הרשות "${S.bad}", מוצגת חולון` : '');
+  const cl = $('#copyLink'); if (cl) cl.dataset.url = cityLink();
   $('#heroCtl').hidden = false;
   const has120 = !!c.h?.['120'];
   if (!has120 && S.pop === '120') S.pop = '12';
@@ -629,7 +644,17 @@ function load(data) {
   if (!data || !Array.isArray(data.rashuyot) || !Array.isArray(data.years)) throw new Error('המבנה של הקובץ אינו מוכר');
   D = data; enrich();
   if (!S.touched) S.custom = null;
-  if (!BY.has(S.city)) { const h = R.find(r => norm(r.n) === norm('חולון')); S.city = h ? +h.s : +R[0].s; }
+  const finalLoad = !(D.partialState && D.partialState.done < D.partialState.total);
+  if (S.cityName) {
+    const q = norm(S.cityName), m = R.find(r => norm(r.n) === q) || R.find(r => norm(r.n).startsWith(q));
+    if (m) { S.city = +m.s; S.cityName = null; }
+    else if (finalLoad) { S.bad = S.cityName; S.cityName = null; }
+  }
+  if (!S.cityName && !BY.has(S.city)) { S.bad = S.bad || String(S.city); const h = R.find(r => norm(r.n) === norm('חולון')); S.city = h ? +h.s : +R[0].s; S.cityGiven = false; }
+  // רשות שאינה חולון: ברירת המחדל היא השוואה לאשכול שלה, כי רשימת "בחירה ידנית" בנויה סביב חולון
+  if (S.cityGiven && !S.gGiven && S.city !== DEFAULT_CITY && BY.has(S.city)) {
+    const cc = BY.get(S.city); S.g = cc.cluster ? 'cluster' : cc.size ? 'size' : 'custom'; S.gGiven = true;
+  }
   const sel = $('#citySel');
   sel.innerHTML = R.slice().sort((a, b) => a.n.localeCompare(b.n, 'he')).map(r => `<option value="${r.s}">${esc(r.n)}</option>`).join('');
   render(); renderDiag();
@@ -670,6 +695,12 @@ function addCustom() {
 }
 let wasNarrow = window.innerWidth < 600;
 window.addEventListener('resize', () => { const n = window.innerWidth < 600; if (D && n !== wasNarrow) { wasNarrow = n; render(); } });
+$('#copyLink').addEventListener('click', async () => {
+  const url = cityLink(), b = $('#copyLink'), t0 = 'העתקת קישור לרשות';
+  try { await navigator.clipboard.writeText(url); b.textContent = 'הקישור הועתק'; }
+  catch { prompt('העתיקו את הקישור:', url); }
+  setTimeout(() => { b.textContent = t0; }, 2200);
+});
 $('#citySel').addEventListener('change', e => { S.city = +e.target.value; S.custom = null; S.touched = false; render(); });
 $('#fileIn').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;

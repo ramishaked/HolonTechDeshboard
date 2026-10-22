@@ -68,7 +68,7 @@ async function launch() {
   fail('Chromium לא עלה'); return null;
 }
 
-async function openPage(browser, data, viewport = { width: 1280, height: 900 }, live = null) {
+async function openPage(browser, data, viewport = { width: 1280, height: 900 }, live = null, query = '') {
   const page = await browser.newPage({ viewport });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -83,7 +83,7 @@ async function openPage(browser, data, viewport = { width: 1280, height: 900 }, 
     }
     return route.abort();
   });
-  await page.goto('http://bp.local/BigPicture/');
+  await page.goto('http://bp.local/BigPicture/' + query);
   await page.waitForTimeout(400);
   return { page, errors };
 }
@@ -194,6 +194,38 @@ if (browser) {
     rp.errors.forEach(e => fail('data.json האמיתי, שגיאה: ' + e));
     await rp.page.close();
   } else fail('BigPicture/data.json חסר');
+
+  // קישורים לרשות: ?city=סמל או שם, ברירת מחדל סבירה לרשות שאינה חולון, וחזרה לחולון כשהרשות לא נמצאה
+  if (fs.existsSync(realPath)) {
+    const real2 = JSON.parse(fs.readFileSync(realPath, 'utf8'));
+    const cases = [
+      ['?city=62000', 'בת ים', 'cluster', 'לפי סמל'],
+      ['?city=' + encodeURIComponent('בת ים'), 'בת ים', 'cluster', 'לפי שם'],
+      ['#city=84004', 'רחובות', 'cluster', 'קישור ישן עם #'],
+      ['?city=62000&g=custom', 'בת ים', 'custom', 'קבוצה מפורשת גוברת'],
+      ['?city=' + encodeURIComponent('ראשון'), 'ראשון לציון', 'cluster', 'שם חלקי'],
+    ];
+    for (const [q, name, g, what] of cases) {
+      const lp = await openPage(browser, real2, { width: 1280, height: 900 }, null, q);
+      const title = await lp.page.locator('#title').innerText();
+      const pressed = await lp.page.locator('.pill[data-g][aria-pressed="true"]').first().getAttribute('data-g');
+      title.includes(name) && pressed === g ? pass(`קישור ${what}: נפתח על ${name}, קבוצה ${g}`) : fail(`קישור ${what} (${q}): כותרת "${title}", קבוצה ${pressed}`);
+      lp.errors.forEach(e => fail('קישור, שגיאה: ' + e));
+      await lp.page.close();
+    }
+    const bad = await openPage(browser, real2, { width: 1280, height: 900 }, null, '?city=999');
+    const bt = await bad.page.locator('#title').innerText(), bn = await bad.page.locator('#heroNote').innerText();
+    bt.includes('חולון') && bn.includes('לא נמצאה') ? pass('רשות לא קיימת: מוצגת חולון עם הודעה') : fail(`רשות לא קיימת: "${bt}" / "${bn}"`);
+    await bad.page.close();
+    const hp = await openPage(browser, real2, { width: 1280, height: 900 }, null, '');
+    const hg = await hp.page.locator('.pill[data-g][aria-pressed="true"]').first().getAttribute('data-g');
+    hg === 'custom' && (await hp.page.locator('#title').innerText()).includes('חולון') ? pass('בלי פרמטר: חולון, בחירה ידנית') : fail('ברירת המחדל השתנתה');
+    await hp.page.selectOption('#citySel', '62000');
+    const u = hp.page.url();
+    /\?city=62000/.test(u) && !u.includes('#') ? pass(`הכתובת מתעדכנת לשיתוף: ${u.replace('http://bp.local', '')}`) : fail('הכתובת לא עודכנה: ' + u);
+    (await hp.page.locator('#copyLink').getAttribute('data-url')) === 'http://bp.local/BigPicture/?city=62000' ? pass('כפתור "העתקת קישור לרשות": קישור נקי לרשות הנוכחית') : fail('data-url שגוי: ' + await hp.page.locator('#copyLink').getAttribute('data-url'));
+    await hp.page.close();
+  }
 
   // סקריפט הרענון (tools/refresh-data.mjs) מול ה-API המדומה: הקובץ שהוא כותב נטען בדף
   {
