@@ -140,6 +140,8 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 .bm { display: inline-block; background: var(--accent); color: #fff; font-weight: 700; padding: 8px 16px; border-radius: 999px; text-decoration: none; cursor: grab; }
 .btn { border: 1px solid var(--border); background: var(--card); color: var(--primary-d); border-radius: 999px; padding: 7px 16px; cursor: pointer; font-weight: 700; font-size: 14px; }
 .btn:hover { border-color: var(--primary); }
+.rkc { width: 2.2rem; text-align: center; color: var(--muted); font-weight: 700; }
+th.rkc { color: var(--muted); }
 .tbl-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .tbl-head h2 { margin: 0; }
 .tbl-head .btn { padding: 5px 14px; font-size: 14px; }
@@ -297,7 +299,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 25;
+const BUILD = 26;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -590,7 +592,7 @@ function renderTable(list) {
     const dy = a != null && b != null ? a - b : null, dn = a != null && n != null ? a - n : null;
     return `<td class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}</span>${rkl(r, v)}${dline(hebYear(PY()), dy, rel(a, b))}${dline('ארצי', dn, rel(a, n))}</span></td>`;
   };
-  const natRow = natOn() ? `<tr class="nat"><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
+  const natRow = natOn() ? `<tr class="nat"><td class="rkc"></td><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
     const a = natVal(v, Y()), b = natVal(v, PY()), d = a != null && b != null ? a - b : null;
     return `<td class="${key === v ? 'sorted' : ''}"><span class="cell2"><span class="cv">${fmt(a)}</span>${dline(hebYear(PY()), d, rel(a, b))}</span></td>`; }).join('')}</tr>` : '';
   /* מובייל: רשימת דירוג. המדד הממוין בגדול, שאר המדדים בשורה קטנה, והקשה פותחת פירוט מלא */
@@ -626,8 +628,8 @@ function renderTable(list) {
     <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}${key === v ? sortIcon(dir) : ''}</button>`).join('')}</div>
     ${mlist}
     <div class="tbl-wrap tbl-core"><table>
-      <thead><tr><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
-      <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
+      <thead><tr><th class="rkc" title="מקום בקבוצה לפי ${label(key)}">#</th><th>רשות</th>${CORE.map(th).join('')}</tr></thead>
+      <tbody>${rows.map((r, i) => `<tr class="${r === c ? 'me' : ''}"><td class="rkc n">${i + 1}</td><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
   </section>`;
 }
@@ -750,7 +752,7 @@ function exportXlsx() {
   const pad = (row) => row.concat(blank(nCols - row.length));
   const title = pad([{ v: `כל מדדי הליבה בקבוצה · ${c.n} · ${lab} · ${ty}`, s: ST.title }]);
   const note = pad([{ v: `${S.pop === '12' ? 'כלל תלמידי י״ב' : 'י״ב ללא חינוך מיוחד'}. הערכים באחוזים מתלמידי י״ב ברשות. ממוין לפי ${label(key)}, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. מקום בקבוצה: 1 = הערך הגבוה ביותר. שינוי בנקודות אחוז (נק׳) וכשיעור שינוי יחסי (%).`, s: ST.note }]);
-  const h1 = [{ v: 'רשות', s: ST.h1 }, { v: `מקום לפי ${label(key)}`, s: ST.h1 }];
+  const h1 = [{ v: `מקום לפי ${label(key)}`, s: ST.h1 }, { v: 'רשות', s: ST.h1 }];
   const h2 = [{ v: null, s: ST.h2 }, { v: null, s: ST.h2 }];
   CORE.forEach(({ t }) => {
     h1.push({ v: t, s: ST.h1 }, ...blank(per - 1).map(() => ({ v: null, s: ST.h1 })));
@@ -762,7 +764,7 @@ function exportXlsx() {
   const dataRow = (name, rank, get, getPrev, me, natRow, rk) => {
     const k = natRow ? ['natTxt', 'natNum', 'natChg', 'natNum'] : me ? ['meTxt', 'meNum', 'meChg', 'meRank'] : ['txt', 'num', 'chg', 'rank'];
     const sTxt = ST[k[0]], sNum = ST[k[1]], sChg = ST[k[2]], sRank = ST[k[3]] ?? ST[natRow ? 'natNum' : 'rank'];
-    const out = [{ v: name, s: sTxt }, { v: rank, s: sRank }];
+    const out = [{ v: rank, s: sRank }, { v: name, s: sTxt }];
     CORE.forEach(({ v }) => {
       const a = get(v), b = getPrev(v), n = natRow ? null : (nat ? natVal(v, Y()) : null);
       out.push({ v: r1(a), s: sNum }, { v: rk ? rankOf(rk, v) : null, s: sRank }, { v: r1(b), s: sNum },
@@ -773,7 +775,7 @@ function exportXlsx() {
   };
   const rows = [title, note, h1, h2, ...sorted.map((r, i) => dataRow(r.n, i + 1, v => val(r, v, Y()), v => val(r, v, PY()), r === c, false, r))];
   if (nat) rows.push(dataRow('ממוצע ארצי (כלל י״ב)', null, v => natVal(v, Y()), v => natVal(v, PY()), false, true, null));
-  const widths = [24, 14, ...CORE.flatMap(() => [11, 10, 11, 13, 12, ...(nat ? [14] : [])])];
+  const widths = [14, 24, ...CORE.flatMap(() => [11, 10, 11, 13, 12, ...(nat ? [14] : [])])];
   const sheet1 = xl.sheet(rows, { widths, merges, freeze: [2, 4], heights: { 0: 24, 1: 32, 2: 22, 3: 44 } });
 
   const rows2 = [
