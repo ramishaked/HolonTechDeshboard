@@ -85,8 +85,9 @@ function api(url) {
 
 /* ── הרצת קוד האיסוף ב-Node, עם DOM מינימלי ─────────────────────── */
 async function runCollector() {
-  const m = html.match(/async function shkifutCollector\(\) \{[\s\S]*?\n\}\n/);
-  if (!m) { fail('לא נמצאה shkifutCollector בדף'); return null; }
+  const core = html.match(/async function eduCollect\([^)]*\) \{[\s\S]*?\n\}\n/), ui = html.match(/async function shkifutCollector\(\) \{[\s\S]*?\n\}\n/);
+  if (!core || !ui) { fail('לא נמצאו eduCollect / shkifutCollector בדף'); return null; }
+  const m = [core[0] + ui[0]];
   let downloaded = null; const blobs = new Map();
   const el = () => ({ style: {}, append() {}, appendChild() {}, remove() {}, click() { downloaded = blobs.get(this.href); }, set textContent(v) {}, dir: '' });
   const env = {
@@ -97,11 +98,10 @@ async function runCollector() {
     Blob, alert: t => fail('alert: ' + t), navigator: {}, window: {}, setTimeout,
   };
   const fn = new Function(...Object.keys(env), `${m[0]}; return shkifutCollector();`);
-  const res = await fn(...Object.values(env));
-  if (!res?.ok) { fail('האיסוף נכשל: ' + JSON.stringify(res)); return null; }
-  pass(`האיסוף: ${res.rashuyot} רשויות, שנה ${res.year}, כשלים ${res.failed}`);
+  await fn(...Object.values(env));
   if (!downloaded) { fail('האיסוף לא הוריד קובץ'); return null; }
   const data = JSON.parse(await downloaded.text());
+  pass(`האיסוף: ${data.rashuyot.length} רשויות, שנה ${data.year}, כשלים ${data.failed.length}`);
   data.year === 2025 ? pass('זוהתה שנת הנתונים 2025') : fail(`שנת נתונים ${data.year} במקום 2025`);
   const h = data.rashuyot.find(r => r.s === 66001);
   const z = h?.h?.['12']?.ACHUZ_ZAKAIM?.[data.years.indexOf(2025)];
@@ -126,15 +126,19 @@ async function launch() {
   fail('Chromium לא עלה'); return null;
 }
 
-async function openPage(browser, data, viewport = { width: 1280, height: 900 }) {
+async function openPage(browser, data, viewport = { width: 1280, height: 900 }, live = null) {
   const page = await browser.newPage({ viewport });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_|Failed to load resource/.test(m.text())) errors.push(m.text()); });
-  await page.route('**/*', route => {
+  await page.route('**/*', async route => {
     const u = route.request().url();
     if (u.startsWith('http://bp.local/BigPicture/data.json')) return data ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) }) : route.fulfill({ status: 404, body: '' });
     if (u.startsWith('http://bp.local/BigPicture/')) return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+    if (u.startsWith('https://shkifut.education.gov.il/api/') && live === 'ok') {
+      const b = api(u); await new Promise(r => setTimeout(r, 15));
+      return route.fulfill({ status: b ? 200 : 404, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(b) });
+    }
     return route.abort();
   });
   await page.goto('http://bp.local/BigPicture/');
@@ -204,9 +208,31 @@ if (browser) {
   }
 
   const emp = await openPage(browser, null);
+  await emp.page.waitForSelector('.empty h2', { timeout: 15000 }).catch(() => {});
   (await emp.page.locator('.empty').count()) === 1 && await emp.page.locator('#upd').evaluate(d => d.open)
-    ? pass('בלי data.json: מסך ריק עם הוראות עדכון') : fail('מסך הריק לא הוצג');
+    ? pass('בלי data.json ובלי גישה לאתר: מסך הסבר עם הוראות עדכון') : fail('מסך ההסבר לא הוצג');
   emp.errors.forEach(e => fail('ריק, שגיאה: ' + e));
+  await emp.page.close();
+
+  // בלי data.json, והאתר של משרד החינוך נגיש מהדפדפן: הדף נפתח לבד עם נתונים
+  const lv = await openPage(browser, null, { width: 1280, height: 900 }, 'ok');
+  await lv.page.waitForSelector('.kpi .v', { timeout: 15000 }).catch(() => {});
+  const first = await lv.page.locator('.kpi .v').first().innerText().catch(() => '');
+  first.includes('82.1') ? pass('בלי data.json: הדף טען לבד מהאתר, חולון 82.1%') : fail(`טעינה חיה: "${first}"`);
+  await lv.page.waitForFunction(() => !/נטענות רשויות/.test(document.querySelector('#heroNote').textContent), null, { timeout: 20000 }).catch(() => {});
+  const nb = await lv.page.locator('.bar').count();
+  nb >= 2 ? pass(`טעינה חיה: ההשוואה התמלאה (${nb} רשויות בקבוצה)`) : fail('טעינה חיה: ההשוואה ריקה');
+  (await lv.page.locator('#heroNote').innerText()).includes('נטען כעת ישירות') ? pass('הכותרת מציינת שהנתונים נטענו כעת מהאתר') : fail('הכותרת לא מציינת טעינה חיה');
+  lv.errors.forEach(e => fail('טעינה חיה, שגיאה: ' + e));
+  await lv.page.close();
+
+  // האתר חוסם את הדפדפן (CORS): מסך שגיאה מסביר, בלי קריסה
+  const bl = await openPage(browser, null);
+  await bl.page.waitForSelector('.empty h2', { timeout: 15000 }).catch(() => {});
+  (await bl.page.locator('.empty h2').innerText().catch(() => '')).includes('לא נטענו')
+    ? pass('כשהאתר חסום ואין data.json: מסך הסבר') : fail('מסך השגיאה לא הוצג');
+  bl.errors.filter(e => !/Failed to fetch|CORS|net::/.test(e)).forEach(e => fail('חסום, שגיאה: ' + e));
+  await bl.page.close();
   await browser.close();
 }
 if (SHOT) console.log('  צילומים: ' + path.join(process.env.SHOT_DIR || os.tmpdir(), 'bp-*.png'));

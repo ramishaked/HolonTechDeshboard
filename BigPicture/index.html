@@ -170,7 +170,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   <section class="card">
     <details class="upd" id="upd">
       <summary>עדכון הנתונים ממשרד החינוך</summary>
-      <p class="lede" style="margin-top:10px">האתר שקיפות בחינוך חוסם גישה משרתים שמחוץ לישראל, ולכן הנתונים נאספים מהדפדפן שלך, מתוך האתר עצמו, ונשמרים כקובץ אחד. האיסוף לוקח כשתי דקות.</p>
+      <p class="lede" style="margin-top:10px">הדף טוען את הנתונים בעצמו מהאתר של משרד החינוך, בדפדפן של מי שפותח אותו. אם יש קובץ data.json בתיקייה הזו, הוא נטען ראשון והדף נפתח מהר יותר. את הקובץ אוספים פעם בשנה, בדפדפן שיושב בישראל, כי האתר חוסם שרתים בחו״ל.</p>
       <ol class="steps">
         <li>גוררים את הכפתור הכתום לסרגל הסימניות: <a class="bm" id="bmLink" href="#">איסוף התמונה החינוכית</a></li>
         <li>פותחים את <a href="https://shkifut.education.gov.il/home" target="_blank" rel="noopener">shkifut.education.gov.il</a> ולוחצים על הסימנייה. בפינת המסך מופיעה התקדמות, ובסוף יורד הקובץ <code>data.json</code>.</li>
@@ -190,7 +190,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 3;
+const BUILD = 4;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -248,7 +248,7 @@ function readHash() {
   if (q.get('m')) S.m = q.get('m');
   if (q.get('pop')) S.pop = q.get('pop') === '120' ? '120' : '12';
   if (q.has('min')) S.min = +q.get('min') || 0;
-  if (q.get('c')) S.custom = q.get('c').split(',').map(Number).filter(Boolean);
+  if (q.get('c')) { S.custom = q.get('c').split(',').map(Number).filter(Boolean); S.touched = true; }
 }
 function writeHash() {
   const q = new URLSearchParams({ city: S.city, g: S.g, m: S.m, pop: S.pop, min: S.min });
@@ -545,7 +545,8 @@ function render() {
   document.title = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
   $('#title').textContent = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
   $('#subtitle').textContent = 'מדדי הבגרות, המגמה מהשנה שעברה וההשוואה לרשויות דומות';
-  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · הנתונים נאספו ב־${dmy(D.collected)}`;
+  const st = D.partialState, busy = st && st.done < st.total;
+  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · ` + (D.live ? 'נטען כעת ישירות מהאתר' : `הנתונים נאספו ב־${dmy(D.collected)}`) + (busy ? ` · נטענות רשויות להשוואה: ${st.done} מתוך ${st.total}` : '');
   $('#heroCtl').hidden = false;
   document.querySelectorAll('[data-pop]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)));
   $('#citySel').value = String(S.city);
@@ -572,6 +573,7 @@ function renderDiag() {
 function load(data) {
   if (!data || !Array.isArray(data.rashuyot) || !Array.isArray(data.years)) throw new Error('המבנה של הקובץ אינו מוכר');
   D = data; enrich();
+  if (!S.touched) S.custom = null;
   if (!BY.has(S.city)) { const h = R.find(r => norm(r.n) === norm('חולון')); S.city = h ? +h.s : +R[0].s; }
   const sel = $('#citySel');
   sel.innerHTML = R.slice().sort((a, b) => a.n.localeCompare(b.n, 'he')).map(r => `<option value="${r.s}">${esc(r.n)}</option>`).join('');
@@ -581,8 +583,8 @@ function load(data) {
 
 function showEmpty(msg) {
   $('#subtitle').textContent = 'מדדי הבגרות והשוואה לרשויות דומות';
-  $('#content').innerHTML = `<section class="card empty"><h2>עדיין אין כאן נתונים</h2>
-    <p class="lede">${esc(msg)}</p><p class="lede">כדי לטעון את נתוני משרד החינוך, פותחים את "עדכון הנתונים" למטה ומבצעים שלושה צעדים.</p></section>`;
+  $('#content').innerHTML = `<section class="card empty"><h2>הנתונים לא נטענו</h2>
+    <p class="lede">${esc(msg)}</p><p class="lede">הפתרון הקבוע: לאסוף את הנתונים פעם אחת ולשמור אותם בקובץ data.json בתיקייה הזו. ההוראות ב"עדכון הנתונים" למטה.</p></section>`;
   $('#upd').open = true; renderDiag();
 }
 
@@ -594,51 +596,52 @@ document.addEventListener('click', e => {
   else if (t.dataset.pop) { S.pop = t.dataset.pop; render(); }
   else if ('min' in t.dataset) { S.min = +t.dataset.min; render(); }
   else if (t.dataset.sort) { S.sort = t.dataset.sort; render(); }
-  else if (t.dataset.rm) { S.custom = S.custom.filter(s => s !== +t.dataset.rm); render(); }
+  else if (t.dataset.rm) { S.touched = true; S.custom = S.custom.filter(s => s !== +t.dataset.rm); render(); }
   else if (t.id === 'addBtn') addCustom();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'addIn') addCustom(); });
 function addCustom() {
   const q = norm($('#addIn').value); if (!q) return;
   const r = R.find(x => norm(x.n) === q) || R.find(x => norm(x.n).startsWith(q));
+  S.touched = true;
   if (r && +r.s !== S.city && !S.custom.includes(+r.s)) S.custom.push(+r.s);
   render(); const i = $('#addIn'); if (i) i.focus();
 }
 let wasNarrow = window.innerWidth < 600;
 window.addEventListener('resize', () => { const n = window.innerWidth < 600; if (D && n !== wasNarrow) { wasNarrow = n; render(); } });
-$('#citySel').addEventListener('change', e => { S.city = +e.target.value; S.custom = null; render(); });
+$('#citySel').addEventListener('change', e => { S.city = +e.target.value; S.custom = null; S.touched = false; render(); });
 $('#fileIn').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   f.text().then(t => { load(JSON.parse(t)); $('#heroNote').textContent += ' · תצוגה מקובץ מקומי, לא נשמר באתר'; })
     .catch(err => alert('לא הצלחתי לקרוא את הקובץ: ' + err.message));
 });
 $('#copyCode').addEventListener('click', async () => {
-  const code = `(${shkifutCollector.toString()})();`;
+  const code = collectorSrc();
   try { await navigator.clipboard.writeText(code); $('#copyCode').textContent = 'הקוד הועתק'; }
   catch { prompt('העתיקו את הקוד:', code); }
 });
 
 /* ── איסוף הנתונים ─────────────────────────────────────────────────
-   הפונקציה הזו לא רצה בדף הזה. היא נארזת כסימנייה (bookmarklet) ורצה
-   בתוך shkifut.education.gov.il, שם הקריאות ל-API הן מאותו origin.
-   האתר חוסם שרתים מחוץ לישראל (נבדק 22.10.2026, 403 גם מ-GitHub Actions),
-   ולכן אין דרך לאסוף מהשרת. נקודות הקצה והשדות: מדריך הגישה לשקיפות.
-   הפלט: מערכים מיושרים לשנים, רק כיתות 12 ו-120, ולכל רשות השדות
-   הפשוטים של נתוניה הכלליים (k) כדי לזהות אשכול, מחוז והיקף. */
-async function shkifutCollector() {
-  const HOST = 'shkifut.education.gov.il';
-  if (location.hostname !== HOST) { alert('את האיסוף מריצים מתוך האתר שקיפות בחינוך:\nhttps://' + HOST + '/home'); return; }
-  const box = document.createElement('div');
-  box.dir = 'rtl';
-  box.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;background:#4a2972;color:#fff;font:15px/1.5 Arial,sans-serif;padding:14px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);max-width:360px';
-  document.body.appendChild(box);
-  const say = t => { box.textContent = t; };
+   eduCollect הוא הליבה, והיא רצה בשני מקומות:
+   1. כשהדף נפתח: ישירות מהדפדפן של מי שפותח אותו (base = כתובת האתר).
+      הדפדפן יושב בישראל, ולכן מקבל מהאתר את מה שהוא חוסם משרתים בחו״ל
+      (נבדק 22.10.2026: 403 מהענן ומ-GitHub Actions). זה תלוי בכך שהאתר
+      מתיר קריאה מדומיין אחר (CORS); אם לא, הדף נופל ל-data.json.
+   2. כסימנייה בתוך האתר עצמו (base ריק), שמורידה data.json לשמירה בריפו.
+   נקודות הקצה והשדות: מדריך הגישה לשקיפות בחינוך.
+   emit(data, {done, total}) נקרא ברגע שיש חולון והארצי, ואחר כך כל 20 רשויות,
+   כדי שהדף יציג נתונים מיד ויתמלא בהדרגה. */
+async function eduCollect(base, say, emit, first) {
+  const HOST = 'https://shkifut.education.gov.il';
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  const g = async u => {
-    for (let t = 0; t < 4; t++) {
-      try { const r = await fetch(u, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-        if (r.ok) return await r.json(); if (r.status === 404) return null; } catch (e) {}
-      await sleep(800 * (t + 1));
+  const g = async (u, strict) => {
+    for (let t = 0; t < 3; t++) {
+      try {
+        const r = await fetch(base + u, { credentials: base ? 'omit' : 'same-origin', headers: { Accept: 'application/json' } });
+        if (r.ok) return await r.json();
+        if (r.status === 404 || (strict && r.status === 403)) return null;
+      } catch (e) { if (strict) throw e; }
+      await sleep(500 * (t + 1));
     }
     return null;
   };
@@ -670,44 +673,61 @@ async function shkifutCollector() {
     }
     return out;
   };
-  try {
-    say('טוען את רשימת הרשויות');
-    const lists = await g('/api/data/lists');
-    if (!lists || !lists.infoLists) throw new Error('רשימת הישויות לא נטענה. האם הדף פתוח על האתר עצמו?');
-    const il = Object.values(lists.infoLists);
-    const rash = il.filter(x => +x.Mode === 2).map(x => ({ s: +x.Semel, n: String(x.Shem || '').trim(), snif: x.Snif }));
-    const extra = il.filter(x => +x.Mode === 1 || +x.Mode === 4).map(x => ({ s: x.Semel, n: String(x.Shem || '').trim(), m: +x.Mode }));
-    const now = new Date();
-    let Y = now.getMonth() >= 9 ? now.getFullYear() - 1 : now.getFullYear() - 2;
-    say('טוען נתונים ארציים');
-    const natRows = n => (n && n.nationalHistory && n.nationalHistory.arziAkavish) || [];
-    let nat = await g('/api/data/national/?year=' + (Y + 1));
-    if (natRows(nat).some(r => +r.year === Y + 1)) Y = Y + 1; else nat = await g('/api/data/national/?year=' + Y);
-    const national = series(natRows(nat));
-    const natKeys = natRows(nat)[0] ? Object.keys(natRows(nat)[0]) : [];
-    const out = [], failed = []; let done = 0, i = 0;
-    const work = async () => {
-      while (i < rash.length) {
-        const r = rash[i++];
-        const [h, k] = await Promise.all([
-          g('/api/data/rashutHistory/?semelRashut=' + r.s),
-          g('/api/data/rashut/?semelRashut=' + r.s + '&year=' + Y),
-        ]);
-        if (!h) failed.push(r.n);
-        out.push({ s: r.s, n: r.n, snif: r.snif, h: series(h && h.rashutAkavish), k: flat(k && (k.rashutKlali || k)), top: k ? Object.keys(k) : [] });
-        say('אוסף נתוני רשויות: ' + (++done) + ' מתוך ' + rash.length + '\n' + r.n);
-      }
-    };
-    await Promise.all(Array.from({ length: 6 }, work));
+  say('טוען את רשימת הרשויות');
+  const lists = await g('/api/data/lists', true);
+  if (!lists || !lists.infoLists) throw new Error('רשימת הרשויות לא התקבלה מהאתר');
+  const il = Object.values(lists.infoLists);
+  const rash = il.filter(x => +x.Mode === 2).map(x => ({ s: +x.Semel, n: String(x.Shem || '').trim(), snif: x.Snif }));
+  const extra = il.filter(x => +x.Mode === 1 || +x.Mode === 4).map(x => ({ s: x.Semel, n: String(x.Shem || '').trim(), m: +x.Mode }));
+  rash.sort((a, b) => (b.s === first) - (a.s === first));
+  const now = new Date();
+  let Y = now.getMonth() >= 9 ? now.getFullYear() - 1 : now.getFullYear() - 2;
+  say('טוען נתונים ארציים');
+  const natRows = n => (n && n.nationalHistory && n.nationalHistory.arziAkavish) || [];
+  let nat = await g('/api/data/national/?year=' + (Y + 1));
+  if (natRows(nat).some(r => +r.year === Y + 1)) Y = Y + 1; else nat = await g('/api/data/national/?year=' + Y);
+  const national = series(natRows(nat));
+  const natKeys = natRows(nat)[0] ? Object.keys(natRows(nat)[0]) : [];
+  const out = [], failed = []; let done = 0, i = 0, top = [];
+  const build = () => {
     const years = [...yearsSet].sort((a, b) => a - b);
     const pack = o => { const p = {}; for (const [c, vs] of Object.entries(o)) { p[c] = {}; for (const [v, ys] of Object.entries(vs)) p[c][v] = years.map(y => ys[y] ?? null); } return p; };
-    const holon = out.find(x => x.s === 66001) || out[0];
-    const data = {
-      format: 'edu-picture/1', source: 'https://' + HOST, collected: new Date().toISOString(), year: Y, years, labels,
-      national: pack(national), extra,
-      rashuyot: out.sort((a, b) => a.s - b.s).map(x => ({ s: x.s, n: x.n, snif: x.snif, h: pack(x.h), k: x.k })),
-      failed, diag: { natKeys, rashutTop: holon ? holon.top : [], kKeys: holon ? Object.keys(holon.k) : [] },
-    };
+    const kk = out.find(x => x.s === first) || out[0];
+    return { format: 'edu-picture/1', source: HOST, collected: new Date().toISOString(), year: Y, years, labels, national: pack(national), extra,
+      rashuyot: out.slice().sort((a, b) => a.s - b.s).map(x => ({ s: x.s, n: x.n, snif: x.snif, h: pack(x.h), k: x.k })),
+      failed: failed.slice(), diag: { natKeys, rashutTop: top, kKeys: kk ? Object.keys(kk.k) : [] } };
+  };
+  const work = async () => {
+    while (i < rash.length) {
+      const r = rash[i++];
+      const [h, k] = await Promise.all([
+        g('/api/data/rashutHistory/?semelRashut=' + r.s),
+        g('/api/data/rashut/?semelRashut=' + r.s + '&year=' + Y),
+      ]);
+      if (!h) failed.push(r.n);
+      if (k && !top.length) top = Object.keys(k);
+      out.push({ s: r.s, n: r.n, snif: r.snif, h: series(h && h.rashutAkavish), k: flat(k && (k.rashutKlali || k)) });
+      done++; say('טוען נתוני רשויות: ' + done + ' מתוך ' + rash.length);
+      if (emit && (done === 1 || done % 20 === 0) && done < rash.length) emit(build(), { done, total: rash.length });
+    }
+  };
+  await work();                                   // הראשונה לבדה, כדי שחולון תגיע לפני כל השאר
+  await Promise.all(Array.from({ length: 6 }, work));
+  const data = build();
+  if (emit) emit(data, { done: rash.length, total: rash.length });
+  return data;
+}
+
+// הסימנייה: רצה בתוך האתר עצמו ומורידה data.json
+async function shkifutCollector() {
+  if (location.hostname !== 'shkifut.education.gov.il') { alert('את האיסוף מריצים מתוך האתר שקיפות בחינוך:\nhttps://shkifut.education.gov.il/home'); return; }
+  const box = document.createElement('div');
+  box.dir = 'rtl';
+  box.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;background:#4a2972;color:#fff;font:15px/1.5 Arial,sans-serif;padding:14px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);max-width:360px';
+  document.body.appendChild(box);
+  const say = t => { box.textContent = t; };
+  try {
+    const data = await eduCollect('', say, null, 66001);
     window.__eduPicture = data;
     const json = JSON.stringify(data);
     const a = document.createElement('a');
@@ -715,7 +735,7 @@ async function shkifutCollector() {
     a.download = 'data.json'; document.body.appendChild(a); a.click();
     box.textContent = '';
     const msg = document.createElement('div');
-    msg.textContent = 'הסתיים. ' + out.length + ' רשויות' + (failed.length ? ', ' + failed.length + ' לא נטענו' : '') + '. הקובץ data.json ירד למחשב.';
+    msg.textContent = 'הסתיים. ' + data.rashuyot.length + ' רשויות' + (data.failed.length ? ', ' + data.failed.length + ' לא נטענו' : '') + '. הקובץ data.json ירד למחשב.';
     const cp = document.createElement('button');
     cp.textContent = 'העתקה ללוח במקום הורדה';
     cp.style.cssText = 'margin-top:8px;font:inherit;padding:4px 12px;border-radius:999px;border:0;cursor:pointer';
@@ -724,22 +744,31 @@ async function shkifutCollector() {
     x.textContent = 'סגירה'; x.style.cssText = cp.style.cssText + ';margin-inline-start:8px';
     x.onclick = () => box.remove();
     box.append(msg, cp, x);
-    return { ok: true, rashuyot: out.length, failed: failed.length, year: Y };
-  } catch (e) {
-    say('האיסוף נכשל: ' + e.message);
-    return { ok: false, error: e.message };
-  }
+  } catch (e) { say('האיסוף נכשל: ' + e.message); }
 }
+const collectorSrc = () => `${eduCollect.toString()}\n(${shkifutCollector.toString()})();`;
 
 /* ── עלייה ─────────────────────────────────────────────────────── */
+const API_BASE = 'https://shkifut.education.gov.il';
+function showProgress(msg) {
+  $('#subtitle').textContent = 'טוען את הנתונים מאתר משרד החינוך';
+  $('#content').innerHTML = `<section class="card empty"><h2>טוען נתונים</h2><p class="lede" id="prog">${esc(msg)}</p></section>`;
+}
+function liveBoot(fileErr) {
+  showProgress('מתחבר לאתר שקיפות בחינוך');
+  const mark = (d, st) => { d.live = true; d.partialState = st; return d; };
+  eduCollect(API_BASE, m => { const p = $('#prog'); if (p) p.textContent = m; },
+    (d, st) => { load(mark(d, st)); }, S.city)
+    .catch(err => showEmpty(`הדפדפן לא הצליח לקרוא את הנתונים ישירות מאתר משרד החינוך (${err.message}), וגם קובץ הנתונים לא נמצא (${fileErr}).`));
+}
 (function boot() {
-  $('#bmLink').href = 'javascript:' + encodeURIComponent(`(${shkifutCollector.toString()})();void 0`);
+  $('#bmLink').href = 'javascript:' + encodeURIComponent(collectorSrc() + 'void 0');
   $('#bmLink').addEventListener('click', e => { e.preventDefault(); alert('את הכפתור הזה גוררים לסרגל הסימניות, ולוחצים עליו מתוך האתר שקיפות בחינוך.'); });
   readHash();
   fetch('data.json', { cache: 'no-cache' })
-    .then(r => { if (!r.ok) throw new Error(r.status === 404 ? 'קובץ הנתונים data.json עוד לא הועלה לתיקייה.' : `שגיאה ${r.status} בטעינת הנתונים.`); return r.json(); })
-    .then(load)
-    .catch(err => showEmpty(err.message));
+    .then(r => { if (!r.ok) throw new Error(r.status === 404 ? 'לא הועלה data.json' : `שגיאה ${r.status}`); return r.json(); })
+    .then(d => { load(d); })
+    .catch(err => liveBoot(err.message));
 })();
 </script>
 </body>
