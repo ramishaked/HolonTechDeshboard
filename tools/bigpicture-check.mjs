@@ -174,9 +174,23 @@ if (browser) {
     await rp.page.click('[data-tb="yoy"]');
     const d120 = await rp.page.locator('[data-pop="120"]').isDisabled();
     !d120 ? pass('חולון: מתג "ללא חינוך מיוחד" פעיל') : fail('המתג מנוטרל לחולון');
-    await rp.page.selectOption('#citySel', String(real.rashuyot.find(r => r.n.startsWith('ראשון')).s));
-    (await rp.page.locator('[data-pop="120"]').isDisabled()) ? pass('רשות בלי נתוני חנ״מ: המתג מנוטרל, בלי תצוגה ריקה') : fail('המתג פעיל לרשות בלי נתונים');
-    (await rp.page.locator('.kpi .v').first().innerText()).match(/\d/) ? pass('ראשון לציון נטענת עם נתונים') : fail('ראשון לציון ריקה');
+    // כל הרשויות מכילות עכשיו גם "ללא חנ״מ", היסטוריה ומדדים נוספים (לא רק חולון)
+    const rish = real.rashuyot.find(r => r.n.startsWith('ראשון'));
+    await rp.page.selectOption('#citySel', String(rish.s));
+    if (rish.h['120']) {
+      (await rp.page.locator('[data-pop="120"]').isDisabled()) ? fail('ראשון לציון יש לה נתוני חנ״מ אבל המתג מנוטרל') : pass('ראשון לציון: מתג "ללא חינוך מיוחד" פעיל (יש נתון)');
+      await rp.page.click('[data-pop="120"]');
+      const v120 = await rp.page.locator('.kpi .v').first().innerText();
+      /\d/.test(v120) ? pass(`ראשון לציון ללא חנ״מ: ${v120.trim()}`) : fail('ראשון לציון ללא חנ״מ: אין ערך');
+      await rp.page.click('[data-pop="12"]');
+    }
+    (await rp.page.locator('.card h2', { hasText: 'מדדים נוספים' }).count()) === 1 ? pass('ראשון לציון: כרטיס "מדדים נוספים" מוצג') : fail('מדדים נוספים חסר לראשון לציון');
+    const no120 = real.rashuyot.find(r => !r.h['120'] && Object.keys(r.h).length);
+    if (no120) {
+      await rp.page.selectOption('#citySel', String(no120.s));
+      (await rp.page.locator('[data-pop="120"]').isDisabled()) ? pass(`${no120.n}: אין נתוני חנ״מ, המתג מנוטרל`) : fail(`${no120.n}: המתג פעיל בלי נתון`);
+    }
+    (await rp.page.locator('.kpi .v').first().innerText()).length ? pass('הדף מציג רשות עם נתונים חלקיים בלי לקרוס') : fail('תצוגה ריקה');
     rp.errors.forEach(e => fail('data.json האמיתי, שגיאה: ' + e));
     await rp.page.close();
   } else fail('BigPicture/data.json חסר');
