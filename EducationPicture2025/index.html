@@ -10,16 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme:light;
   --bg:#f4f6f9;--card:#ffffff;--ink:#0f172a;--mut:#5b6b82;--line:#e3e8ef;
   --acc:#0b5cad;--acc-soft:#e8f1fb;--nat:#c76a00;--grp:#475569;
   --up:#137a3a;--up-bg:#e5f5ea;--dn:#b42318;--dn-bg:#fdeceb;--fl:#5b6b82;--fl-bg:#eef1f5;
   --bar:#ccd6e3;--shadow:0 1px 2px rgba(15,23,42,.05),0 4px 14px rgba(15,23,42,.05);
-}
-@media (prefers-color-scheme:dark){
-  :root{--bg:#0a1120;--card:#111a2c;--ink:#e8edf6;--mut:#94a3bb;--line:#223049;
-  --acc:#5aa9ff;--acc-soft:#13294a;--nat:#f2ad4b;--grp:#a3b3cc;
-  --up:#4ade80;--up-bg:#11301f;--dn:#f87171;--dn-bg:#3a1618;--fl:#a3b3cc;--fl-bg:#1b2639;
-  --bar:#34476a;--shadow:0 1px 2px rgba(0,0,0,.4)}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -82,7 +77,6 @@ h2{font-size:20px;margin:0 0 4px;font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
-@media (prefers-color-scheme:dark){.chip[aria-pressed="true"]{color:#06101f}}
 .ctx{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--acc-soft);display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:14px}
 .ctx label{display:flex;align-items:center;gap:6px}
 .ctx .chk{display:inline-flex;gap:5px;align-items:center;padding:3px 9px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px}
