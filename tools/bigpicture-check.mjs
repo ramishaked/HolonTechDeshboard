@@ -183,12 +183,25 @@ if (browser) {
   errors.length ? errors.forEach(e => fail('שגיאת קונסול: ' + e)) : pass('קונסול נקי');
   await page.close();
 
-  const mob = await openPage(browser, data, { width: 390, height: 844 });
-  const over = await mob.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  over <= 0 ? pass('מובייל 390px: אין גלילה אופקית') : fail(`מובייל: גלילה אופקית של ${over}px`);
-  if (SHOT) await mob.page.screenshot({ path: path.join(process.env.SHOT_DIR || os.tmpdir(), 'bp-mobile.png'), fullPage: true });
-  mob.errors.forEach(e => fail('מובייל, שגיאה: ' + e));
-  await mob.page.close();
+  for (const w of [320, 360, 390, 768]) {
+    const mob = await openPage(browser, data, { width: w, height: 844 });
+    const check = async tag => {
+      const r = await mob.page.evaluate(() => ({
+        page: document.documentElement.scrollWidth - window.innerWidth,
+        tables: [...document.querySelectorAll('.tbl-wrap')].map(e => e.scrollWidth - e.clientWidth).filter(x => x > 1).length,
+        clipped: [...document.querySelectorAll('.kpi, .card, .mini')].filter(e => e.scrollWidth - e.clientWidth > 1).length,
+      }));
+      r.page <= 0 && !r.clipped ? pass(`${w}px ${tag}: אין גלילה אופקית ואין תוכן חתוך`) : fail(`${w}px ${tag}: דף ${r.page}px, רכיבים חתוכים ${r.clipped}`);
+      if (w < 600) r.tables === 0 ? pass(`${w}px ${tag}: הטבלאות מוצגות ככרטיסים, בלי גלילה`) : fail(`${w}px ${tag}: ${r.tables} טבלאות גוללות`);
+    };
+    await check('אשכול');
+    await mob.page.click('.pill[data-g="custom"]'); await check('בחירה ידנית');
+    if (w < 600) { await mob.page.click('.sortbar .pill[data-sort="ACHUZ_ANGLIT_5YL"]');
+      (await mob.page.locator('.sortbar .pill[aria-pressed="true"]').innerText()).includes('אנגלית') ? pass(`${w}px: מיון מכפתורי המובייל`) : fail(`${w}px: מיון במובייל לא עבד`); }
+    if (SHOT && w === 390) { await mob.page.click('.pill[data-g="cluster"]'); await mob.page.screenshot({ path: path.join(process.env.SHOT_DIR || os.tmpdir(), 'bp-mobile.png'), fullPage: true }); }
+    mob.errors.forEach(e => fail(`${w}px, שגיאה: ` + e));
+    await mob.page.close();
+  }
 
   const emp = await openPage(browser, null);
   (await emp.page.locator('.empty').count()) === 1 && await emp.page.locator('#upd').evaluate(d => d.open)

@@ -118,7 +118,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 600px) {
   .wrap { padding: 16px 16px 28px; gap: 16px; }
   .hero { padding: 18px; } .hero h1 { font-size: 23px; }
@@ -127,7 +127,21 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
   .bar { grid-template-columns: minmax(5.5rem, 7.5rem) 1fr 3.6rem; gap: 6px; }
   .bar .dl { display: none; }
   .pick input { min-width: 0; width: 100%; }
+  .ctl-l { min-width: 100%; }
+  /* טבלאות: כרטיס לכל שורה, כותרת העמודה בתוך התא */
+  .mtab thead { display: none; }
+  .mtab, .mtab tbody, .mtab tr, .mtab td { display: block; }
+  .mtab tr { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 12px; padding: 12px 8px; border-bottom: 1px solid var(--border); }
+  .mtab td { border: 0; padding: 0; white-space: normal; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .mtab td::before { content: attr(data-l); color: var(--muted); font-size: 13px; font-weight: 500; }
+  .mtab td.h { grid-column: 1 / -1; font-weight: 700; font-size: 16px; }
+  .mtab td.h::before { content: none; }
+  .mtab tr.me, .mtab tr.nat { border-radius: 10px; }
+  .mtab tr.me { background: var(--accent-l); } .mtab tr.nat { background: #faf8fc; }
+  .mtab tr.me td, .mtab tr.nat td { background: transparent; }
+  .sortbar { display: flex !important; }
 }
+.sortbar { display: none; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; align-items: center; }
 @media print { body { background: #fff; } .upd, .ctl button:not([aria-pressed="true"]) { display: none; } .card, .kpi { box-shadow: none; } }
 </style>
 </head>
@@ -176,7 +190,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 2;
+const BUILD = 3;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -424,17 +438,18 @@ function renderTable(list) {
   const rows = list.slice().sort((a, b) => (val(b, key, Y()) ?? -1) - (val(a, key, Y()) ?? -1));
   const cell = (r, v) => {
     const a = val(r, v, Y()), b = val(r, v, PY());
-    return `<td><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`;
+    return `<td data-l="${label(v)}"><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`;
   };
-  const natRow = natOn() ? `<tr class="nat"><td>ממוצע ארצי</td>${CORE.map(({ v }) => {
+  const natRow = natOn() ? `<tr class="nat"><td class="h">ממוצע ארצי</td>${CORE.map(({ v }) => {
     const a = natVal(v, Y()), b = natVal(v, PY());
-    return `<td><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`; }).join('')}</tr>` : '';
+    return `<td data-l="${label(v)}"><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`; }).join('')}</tr>` : '';
   return `<section class="card">
     <h2>כל מדדי הליבה בקבוצה</h2>
-    <p class="lede">לחיצה על כותרת עמודה ממיינת לפיה. המשולש מסמן עלייה או ירידה מ${hebYear(PY())}.</p>
-    <div class="tbl-wrap"><table>
+    <p class="lede">אפשר למיין לפי כל אחד מהמדדים. המשולש מסמן עלייה או ירידה מ${hebYear(PY())}.</p>
+    <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}</button>`).join('')}</div>
+    <div class="tbl-wrap"><table class="mtab">
       <thead><tr><th>רשות</th>${CORE.map(({ v, t }) => `<th><button type="button" data-sort="${v}" aria-pressed="${key === v}">${t}</button></th>`).join('')}</tr></thead>
-      <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td>${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
+      <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td class="h">${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
     </table></div>
   </section>`;
 }
@@ -495,13 +510,13 @@ function renderOther() {
   return `<section class="card">
     <h2>מדדים נוספים</h2>
     <p class="lede">${esc(c.n)}, ${hebYear(Y())} מול ${hebYear(PY())}${natOn() ? ' ומול הממוצע הארצי' : ''}.</p>
-    <div class="tbl-wrap"><table>
+    <div class="tbl-wrap"><table class="mtab">
       <thead><tr><th>מדד</th><th>${hebYear(Y())}</th><th>${hebYear(PY())}</th><th>שינוי</th>${natOn() ? '<th>ארצי</th><th>פער מהארצי</th>' : ''}</tr></thead>
       <tbody>${keys.map(v => {
         const a = val(c, v, Y()), b = val(c, v, PY()), n = natOn() ? natVal(v, Y()) : null;
-        return `<tr><td>${esc(label(v))}</td><td>${fmt(a)}</td><td>${fmt(b)}</td>
-          <td><span class="cell">${a != null && b != null ? `${tri(a - b)}<span class="n">${sgn(a - b)}</span>` : '<span class="na">אין</span>'}</span></td>
-          ${natOn() ? `<td>${fmt(n)}</td><td>${a != null && n != null ? `<span class="n">${sgn(a - n)}</span>` : '<span class="na">אין</span>'}</td>` : ''}</tr>`;
+        return `<tr><td class="h">${esc(label(v))}</td><td data-l="${hebYear(Y())}">${fmt(a)}</td><td data-l="${hebYear(PY())}">${fmt(b)}</td>
+          <td data-l="שינוי"><span class="cell">${a != null && b != null ? `${tri(a - b)}<span class="n">${sgn(a - b)}</span>` : '<span class="na">אין</span>'}</span></td>
+          ${natOn() ? `<td data-l="ארצי">${fmt(n)}</td><td data-l="פער מהארצי">${a != null && n != null ? `<span class="n">${sgn(a - n)}</span>` : '<span class="na">אין</span>'}</td>` : ''}</tr>`;
       }).join('')}</tbody>
     </table></div>
   </section>`;
