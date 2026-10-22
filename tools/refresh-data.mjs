@@ -107,6 +107,24 @@ data.rashuyot = data.rashuyot.filter(r => Object.values(r.h).some(c => Object.ke
 data.note = `נשלף ישירות מ-${HOME} ב-${new Date().toISOString().slice(0, 10)} על ידי tools/refresh-data.mjs (הקוד של eduCollect שבדף).`;
 const yi = y => data.years.indexOf(y);
 
+/* ── תיקונים ידניים: BigPicture/overrides.json ───────────────────────
+   ערכים שנקבעו ידנית כי הם סותרים את מה שהאתר מציג (למשל חולון, בגרות טק 2025:
+   14.8 בעמוד, 14.6 ב-API). מוחלים אחרי כל רענון, כדי שלא יימחקו בשקט, ומודפסים.
+   כשהמקור יתברר, מוחקים את השורה מהקובץ. ראו CLAUDE.md, סעיף BigPicture. */
+data.overrides = [];
+try {
+  const ov = JSON.parse(fs.readFileSync(path.join(ROOT, 'BigPicture', 'overrides.json'), 'utf8'));
+  for (const o of ov) {
+    const arr = data.rashuyot.find(r => r.s === o.s)?.h?.[o.class]?.[o.var], i = yi(o.year);
+    if (!arr || i < 0) { log(`  ⚠ תיקון ידני לא הוחל (${o.name} ${o.var} ${o.year}): הרשות/המדד חסרים`); continue; }
+    const now = arr[i];
+    if (now === o.value) log(`  תיקון ידני ${o.name} ${o.var} ${o.year}: ה-API כבר נותן ${now}, אפשר למחוק את השורה מ-overrides.json`);
+    else if (now !== o.api) log(`  ⚠ תיקון ידני ${o.name} ${o.var} ${o.year}: ה-API השתנה (${o.api} ← ${now}). מחיל ${o.value} בכל זאת, כדאי לבדוק`.replace('←', 'הפך ל'));
+    arr[i] = o.value; data.overrides.push({ ...o, api: now });
+  }
+  if (ov.length) log(`הוחלו ${data.overrides.length} תיקונים ידניים מ-overrides.json`);
+} catch (e) { if (e.code !== 'ENOENT') die('overrides.json לא תקין: ' + e.message); }
+
 /* ── אימות ──────────────────────────────────────────────────────── */
 const bad = [];
 if (data.rashuyot.length < (flag('--mock') ? 10 : 200)) bad.push(`רק ${data.rashuyot.length} רשויות עם נתוני בגרות`);

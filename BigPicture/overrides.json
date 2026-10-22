@@ -1,0 +1,14 @@
+[
+ {
+  "s": 66001,
+  "name": "חולון",
+  "class": "12",
+  "var": "ACHUZ_ZAKAIM_BG_TECH_ANG5",
+  "year": 2025,
+  "value": 14.8,
+  "api": 14.6,
+  "reason": "בעמוד הרשמי shkifut.education.gov.il/city/66001/educationPicture מוצג 14.8%, וה-API (rashutHistory) מחזיר 14.6. רמת גן (86009) תואמת במלואה, ולכן זה חריג של חולון. נקבע ידנית לבקשת רמי שקד, עד שיתברר המקור.",
+  "date": "2026-10-22",
+  "status": "זמני: לבדוק מול הבקשה שהעמוד שולח (probe-page)"
+ }
+]
