@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>התמונה החינוכית</title>
+<meta name="description" content="דשבורד התמונה החינוכית לפי נתוני שקיפות בחינוך של משרד החינוך: מדדי ליבה, מגמה שנתית והשוואה לרשויות דומות.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap">
+<style>
+/* שפה עיצובית: מפרט §4 (סגול/כתום חולון, Heebo, RTL, light) */
+:root { --primary:#6a3e9c; --primary-d:#4a2972; --primary-l:#ede1f7; --accent:#f47b20; --accent-l:#fde9d9;
+  --good:#34a853; --good-d:#1e7b3a; --good-l:#e3f4e8; --bad:#e84235; --bad-d:#b3261e; --bad-l:#fde4e2;
+  --bg:#f5f3f8; --card:#ffffff; --border:#e0d8eb; --text:#1f1530; --muted:#6a6080; --nat:#8f86a3; color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Heebo', 'Arial Hebrew', Arial, sans-serif; font-size: 15px; line-height: 1.45; }
+button, input, select { font: inherit; }
+.n { font-variant-numeric: tabular-nums; unicode-bidi: isolate; direction: ltr; display: inline-block; }
+.na { color: var(--muted); font-size: 13px; font-weight: 500; }
+.wrap { max-width: 76rem; margin-inline: auto; padding: 24px 24px 40px; display: grid; gap: 20px; }
+
+/* כותרת */
+.hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-d) 100%); color: #fff; border-radius: 16px; padding: 22px 24px; display: grid; gap: 14px; box-shadow: 0 6px 20px rgba(74,41,114,.18); }
+.hero-top { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between; }
+.hero h1 { margin: 0; font-weight: 900; font-size: 30px; line-height: 1.15; text-wrap: balance; }
+.hero .sub { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+.hero-ctl { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.hero select { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 7px 14px; font-weight: 700; max-width: 16rem; }
+.hero select option { color: var(--text); }
+.seg { display: inline-flex; background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: #fff; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 500; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--primary-d); font-weight: 700; }
+.hero-note { font-size: 13px; opacity: .85; margin: 0; }
+
+/* כרטיסים */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 2px 8px rgba(42,26,77,.06); min-width: 0; }
+.card h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; color: var(--primary-d); }
+.lede { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+.sec-title { font-size: 22px; font-weight: 900; color: var(--primary-d); margin: 6px 0 -6px; }
+
+/* מדדי ליבה */
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 16px; padding: 14px 16px 12px; display: grid; gap: 6px; box-shadow: 0 2px 8px rgba(42,26,77,.06); cursor: pointer; text-align: right; color: inherit; min-width: 0; }
+.kpi:hover { border-color: var(--primary); border-top-color: var(--accent); }
+.kpi[aria-pressed="true"] { outline: 3px solid var(--primary-l); }
+.kpi .l { color: var(--muted); font-size: 14px; font-weight: 700; }
+.kpi .v { font-weight: 900; font-size: 34px; line-height: 1; color: var(--text); }
+.kpi .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 9px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.chip.up { background: var(--good-l); color: var(--good-d); }
+.chip.dn { background: var(--bad-l); color: var(--bad-d); }
+.chip.eq { background: #efecf3; color: var(--muted); }
+.spark { width: 100%; height: 34px; display: block; }
+.tr { width: 11px; height: 11px; flex: none; vertical-align: -1px; }
+.tr.up { fill: var(--good); } .tr.dn { fill: var(--bad); }
+.tr.eq path { stroke: var(--muted); stroke-width: 2.4; fill: none; }
+
+/* בקרות השוואה */
+.ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.ctl-l { font-size: 13px; color: var(--muted); font-weight: 700; margin-inline-end: 4px; min-width: 4.5rem; }
+.pill { border: 1px solid var(--border); background: var(--card); color: var(--primary-d); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 14px; font-weight: 500; }
+.pill:hover { border-color: var(--primary); }
+.pill[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
+.pill[disabled] { opacity: .45; cursor: default; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 12px; }
+.pick input { border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; min-width: 14rem; background: #fff; }
+.tag { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-l); color: var(--primary-d); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 14px; font-weight: 700; }
+.tag button { border: 0; background: #fff; color: var(--primary-d); width: 20px; height: 20px; border-radius: 50%; cursor: pointer; line-height: 1; padding: 0; }
+.cmp-sum { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin: 6px 0 16px; }
+.mini { background: #faf8fc; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.mini .v { font-weight: 900; font-size: 24px; line-height: 1.1; }
+.mini .l { color: var(--muted); font-size: 13px; }
+
+/* מוטות דירוג */
+.bars { display: grid; gap: 4px; }
+.bar { display: grid; grid-template-columns: minmax(7rem, 11rem) 1fr 4.2rem 5.2rem; align-items: center; gap: 10px; padding: 3px 6px; border-radius: 8px; }
+.bar.me { background: var(--accent-l); }
+.bar .nm { font-size: 14px; font-weight: 500; display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+.bar .nm .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.bar.me .nm { font-weight: 900; }
+.bar .rk { color: var(--muted); font-size: 12px; flex: none; }
+.track { position: relative; height: 14px; background: var(--primary-l); border-radius: 999px; }
+.fill { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 999px; background: var(--primary); }
+.bar.me .fill { background: var(--accent); }
+.ref { position: absolute; inset-block: -4px; width: 0; border-inline-start: 2px dashed var(--text); opacity: .55; }
+.bar .val { font-weight: 700; text-align: left; }
+.bar .dl { font-size: 13px; display: flex; align-items: center; gap: 4px; justify-content: flex-start; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 10px 0 0; align-items: center; }
+.legend i { display: inline-block; width: 16px; height: 0; border-top: 2px dashed var(--text); opacity: .6; vertical-align: middle; margin-inline-end: 4px; }
+
+/* טבלה */
+.tbl-wrap { overflow-x: auto; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: right; font-weight: 700; color: var(--muted); font-size: 13px; padding: 8px 10px; border-bottom: 2px solid var(--primary-l); white-space: nowrap; }
+th button { all: unset; cursor: pointer; }
+th button:hover, th button[aria-pressed="true"] { color: var(--primary-d); text-decoration: underline; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr.me td { background: var(--accent-l); font-weight: 700; }
+tr.nat td { color: var(--muted); font-style: normal; background: #faf8fc; }
+td .cell { display: inline-flex; gap: 6px; align-items: center; }
+
+/* גרף מגמה */
+.trend { width: 100%; height: auto; display: block; }
+
+/* עדכון ונתונים */
+details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-d); font-size: 16px; }
+.steps { margin: 12px 0; padding-inline-start: 22px; display: grid; gap: 8px; }
+.bm { display: inline-block; background: var(--accent); color: #fff; font-weight: 700; padding: 8px 16px; border-radius: 999px; text-decoration: none; cursor: grab; }
+.btn { border: 1px solid var(--border); background: var(--card); color: var(--primary-d); border-radius: 999px; padding: 7px 16px; cursor: pointer; font-weight: 700; font-size: 14px; }
+.btn:hover { border-color: var(--primary); }
+.diag { font-size: 13px; color: var(--muted); display: grid; gap: 2px; margin-top: 12px; }
+.alert { background: var(--bad-l); color: var(--bad-d); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
+.empty { text-align: center; padding: 36px 20px; }
+.empty h2 { margin: 0 0 8px; }
+.foot { color: var(--muted); font-size: 13px; margin: 0; line-height: 1.7; }
+.foot a { color: var(--primary-d); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .cmp-sum { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 600px) {
+  .wrap { padding: 16px 16px 28px; gap: 16px; }
+  .hero { padding: 18px; } .hero h1 { font-size: 23px; }
+  .card { padding: 16px; }
+  .kpi .v { font-size: 28px; }
+  .bar { grid-template-columns: minmax(5.5rem, 7.5rem) 1fr 3.6rem; gap: 6px; }
+  .bar .dl { display: none; }
+  .pick input { min-width: 0; width: 100%; }
+}
+@media print { body { background: #fff; } .upd, .ctl button:not([aria-pressed="true"]) { display: none; } .card, .kpi { box-shadow: none; } }
+</style>
+</head>
+<body>
+<main class="wrap" id="app">
+  <header class="hero" id="hero">
+    <div class="hero-top">
+      <div>
+        <h1 id="title">התמונה החינוכית</h1>
+        <p class="sub" id="subtitle">טוען נתונים</p>
+      </div>
+      <div class="hero-ctl" id="heroCtl" hidden>
+        <label class="sr" for="citySel" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">רשות</label>
+        <select id="citySel" aria-label="בחירת רשות"></select>
+        <div class="seg" role="group" aria-label="אוכלוסיית המדידה">
+          <button type="button" data-pop="12">כלל תלמידי י״ב</button>
+          <button type="button" data-pop="120">ללא חינוך מיוחד</button>
+        </div>
+      </div>
+    </div>
+    <p class="hero-note" id="heroNote"></p>
+  </header>
+
+  <div id="content"></div>
+
+  <section class="card">
+    <details class="upd" id="upd">
+      <summary>עדכון הנתונים ממשרד החינוך</summary>
+      <p class="lede" style="margin-top:10px">האתר שקיפות בחינוך חוסם גישה משרתים שמחוץ לישראל, ולכן הנתונים נאספים מהדפדפן שלך, מתוך האתר עצמו, ונשמרים כקובץ אחד. האיסוף לוקח כשתי דקות.</p>
+      <ol class="steps">
+        <li>גוררים את הכפתור הכתום לסרגל הסימניות: <a class="bm" id="bmLink" href="#">איסוף התמונה החינוכית</a></li>
+        <li>פותחים את <a href="https://shkifut.education.gov.il/home" target="_blank" rel="noopener">shkifut.education.gov.il</a> ולוחצים על הסימנייה. בפינת המסך מופיעה התקדמות, ובסוף יורד הקובץ <code>data.json</code>.</li>
+        <li>מעלים את הקובץ לתיקייה <code>BigPicture</code> בריפו (Add file, Upload files). הדף מתעדכן לכולם תוך דקה.</li>
+      </ol>
+      <div class="ctl">
+        <button type="button" class="btn" id="copyCode">העתקת קוד האיסוף (להדבקה בקונסול)</button>
+        <label class="btn" for="fileIn">צפייה בקובץ מקומי</label>
+        <input type="file" id="fileIn" accept="application/json,.json" hidden>
+      </div>
+      <div class="diag" id="diag"></div>
+    </details>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</main>
+
+<script>
+'use strict';
+const BUILD = 2;
+
+/* ── הגדרות ────────────────────────────────────────────────────── */
+// מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
+const CORE = [
+  { v:'ACHUZ_ZAKAIM',               t:'זכאות לבגרות' },
+  { v:'ACHUZ_ZAKAIM_MITZTYEN',      t:'בגרות מצטיינת' },
+  { v:'ACHUZ_ZAKAIM_BG_TECH_ANG5',  t:'בגרות טק' },
+  { v:'ACHUZ_ANGLIT_5YL',           t:'אנגלית 5 יח״ל' },
+  { v:'ACHUZ_MATEM_5YL',            t:'מתמטיקה 5 יח״ל' },
+];
+const OTHER_NAMES = {
+  ACHUZ_ANGLIT_4YL:'אנגלית 4 יח״ל', ACHUZ_MATEM_4YL:'מתמטיקה 4 יח״ל',
+  ACHUZ_ZAK_TECH_KLALI:'זכאות טכנולוגית', ACHUZ_ZAK_TECH_33:'זכאות טכנולוגית מצטיינת',
+  ACHUZ_ZAK_TECH_21_31_32_33:'זכאות טכנולוגית לטכנאים והנדסאים',
+};
+const DEFAULT_CITY = 66001;          // חולון. כל רשות אחרת: ?city=סמל או בבורר
+const MIN12 = 200;                   // סף ברירת מחדל: רשויות קטנות מזיזות אחוז בקלות
+const SIZE_BAND = 0.25;              // "היקף דומה" = ±25%, כמו POP_BAND בדשבורד הראשי
+const CUSTOM_DEFAULT = ['בת ים','ראשון לציון','רמת גן','פתח תקווה','רחובות','תל אביב'];
+
+// גיבוי בלבד, כשבנתוני הרשות אין שדה אשכול: data/socio_sources.csv (עמודה F).
+const CLUSTER_FALLBACK = {'ירושלים':2,'תל אביב - יפו':8,'חיפה':7,'ראשון לציון':7,'פתח תקווה':7,'נתניה':6,'בני ברק':2,'אשדוד':5,'באר שבע':5,'חולון':7,'רמת גן':8,'בית שמש':2,'אשקלון':5,'רחובות':7,'בת ים':5,'הרצליה':8,'כפר סבא':8,'חדרה':6,'מודיעין-מכבים-רעות':9,'מודיעין עילית':1,'לוד':3,'רעננה':8,'רמלה':4,'ראש העין':7,'הוד השרון':9,'ביתר עילית':1,'קריית גת':4,'עפולה':5,'גבעתיים':9,'קריית אתא':6,'נהריה':6,'יבנה':7,'אילת':6,'עכו':4,'נס ציונה':8,'רמת השרון':9,'טבריה':3,'קריית מוצקין':7,'נתיבות':3,'כרמיאל':5,'קריית אונו':9,'קריית ביאליק':6,'קריית ים':5,'אור יהודה':5,'צפת':2,'מעלה אדומים':6,'דימונה':4,'אופקים':3,'שדרות':4,'יהוד-מונוסון':7,'טירת כרמל':6,'גבעת שמואל':8,'ערד':3,'מגדל העמק':4,'נשר':7,'גני תקווה':9,'קריית שמונה':5,'שוהם':9,'אריאל':6,'מזכרת בתיה':8,'מיתר':9,'כוכב יאיר - צור יגאל':9,'עומר':9,'להבים':9,'סביון':10,'כפר שמריהו':10};
+// גיבוי בלבד לאזור: CITY_DATA בדשבורד הראשי (33 רשויות).
+const REGION_FALLBACK = {'גבעת שמואל':'מרכז','רמת השרון':'מרכז','קרית אונו':'מרכז','תל מונד':'מרכז','נס ציונה':'מרכז','הרצליה':'מרכז','זכרון יעקב':'צפון','גני תקווה':'מרכז','מזכרת בתיה':'מרכז','רמת גן':'מרכז','מודיעין-מכבים-רעות':'מרכז','שוהם':'מרכז','הוד השרון':'מרכז','קדימה-צורן':'מרכז','גבעתיים':'מרכז','ראשון לציון':'מרכז','כפר סבא':'מרכז','חיפה':'צפון','רחובות':'מרכז','חולון':'מרכז','תל אביב - יפו':'מרכז','פתח תקווה':'מרכז','אשדוד':'דרום','אשקלון':'דרום','באר שבע':'דרום','נתניה':'שרון','לוד':'מרכז','חדרה':'שרון','בת ים':'מרכז','ירושלים':'ירושלים','בית שמש':'ירושלים','בני ברק':'מרכז'};
+
+/* ── כלים ──────────────────────────────────────────────────────── */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s ?? '').replace(/[\s\-\u05BE\u2013"'\u05F4\u05F3.]/g, '').replace(/קריית/g, 'קרית').replace(/תלאביביפו/, 'תלאביב');
+const fmt = v => v == null ? '<span class="na">אין נתון</span>' : `<span class="n">${v.toFixed(1)}%</span>`;
+const sgn = d => `${d > 0 ? '+' : ''}${d.toFixed(1)}`;
+const kindOf = d => d == null ? null : Math.abs(d) < 0.05 ? 'eq' : d > 0 ? 'up' : 'dn';
+function tri(d) {
+  const k = kindOf(d); if (!k) return '';
+  const p = k === 'up' ? 'M6 1.5 L11 10 L1 10 Z' : k === 'dn' ? 'M6 10.5 L11 2 L1 2 Z' : 'M1.5 6 L10.5 6';
+  const lab = k === 'up' ? 'עלייה' : k === 'dn' ? 'ירידה' : 'ללא שינוי';
+  return `<svg class="tr ${k}" viewBox="0 0 12 12" role="img" aria-label="${lab}"><path d="${p}"/></svg>`;
+}
+function hebYear(g) {                 // 2025 → תשפ״ה (שנת הלימודים שמסתיימת באותה שנה)
+  let n = (g + 3760) % 1000, s = '';
+  const L = [[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],[60,'ס'],[50,'נ'],[40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],[6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
+  for (const [v, c] of L) while (n >= v) { if (n === 15) { s += 'טו'; n = 0; break; } if (n === 16) { s += 'טז'; n = 0; break; } s += c; n -= v; }
+  return s.length > 1 ? s.slice(0, -1) + '״' + s.slice(-1) : s + '׳';
+}
+const dmy = iso => { const d = new Date(iso); return isNaN(d) ? '' : `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
+
+/* ── מצב ───────────────────────────────────────────────────────── */
+let D = null, R = [], BY = new Map();
+const S = { city: DEFAULT_CITY, g: 'cluster', m: CORE[0].v, pop: '12', min: MIN12, custom: null, sort: null };
+
+function readHash() {
+  const q = new URLSearchParams(location.hash.slice(1) || location.search.slice(1));
+  if (q.get('city')) S.city = +q.get('city');
+  if (q.get('g')) S.g = q.get('g');
+  if (q.get('m')) S.m = q.get('m');
+  if (q.get('pop')) S.pop = q.get('pop') === '120' ? '120' : '12';
+  if (q.has('min')) S.min = +q.get('min') || 0;
+  if (q.get('c')) S.custom = q.get('c').split(',').map(Number).filter(Boolean);
+}
+function writeHash() {
+  const q = new URLSearchParams({ city: S.city, g: S.g, m: S.m, pop: S.pop, min: S.min });
+  if (S.custom) q.set('c', S.custom.join(','));
+  history.replaceState(null, '', '#' + q.toString());
+}
+
+/* ── נתונים ────────────────────────────────────────────────────── */
+// מבנה הקובץ: ראו shkifutCollector למטה. h[כיתה][מדד] = מערך מיושר ל-D.years.
+const Y = () => D.year, PY = () => D.year - 1;
+function val(r, v, y, cls = S.pop) {
+  const a = r?.h?.[cls]?.[v], i = D.years.indexOf(y);
+  return a && i >= 0 && a[i] != null ? +a[i] : null;
+}
+function natVal(v, y) {
+  const a = D.national?.['12']?.[v], i = D.years.indexOf(y);
+  return a && i >= 0 && a[i] != null ? +a[i] : null;
+}
+const natOn = () => S.pop === '12';          // ארצי קיים רק לכלל י״ב
+const label = v => (CORE.find(c => c.v === v) || {}).t || OTHER_NAMES[v] || D.labels?.[v] || v;
+const city = () => BY.get(S.city) || R[0];
+
+function findKey(k, re, test) {
+  for (const [key, v] of Object.entries(k || {})) {
+    const last = key.split('.').pop();
+    if (re.test(last) && test(v)) return key;
+  }
+  return null;
+}
+function enrich() {
+  R = (D.rashuyot || []).filter(r => r.h && Object.keys(r.h).length);
+  BY = new Map(R.map(r => [+r.s, r]));
+  const dist = new Map((D.extra || []).filter(e => e.m === 1).map(e => [String(e.s), e.n]));
+  const clF = new Map(Object.entries(CLUSTER_FALLBACK).map(([n, c]) => [norm(n), c]));
+  const rgF = new Map(Object.entries(REGION_FALLBACK).map(([n, c]) => [norm(n), c]));
+  const det = { cluster: null, district: null, size: null };
+  const isInt10 = v => Number.isInteger(+v) && +v >= 1 && +v <= 10 && v !== '' && v != null;
+  for (const r of R) {
+    const k = r.k || {};
+    let key = findKey(k, /ESHKOL|ASHKOL|ESHCOL|CLUSTER|SOCIO|MADAD_?(KALKALI|LAMAS)/i, isInt10);
+    if (key) { r.cluster = +k[key]; r.clusterSrc = 'api'; det.cluster = det.cluster || key; }
+    else if (clF.has(norm(r.n))) { r.cluster = clF.get(norm(r.n)); r.clusterSrc = 'fallback'; }
+    key = findKey(k, /MACHOZ|MAHOZ|MEHOZ|MECHOZ|DISTRICT/i, v => v != null && v !== '');
+    if (key) {
+      const raw = k[key];
+      r.district = /^\d+$/.test(String(raw)) ? (dist.get(String(raw)) || `מחוז ${raw}`) : String(raw).replace(/^מחוז\s*/, '');
+      det.district = det.district || key;
+    } else if (rgF.has(norm(r.n))) { r.district = rgF.get(norm(r.n)); r.districtSrc = 'fallback'; }
+    key = findKey(k, /TALMIDIM_12$/i, v => +v > 0);
+    r.n12 = key ? +k[key] : null;
+    // היקף: אוכלוסייה אם קיימת בנתונים, אחרת מספר התלמידים ברשות, אחרת תלמידי י״ב.
+    let sk = findKey(k, /OCHLUS|UCHLUS|POPUL|TOSHAV/i, v => +v > 500);
+    let kind = 'pop';
+    if (!sk) { sk = findKey(k, /^(SACH_)?TALMIDIM(_SACH|_KOL|_TOTAL|_SH?ECHVOT)?$/i, v => +v > 0); kind = 'students'; }
+    if (sk) { r.size = +k[sk]; r.sizeKind = kind; det.size = det.size || sk; }
+    else if (r.n12) { r.size = r.n12; r.sizeKind = 'n12'; }
+  }
+  D._det = det;
+}
+
+/* ── קבוצות השוואה ──────────────────────────────────────────────── */
+const CENTRAL = d => /מרכז|תל.?אביב/.test(d || '');
+const sizeWord = k => k === 'pop' ? 'אוכלוסייה' : k === 'students' ? 'מספר תלמידים' : 'מספר תלמידי י״ב';
+function passMin(r, c) { return r === c || !S.min || r.n12 == null || r.n12 >= S.min; }
+function groupOf(g = S.g) {
+  const c = city(); let list = [], lab = '';
+  if (g === 'cluster') {
+    if (c.cluster) { list = R.filter(r => r.cluster === c.cluster && passMin(r, c)); lab = `אשכול חברתי־כלכלי ${c.cluster}`; }
+    else lab = 'אשכול לא ידוע לרשות הזו';
+  } else if (g === 'size') {
+    if (c.size) {
+      const pool = R.filter(r => r.size && r.sizeKind === c.sizeKind && passMin(r, c));
+      list = pool.filter(r => r.size >= c.size * (1 - SIZE_BAND) && r.size <= c.size * (1 + SIZE_BAND));
+      lab = `היקף דומה (${sizeWord(c.sizeKind)}, ±${SIZE_BAND * 100}%)`;
+      if (list.length < 6) {
+        list = pool.slice().sort((a, b) => Math.abs(Math.log(a.size / c.size)) - Math.abs(Math.log(b.size / c.size))).slice(0, 11);
+        lab = `10 הרשויות הקרובות בהיקף (${sizeWord(c.sizeKind)})`;
+      }
+    } else lab = 'אין נתון היקף לרשות הזו';
+  } else if (g === 'region') {
+    if (c.district) {
+      const central = CENTRAL(c.district);
+      list = R.filter(r => r.district && (central ? CENTRAL(r.district) : r.district === c.district) && passMin(r, c));
+      lab = central ? 'אזור המרכז' : `מחוז ${c.district}`;
+    } else lab = 'אזור לא ידוע לרשות הזו';
+  } else {
+    if (!S.custom) S.custom = CUSTOM_DEFAULT.map(n => R.find(r => norm(r.n).startsWith(norm(n)))).filter(Boolean).map(r => +r.s).filter(s => s !== +c.s);
+    list = [c, ...S.custom.map(s => BY.get(s)).filter(Boolean)];
+    lab = 'בחירה ידנית';
+  }
+  if (!list.includes(c)) list.unshift(c);
+  return { list: [...new Set(list)], lab };
+}
+
+/* ── רינדור ────────────────────────────────────────────────────── */
+function spark(v) {
+  const ys = D.years, pts = ys.map(y => val(city(), v, y)), nat = natOn() ? ys.map(y => natVal(v, y)) : [];
+  const all = [...pts, ...nat].filter(x => x != null);
+  if (all.length < 2) return '';
+  const lo = Math.min(...all), hi = Math.max(...all), W = 160, H = 34, pad = 3;
+  const X = i => pad + i * (W - 2 * pad) / (ys.length - 1);       // ציר הזמן משמאל לימין, כמו בגרף המגמה
+  const Yp = x => H - pad - (hi === lo ? .5 : (x - lo) / (hi - lo)) * (H - 2 * pad);
+  const path = arr => arr.map((x, i) => x == null ? null : [X(i), Yp(x)]).filter(Boolean).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    ${nat.length ? `<path d="${path(nat)}" fill="none" stroke="var(--nat)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>` : ''}
+    <path d="${path(pts)}" fill="none" stroke="var(--accent)" stroke-width="2.4" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+function renderCore() {
+  const c = city();
+  return `<h2 class="sec-title">מדדי הליבה · ${esc(c.n)} · ${hebYear(Y())}</h2>
+  <div class="kpis">${CORE.map(({ v, t }) => {
+    const a = val(c, v, Y()), b = val(c, v, PY()), d = a != null && b != null ? a - b : null;
+    const n = natOn() ? natVal(v, Y()) : null, gap = a != null && n != null ? a - n : null;
+    return `<button type="button" class="kpi" data-m="${v}" aria-pressed="${S.m === v}">
+      <span class="l">${t}</span>
+      <span class="v">${fmt(a)}</span>
+      <span class="row">${d != null ? `<span class="chip ${kindOf(d)}">${tri(d)}<span class="n">${sgn(d)}</span></span> מ${hebYear(PY())}` : '<span class="na">אין השוואה לשנה הקודמת</span>'}</span>
+      <span class="row">${n != null ? `ארצי ${fmt(n)} · <span class="n" style="color:${gap >= 0 ? 'var(--good-d)' : 'var(--bad-d)'};font-weight:700">${sgn(gap)}</span>` : natOn() ? '' : 'השוואה לארצי רק על כלל י״ב'}</span>
+      ${spark(v)}
+    </button>`;
+  }).join('')}</div>`;
+}
+
+function renderCompare() {
+  const c = city(), { list, lab } = groupOf(), m = S.m;
+  const rows = list.map(r => ({ r, a: val(r, m, Y()), b: val(r, m, PY()) })).filter(x => x.a != null)
+    .sort((x, y) => y.a - x.a);
+  const me = rows.findIndex(x => x.r === c);
+  const others = rows.filter(x => x.r !== c);
+  const avg = others.length ? others.reduce((s, x) => s + x.a, 0) / others.length : null;
+  const ups = rows.filter(x => x.b != null && x.a - x.b >= 0.05).length, dns = rows.filter(x => x.b != null && x.a - x.b <= -0.05).length;
+  const nat = natOn() ? natVal(m, Y()) : null;
+  const max = Math.max(...rows.map(x => x.a), nat ?? 0, 1);
+  const top = max > 60 ? 100 : Math.ceil(max / 10) * 10;
+  const pct = x => (x / top * 100).toFixed(2) + '%';
+  const myA = me >= 0 ? rows[me].a : null;
+  const gp = (k, t, dis) => `<button type="button" class="pill" data-g="${k}" aria-pressed="${S.g === k}" ${dis ? 'disabled' : ''}>${t}</button>`;
+  const cx = city();
+
+  const bars = rows.map((x, i) => {
+    const d = x.b != null ? x.a - x.b : null;
+    return `<div class="bar${x.r === c ? ' me' : ''}">
+      <span class="nm" title="${esc(x.r.n)}"><span class="rk n">${i + 1}</span><span class="t">${esc(x.r.n)}</span></span>
+      <span class="track"><span class="fill" style="width:${pct(x.a)}"></span>${nat != null ? `<span class="ref" style="inset-inline-start:${pct(nat)}"></span>` : ''}</span>
+      <span class="val">${fmt(x.a)}</span>
+      <span class="dl">${d != null ? `${tri(d)}<span class="n">${sgn(d)}</span>` : '<span class="na">חדש</span>'}</span>
+    </div>`;
+  }).join('');
+
+  const missing = list.length - rows.length;
+  return `<h2 class="sec-title">השוואה לרשויות דומות</h2>
+  <section class="card">
+    <div class="ctl"><span class="ctl-l">קבוצה</span>
+      ${gp('cluster', cx.cluster ? `אשכול ${cx.cluster}` : 'אשכול', !cx.cluster)}
+      ${gp('size', 'היקף דומה', !cx.size)}
+      ${gp('region', 'אזור', !cx.district)}
+      ${gp('custom', 'בחירה ידנית')}
+    </div>
+    <div class="ctl"><span class="ctl-l">מדד</span>
+      ${CORE.map(({ v, t }) => `<button type="button" class="pill" data-m="${v}" aria-pressed="${m === v}">${t}</button>`).join('')}
+    </div>
+    ${S.g !== 'custom' ? `<div class="ctl"><span class="ctl-l">גודל</span>
+      <button type="button" class="pill" data-min="${MIN12}" aria-pressed="${S.min === MIN12}">רשויות עם <span class="n">${MIN12}+</span> תלמידי י״ב</button>
+      <button type="button" class="pill" data-min="0" aria-pressed="${!S.min}">כל הרשויות</button></div>` : ''}
+    ${S.g === 'custom' ? `<div class="pick">
+      <input id="addIn" list="rList" placeholder="הוספת רשות להשוואה" aria-label="הוספת רשות להשוואה">
+      <button type="button" class="btn" id="addBtn">הוספה</button>
+      ${(S.custom || []).map(s => BY.get(s)).filter(Boolean).map(r => `<span class="tag">${esc(r.n)}<button type="button" data-rm="${r.s}" aria-label="הסרת ${esc(r.n)}">×</button></span>`).join('')}
+    </div>` : ''}
+    <h2>${label(m)} · ${esc(lab)}</h2>
+    <p class="lede">${hebYear(Y())}, ${S.pop === '12' ? 'כלל תלמידי י״ב' : 'י״ב ללא חינוך מיוחד'}. ${rows.length} רשויות${missing > 0 ? `, ל־${missing} אין נתון במדד הזה` : ''}. הסימון ליד כל רשות: שינוי מ${hebYear(PY())} בנקודות אחוז.</p>
+    <div class="cmp-sum">
+      <div class="mini"><div class="v">${me >= 0 ? `<span class="n">${me + 1}</span> <span style="font-size:15px;font-weight:500">מתוך <span class="n">${rows.length}</span></span>` : '<span class="na">אין נתון</span>'}</div><div class="l">המקום של ${esc(c.n)} בקבוצה</div></div>
+      <div class="mini"><div class="v">${fmt(avg)}</div><div class="l">ממוצע שאר הקבוצה (פשוט)</div></div>
+      <div class="mini"><div class="v">${myA != null && avg != null ? `<span class="n" style="color:${myA - avg >= 0 ? 'var(--good-d)' : 'var(--bad-d)'}">${sgn(myA - avg)}</span>` : '<span class="na">אין נתון</span>'}</div><div class="l">הפער של ${esc(c.n)} מהממוצע (נק׳)</div></div>
+      <div class="mini"><div class="v"><span style="color:var(--good-d)">${tri(1)} <span class="n">${ups}</span></span> &nbsp; <span style="color:var(--bad-d)">${tri(-1)} <span class="n">${dns}</span></span></div><div class="l">רשויות בעלייה ובירידה</div></div>
+    </div>
+    <div class="bars">${bars || '<p class="na">אין רשויות עם נתון במדד הזה</p>'}</div>
+    ${nat != null ? `<p class="legend"><span><i></i>ממוצע ארצי <span class="n">${nat.toFixed(1)}%</span></span></p>` : ''}
+  </section>
+  ${renderTable(list)}`;
+}
+
+function renderTable(list) {
+  const c = city(), key = S.sort || S.m;
+  const rows = list.slice().sort((a, b) => (val(b, key, Y()) ?? -1) - (val(a, key, Y()) ?? -1));
+  const cell = (r, v) => {
+    const a = val(r, v, Y()), b = val(r, v, PY());
+    return `<td><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`;
+  };
+  const natRow = natOn() ? `<tr class="nat"><td>ממוצע ארצי</td>${CORE.map(({ v }) => {
+    const a = natVal(v, Y()), b = natVal(v, PY());
+    return `<td><span class="cell">${fmt(a)}${a != null && b != null ? tri(a - b) : ''}</span></td>`; }).join('')}</tr>` : '';
+  return `<section class="card">
+    <h2>כל מדדי הליבה בקבוצה</h2>
+    <p class="lede">לחיצה על כותרת עמודה ממיינת לפיה. המשולש מסמן עלייה או ירידה מ${hebYear(PY())}.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>רשות</th>${CORE.map(({ v, t }) => `<th><button type="button" data-sort="${v}" aria-pressed="${key === v}">${t}</button></th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr class="${r === c ? 'me' : ''}"><td>${esc(r.n)}</td>${CORE.map(({ v }) => cell(r, v)).join('')}</tr>`).join('')}${natRow}</tbody>
+    </table></div>
+  </section>`;
+}
+
+function renderTrend() {
+  const c = city(), m = S.m, ys = D.years;
+  const { list } = groupOf();
+  const grp = list.filter(r => r !== c);
+  const series = [
+    { n: c.n, col: 'var(--accent)', w: 3, dash: '', pts: ys.map(y => val(c, m, y)) },
+    ...(natOn() ? [{ n: 'ארצי', col: 'var(--nat)', w: 2, dash: '5 4', pts: ys.map(y => natVal(m, y)) }] : []),
+    ...(grp.length ? [{ n: 'ממוצע הקבוצה', col: 'var(--primary)', w: 2, dash: '2 3', pts: ys.map(y => {
+      const v = grp.map(r => val(r, m, y)).filter(x => x != null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; }) }] : []),
+  ];
+  const all = series.flatMap(s => s.pts).filter(x => x != null);
+  if (all.length < 2) return '';
+  const used = ys.map((y, i) => series.some(s => s.pts[i] != null));
+  const i0 = used.indexOf(true), i1 = used.lastIndexOf(true);
+  const narrow = window.innerWidth < 600;           // במובייל: viewBox צר, כדי שהטקסט לא יתכווץ לבלתי קריא
+  const W = narrow ? 380 : 720, H = narrow ? 260 : 280, L = 40, Rm = narrow ? 52 : 70, T = 16, B = 34;
+  let lo = Math.floor(Math.min(...all) / 5) * 5, hi = Math.ceil(Math.max(...all) / 5) * 5; if (hi === lo) hi = lo + 5;
+  const n = i1 - i0;
+  // ציר הזמן משמאל לימין (תקן גרפים), כמו גרפי Chart.js בדשבורד הראשי
+  const X = i => L + (n ? (i - i0) * (W - L - Rm) / n : (W - L - Rm) / 2);
+  const Yp = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const step = (hi - lo) > 30 ? 10 : 5;
+  let g = '';
+  for (let v = lo; v <= hi; v += step) g += `<line x1="${L}" x2="${W - Rm}" y1="${Yp(v)}" y2="${Yp(v)}" stroke="#ece6f3"/><text x="${L - 8}" y="${Yp(v) + 4}" text-anchor="end" font-size="12" fill="#6a6080">${v}%</text>`;
+  for (let i = i0; i <= i1; i++) if (!narrow || (i1 - i) % 2 === 0) g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" font-size="12" fill="#6a6080" direction="rtl">${hebYear(ys[i])}</text>`;
+  // תוויות הקצה: מרווח של 15px לפחות, כדי ששני קווים קרובים לא יתנגשו
+  const ends = series.map((s, k) => { const i = s.pts.map((v, j) => v != null && j >= i0 && j <= i1 ? j : -1).filter(j => j >= 0).pop(); return i == null ? null : { k, i, v: s.pts[i], y: Yp(s.pts[i]) + 4 }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+  for (let j = 1; j < ends.length; j++) if (ends[j].y - ends[j - 1].y < 15) ends[j].y = ends[j - 1].y + 15;
+  const endY = new Map(ends.map(e => [e.k, e]));
+  const lines = series.map((s, k) => {
+    const p = s.pts.map((v, i) => v == null || i < i0 || i > i1 ? null : [X(i), Yp(v)]);
+    const d = p.filter(Boolean).map((q, k) => (k ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+    const lastI = p.map((q, i) => q ? i : -1).filter(i => i >= 0).pop();
+    const dots = s.w === 3 ? p.filter(Boolean).map(q => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${s.col}"/>`).join('') : '';
+    const lastV = lastI != null ? s.pts[lastI] : null;
+    return `<path d="${d}" fill="none" stroke="${s.col}" stroke-width="${s.w}" stroke-dasharray="${s.dash}" stroke-linejoin="round"/>${dots}
+      ${lastV != null ? `<text x="${X(lastI) + 8}" y="${endY.get(k).y}" font-size="13" font-weight="700" fill="${s.col}" stroke="#fff" stroke-width="3" paint-order="stroke">${lastV.toFixed(1)}%</text>` : ''}`;
+  }).join('');
+  const legend = series.map(s => `<span style="display:inline-flex;align-items:center;gap:6px"><svg width="22" height="6" aria-hidden="true"><line x1="0" x2="22" y1="3" y2="3" stroke="${s.col}" stroke-width="${s.w}" stroke-dasharray="${s.dash}"/></svg>${esc(s.n)}</span>`).join('');
+  return `<section class="card">
+    <h2>${label(m)} לאורך השנים</h2>
+    <p class="lede">${esc(c.n)} מול ${natOn() ? 'הממוצע הארצי ו' : ''}ממוצע הקבוצה שנבחרה למעלה.</p>
+    <svg class="trend" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label(m)} לאורך השנים">${g}${lines}</svg>
+    <p class="legend">${legend}</p>
+  </section>`;
+}
+
+function renderOther() {
+  const c = city();
+  const coreSet = new Set(CORE.map(x => x.v));
+  const keys = [...new Set([...Object.keys(OTHER_NAMES), ...Object.keys(c.h?.[S.pop] || {})])]
+    .filter(v => !coreSet.has(v) && val(c, v, Y()) != null);
+  if (!keys.length) return '';
+  return `<section class="card">
+    <h2>מדדים נוספים</h2>
+    <p class="lede">${esc(c.n)}, ${hebYear(Y())} מול ${hebYear(PY())}${natOn() ? ' ומול הממוצע הארצי' : ''}.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>מדד</th><th>${hebYear(Y())}</th><th>${hebYear(PY())}</th><th>שינוי</th>${natOn() ? '<th>ארצי</th><th>פער מהארצי</th>' : ''}</tr></thead>
+      <tbody>${keys.map(v => {
+        const a = val(c, v, Y()), b = val(c, v, PY()), n = natOn() ? natVal(v, Y()) : null;
+        return `<tr><td>${esc(label(v))}</td><td>${fmt(a)}</td><td>${fmt(b)}</td>
+          <td><span class="cell">${a != null && b != null ? `${tri(a - b)}<span class="n">${sgn(a - b)}</span>` : '<span class="na">אין</span>'}</span></td>
+          ${natOn() ? `<td>${fmt(n)}</td><td>${a != null && n != null ? `<span class="n">${sgn(a - n)}</span>` : '<span class="na">אין</span>'}</td>` : ''}</tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </section>`;
+}
+
+function renderGeneral() {
+  const c = city(), k = c.k || {};
+  const pick = (re) => { const key = findKey(k, re, v => v != null && v !== ''); return key ? +k[key] : null; };
+  const items = [
+    { t: 'תלמידי י״ב', v: c.n12, f: v => `<span class="n">${Math.round(v).toLocaleString('he-IL')}</span>` },
+    { t: 'לומדים בחינוך הטכנולוגי', v: pick(/TALMIDIM_TECHNOLOGI$/i), f: v => `<span class="n">${(+v).toFixed(1)}%</span>` },
+    { t: 'משולבים עם סל אישי', v: pick(/MDD_SAL_ISHI$/i), f: v => `<span class="n">${(+v).toFixed(1)}%</span>` },
+    { t: 'אשכול חברתי־כלכלי', v: c.cluster, f: v => `<span class="n">${v}</span>${c.clusterSrc === 'fallback' ? ' <span class="na">(למ״ס)</span>' : ''}` },
+  ].filter(x => x.v != null && !isNaN(x.v));
+  if (!items.length) return '';
+  return `<section class="card">
+    <h2>נתונים כלליים</h2>
+    <div class="cmp-sum" style="margin-bottom:0">${items.map(x => `<div class="mini"><div class="v">${x.f(x.v)}</div><div class="l">${x.t}</div></div>`).join('')}</div>
+  </section>`;
+}
+
+function render() {
+  const c = city();
+  if (!c) return;
+  S.city = +c.s;
+  document.title = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
+  $('#title').textContent = `התמונה החינוכית ${hebYear(Y())} · ${c.n}`;
+  $('#subtitle').textContent = 'מדדי הבגרות, המגמה מהשנה שעברה וההשוואה לרשויות דומות';
+  $('#heroNote').textContent = `מקור: שקיפות בחינוך, משרד החינוך · הנתונים נאספו ב־${dmy(D.collected)}`;
+  $('#heroCtl').hidden = false;
+  document.querySelectorAll('[data-pop]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)));
+  $('#citySel').value = String(S.city);
+  $('#content').innerHTML = `<div style="display:grid;gap:20px">${renderCore()}${renderCompare()}
+    ${renderTrend()}${renderGeneral()}${renderOther()}</div>
+    <datalist id="rList">${R.map(r => `<option value="${esc(r.n)}">`).join('')}</datalist>`;
+  writeHash();
+}
+
+function renderDiag() {
+  const det = D?._det || {};
+  const fb = R.filter(r => r.clusterSrc === 'fallback').length;
+  const lines = D ? [
+    `${R.length} רשויות עם נתוני בגרות · שנת נתונים ${hebYear(D.year)} (${D.year}) · נאסף ${dmy(D.collected)}`,
+    `אשכול: ${det.cluster ? `מהשדה ${det.cluster}` : `לא נמצא שדה בנתוני משרד החינוך, נעשה שימוש בטבלת הלמ״ס שבריפו (${fb} רשויות)`}`,
+    `אזור: ${det.district ? `מהשדה ${det.district}` : 'לא נמצא שדה מחוז, נעשה שימוש בטבלת הרשויות שבריפו (חלקי)'}`,
+    `היקף: ${det.size ? `מהשדה ${det.size}` : 'לפי מספר תלמידי י״ב'}`,
+    D.failed?.length ? `לא נטענו ${D.failed.length} רשויות: ${D.failed.slice(0, 8).map(esc).join(', ')}` : '',
+    `גרסה ${BUILD}`,
+  ] : [`גרסה ${BUILD}`];
+  $('#diag').innerHTML = lines.filter(Boolean).map(l => `<span>${l}</span>`).join('');
+}
+
+function load(data) {
+  if (!data || !Array.isArray(data.rashuyot) || !Array.isArray(data.years)) throw new Error('המבנה של הקובץ אינו מוכר');
+  D = data; enrich();
+  if (!BY.has(S.city)) { const h = R.find(r => norm(r.n) === norm('חולון')); S.city = h ? +h.s : +R[0].s; }
+  const sel = $('#citySel');
+  sel.innerHTML = R.slice().sort((a, b) => a.n.localeCompare(b.n, 'he')).map(r => `<option value="${r.s}">${esc(r.n)}</option>`).join('');
+  render(); renderDiag();
+  $('#foot').innerHTML = `מקור הנתונים: <a href="https://shkifut.education.gov.il/home" target="_blank" rel="noopener">שקיפות בחינוך, משרד החינוך</a>. אחוזים מתוך תלמידי י״ב ברשות. ההשוואה לממוצע הארצי נעשית רק על כלל תלמידי י״ב. ממוצע קבוצה הוא ממוצע פשוט של הרשויות, לא משוקלל. גרסה ${BUILD}.`;
+}
+
+function showEmpty(msg) {
+  $('#subtitle').textContent = 'מדדי הבגרות והשוואה לרשויות דומות';
+  $('#content').innerHTML = `<section class="card empty"><h2>עדיין אין כאן נתונים</h2>
+    <p class="lede">${esc(msg)}</p><p class="lede">כדי לטעון את נתוני משרד החינוך, פותחים את "עדכון הנתונים" למטה ומבצעים שלושה צעדים.</p></section>`;
+  $('#upd').open = true; renderDiag();
+}
+
+/* ── אירועים ───────────────────────────────────────────────────── */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t || !D) return;
+  if (t.dataset.m) { S.m = t.dataset.m; S.sort = null; render(); }
+  else if (t.dataset.g && !t.disabled) { S.g = t.dataset.g; render(); }
+  else if (t.dataset.pop) { S.pop = t.dataset.pop; render(); }
+  else if ('min' in t.dataset) { S.min = +t.dataset.min; render(); }
+  else if (t.dataset.sort) { S.sort = t.dataset.sort; render(); }
+  else if (t.dataset.rm) { S.custom = S.custom.filter(s => s !== +t.dataset.rm); render(); }
+  else if (t.id === 'addBtn') addCustom();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'addIn') addCustom(); });
+function addCustom() {
+  const q = norm($('#addIn').value); if (!q) return;
+  const r = R.find(x => norm(x.n) === q) || R.find(x => norm(x.n).startsWith(q));
+  if (r && +r.s !== S.city && !S.custom.includes(+r.s)) S.custom.push(+r.s);
+  render(); const i = $('#addIn'); if (i) i.focus();
+}
+let wasNarrow = window.innerWidth < 600;
+window.addEventListener('resize', () => { const n = window.innerWidth < 600; if (D && n !== wasNarrow) { wasNarrow = n; render(); } });
+$('#citySel').addEventListener('change', e => { S.city = +e.target.value; S.custom = null; render(); });
+$('#fileIn').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { load(JSON.parse(t)); $('#heroNote').textContent += ' · תצוגה מקובץ מקומי, לא נשמר באתר'; })
+    .catch(err => alert('לא הצלחתי לקרוא את הקובץ: ' + err.message));
+});
+$('#copyCode').addEventListener('click', async () => {
+  const code = `(${shkifutCollector.toString()})();`;
+  try { await navigator.clipboard.writeText(code); $('#copyCode').textContent = 'הקוד הועתק'; }
+  catch { prompt('העתיקו את הקוד:', code); }
+});
+
+/* ── איסוף הנתונים ─────────────────────────────────────────────────
+   הפונקציה הזו לא רצה בדף הזה. היא נארזת כסימנייה (bookmarklet) ורצה
+   בתוך shkifut.education.gov.il, שם הקריאות ל-API הן מאותו origin.
+   האתר חוסם שרתים מחוץ לישראל (נבדק 22.10.2026, 403 גם מ-GitHub Actions),
+   ולכן אין דרך לאסוף מהשרת. נקודות הקצה והשדות: מדריך הגישה לשקיפות.
+   הפלט: מערכים מיושרים לשנים, רק כיתות 12 ו-120, ולכל רשות השדות
+   הפשוטים של נתוניה הכלליים (k) כדי לזהות אשכול, מחוז והיקף. */
+async function shkifutCollector() {
+  const HOST = 'shkifut.education.gov.il';
+  if (location.hostname !== HOST) { alert('את האיסוף מריצים מתוך האתר שקיפות בחינוך:\nhttps://' + HOST + '/home'); return; }
+  const box = document.createElement('div');
+  box.dir = 'rtl';
+  box.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;background:#4a2972;color:#fff;font:15px/1.5 Arial,sans-serif;padding:14px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);max-width:360px';
+  document.body.appendChild(box);
+  const say = t => { box.textContent = t; };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const g = async u => {
+    for (let t = 0; t < 4; t++) {
+      try { const r = await fetch(u, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        if (r.ok) return await r.json(); if (r.status === 404) return null; } catch (e) {}
+      await sleep(800 * (t + 1));
+    }
+    return null;
+  };
+  const num = x => { if (x == null || x === '') return null; const n = +String(x).replace(',', '.'); return isFinite(n) ? n : null; };
+  const SKIP = new Set(['year', 'Class_Id', 'Entity_id', 'Var_id', 'Var_Id_Heb']);
+  const valOf = row => {
+    for (const k of ['ACHUZ_RASHUTI', 'ACHUZ_ARZI', 'ACHUZ']) if (k in row) return num(row[k]);
+    for (const k of Object.keys(row)) if (!SKIP.has(k) && /ACHUZ|VALUE|ERECH/i.test(k)) return num(row[k]);
+    return null;
+  };
+  const labels = {}, yearsSet = new Set();
+  const series = rows => {
+    const out = {};
+    for (const a of rows || []) {
+      const cls = String(a.Class_Id); if (cls !== '12' && cls !== '120') continue;
+      const v = a.Var_id, y = +a.year, x = valOf(a); if (!v || !y || x == null) continue;
+      if (a.Var_Id_Heb) labels[v] = String(a.Var_Id_Heb).trim();
+      yearsSet.add(y); ((out[cls] = out[cls] || {})[v] = out[cls][v] || {})[y] = x;
+    }
+    return out;
+  };
+  const flat = o => {
+    const out = {};
+    const put = (k, v) => { if (v == null) return; if (typeof v === 'number' || typeof v === 'boolean') out[k] = v; else if (typeof v === 'string' && v.length <= 60) out[k] = v; };
+    for (const [k, v] of Object.entries(o || {})) {
+      const obj = Array.isArray(v) && v.length === 1 && v[0] && typeof v[0] === 'object' ? v[0] : v;
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) { for (const [k2, v2] of Object.entries(obj)) if (typeof v2 !== 'object') put(k + '.' + k2, v2); }
+      else put(k, obj);
+    }
+    return out;
+  };
+  try {
+    say('טוען את רשימת הרשויות');
+    const lists = await g('/api/data/lists');
+    if (!lists || !lists.infoLists) throw new Error('רשימת הישויות לא נטענה. האם הדף פתוח על האתר עצמו?');
+    const il = Object.values(lists.infoLists);
+    const rash = il.filter(x => +x.Mode === 2).map(x => ({ s: +x.Semel, n: String(x.Shem || '').trim(), snif: x.Snif }));
+    const extra = il.filter(x => +x.Mode === 1 || +x.Mode === 4).map(x => ({ s: x.Semel, n: String(x.Shem || '').trim(), m: +x.Mode }));
+    const now = new Date();
+    let Y = now.getMonth() >= 9 ? now.getFullYear() - 1 : now.getFullYear() - 2;
+    say('טוען נתונים ארציים');
+    const natRows = n => (n && n.nationalHistory && n.nationalHistory.arziAkavish) || [];
+    let nat = await g('/api/data/national/?year=' + (Y + 1));
+    if (natRows(nat).some(r => +r.year === Y + 1)) Y = Y + 1; else nat = await g('/api/data/national/?year=' + Y);
+    const national = series(natRows(nat));
+    const natKeys = natRows(nat)[0] ? Object.keys(natRows(nat)[0]) : [];
+    const out = [], failed = []; let done = 0, i = 0;
+    const work = async () => {
+      while (i < rash.length) {
+        const r = rash[i++];
+        const [h, k] = await Promise.all([
+          g('/api/data/rashutHistory/?semelRashut=' + r.s),
+          g('/api/data/rashut/?semelRashut=' + r.s + '&year=' + Y),
+        ]);
+        if (!h) failed.push(r.n);
+        out.push({ s: r.s, n: r.n, snif: r.snif, h: series(h && h.rashutAkavish), k: flat(k && (k.rashutKlali || k)), top: k ? Object.keys(k) : [] });
+        say('אוסף נתוני רשויות: ' + (++done) + ' מתוך ' + rash.length + '\n' + r.n);
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, work));
+    const years = [...yearsSet].sort((a, b) => a - b);
+    const pack = o => { const p = {}; for (const [c, vs] of Object.entries(o)) { p[c] = {}; for (const [v, ys] of Object.entries(vs)) p[c][v] = years.map(y => ys[y] ?? null); } return p; };
+    const holon = out.find(x => x.s === 66001) || out[0];
+    const data = {
+      format: 'edu-picture/1', source: 'https://' + HOST, collected: new Date().toISOString(), year: Y, years, labels,
+      national: pack(national), extra,
+      rashuyot: out.sort((a, b) => a.s - b.s).map(x => ({ s: x.s, n: x.n, snif: x.snif, h: pack(x.h), k: x.k })),
+      failed, diag: { natKeys, rashutTop: holon ? holon.top : [], kKeys: holon ? Object.keys(holon.k) : [] },
+    };
+    window.__eduPicture = data;
+    const json = JSON.stringify(data);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = 'data.json'; document.body.appendChild(a); a.click();
+    box.textContent = '';
+    const msg = document.createElement('div');
+    msg.textContent = 'הסתיים. ' + out.length + ' רשויות' + (failed.length ? ', ' + failed.length + ' לא נטענו' : '') + '. הקובץ data.json ירד למחשב.';
+    const cp = document.createElement('button');
+    cp.textContent = 'העתקה ללוח במקום הורדה';
+    cp.style.cssText = 'margin-top:8px;font:inherit;padding:4px 12px;border-radius:999px;border:0;cursor:pointer';
+    cp.onclick = () => navigator.clipboard.writeText(json).then(() => { cp.textContent = 'הועתק'; });
+    const x = document.createElement('button');
+    x.textContent = 'סגירה'; x.style.cssText = cp.style.cssText + ';margin-inline-start:8px';
+    x.onclick = () => box.remove();
+    box.append(msg, cp, x);
+    return { ok: true, rashuyot: out.length, failed: failed.length, year: Y };
+  } catch (e) {
+    say('האיסוף נכשל: ' + e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+/* ── עלייה ─────────────────────────────────────────────────────── */
+(function boot() {
+  $('#bmLink').href = 'javascript:' + encodeURIComponent(`(${shkifutCollector.toString()})();void 0`);
+  $('#bmLink').addEventListener('click', e => { e.preventDefault(); alert('את הכפתור הזה גוררים לסרגל הסימניות, ולוחצים עליו מתוך האתר שקיפות בחינוך.'); });
+  readHash();
+  fetch('data.json', { cache: 'no-cache' })
+    .then(r => { if (!r.ok) throw new Error(r.status === 404 ? 'קובץ הנתונים data.json עוד לא הועלה לתיקייה.' : `שגיאה ${r.status} בטעינת הנתונים.`); return r.json(); })
+    .then(load)
+    .catch(err => showEmpty(err.message));
+})();
+</script>
+</body>
+</html>
