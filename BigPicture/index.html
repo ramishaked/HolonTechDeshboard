@@ -140,6 +140,9 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 .bm { display: inline-block; background: var(--accent); color: #fff; font-weight: 700; padding: 8px 16px; border-radius: 999px; text-decoration: none; cursor: grab; }
 .btn { border: 1px solid var(--border); background: var(--card); color: var(--primary-d); border-radius: 999px; padding: 7px 16px; cursor: pointer; font-weight: 700; font-size: 14px; }
 .btn:hover { border-color: var(--primary); }
+.tbl-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.tbl-head h2 { margin: 0; }
+.tbl-head .btn { padding: 5px 14px; font-size: 14px; }
 .diag { font-size: 13px; color: var(--muted); display: grid; gap: 2px; margin-top: 12px; }
 .alert { background: var(--bad-l); color: var(--bad-d); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
 .empty { text-align: center; padding: 36px 20px; }
@@ -218,7 +221,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 @media print {
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
-  .hero-ctl, .upd, .pick, .sortbar, .quiet, .foot button, dialog, #copyLink { display: none !important; }
+  .hero-ctl, .upd, .pick, .sortbar, .quiet, .foot button, dialog, #copyLink, #xlsTbl { display: none !important; }
   .ctl { display: none !important; }
   .cmp-sum { grid-template-columns: repeat(4, minmax(0,1fr)) !important; margin: 4px 0 10px; }
   .mini { padding: 6px 10px; } .mini .v { font-size: 20px; }
@@ -246,7 +249,6 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
         <label class="sr" for="citySel" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">רשות</label>
         <select id="citySel" aria-label="בחירת רשות"></select>
         <button type="button" class="linkbtn" id="pdfBtn" title="פתיחת חלון הדפסה. בוחרים &quot;שמירה כ-PDF&quot;">ייצוא PDF</button>
-        <button type="button" class="linkbtn" id="xlsBtn" title="קובץ Excel עם הטבלה אחרי הסינון והמיון">ייצוא Excel</button>
         <button type="button" class="linkbtn" id="aboutBtn">אודות</button>
         <div class="seg" role="group" aria-label="אוכלוסיית המדידה">
           <button type="button" data-pop="12">כלל תלמידי י״ב</button>
@@ -295,7 +297,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 24;
+const BUILD = 25;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -618,7 +620,7 @@ function renderTable(list) {
   const mlist = `<div class="mlist">${rows.map((r, i) => mrow(r, i, false)).join('')}${natOn() ? mrow(null, 0, true) : ''}</div>`;
   const th = ({ v, t }) => `<th class="${key === v ? 'sorted' : ''}" aria-sort="${key === v ? (dir < 0 ? 'descending' : 'ascending') : 'none'}"><button type="button" data-sort="${v}" title="מיון לפי ${t}">${t}${sortIcon(key === v ? dir : 0)}</button></th>`;
   return `<section class="card">
-    <h2>כל מדדי הליבה בקבוצה</h2>
+    <div class="tbl-head"><h2>כל מדדי הליבה בקבוצה</h2><button type="button" class="btn" id="xlsTbl" title="קובץ Excel עם הטבלה הזו, אחרי הסינון והמיון">ייצוא לאקסל</button></div>
     <p class="lede">ממוין לפי <b>${label(key)}</b>, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. <span class="dsk">לחיצה על כותרת עמודה ממיינת לפיה, ולחיצה נוספת הופכת את הכיוון.</span><span class="mob">זה המספר הגדול בכל שורה. הקשה על רשות פותחת פירוט מלא.</span></p>
     <p class="legend2">מתחת לכל ערך: השינוי מ${hebYear(PY())} ומול הממוצע הארצי, בנקודות אחוז ובסוגריים כשיעור שינוי יחסי.</p>
     <div class="sortbar"><span class="ctl-l" style="min-width:auto">מיון</span>${CORE.map(({ v, t }) => `<button type="button" class="pill" data-sort="${v}" aria-pressed="${key === v}">${t}${key === v ? sortIcon(dir) : ''}</button>`).join('')}</div>
@@ -714,66 +716,112 @@ function zipStore(files) {                       // zip בלי דחיסה, מס�
 const xl = {
   col: i => { let s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; },
   x: t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
-  // תא: מספר (עם סגנון 2 = 0.0, 3 = +0.0) או טקסט. סגנון 1 = כותרת, 4 = מודגש
-  cell(v, ci, ri, st) {
+  // תא: {v, s}. מספר = <v>, טקסט = inlineStr. s = אינדקס סגנון (xl.ST). תא ריק עם סגנון נשמר, כדי שהמסגרת והצבע ימשיכו
+  cell(c, ci, ri) {
+    const { v, s } = c && typeof c === 'object' ? c : { v: c, s: 0 };
     const r = `${xl.col(ci)}${ri + 1}`;
-    if (v == null || v === '' || (typeof v === 'number' && !isFinite(v))) return st ? `<c r="${r}" s="${st}"/>` : '';
-    return typeof v === 'number' ? `<c r="${r}" s="${st || 2}"><v>${v}</v></c>` : `<c r="${r}" t="inlineStr" s="${st || 0}"><is><t xml:space="preserve">${xl.x(v)}</t></is></c>`;
+    if (v == null || v === '' || (typeof v === 'number' && !isFinite(v))) return s ? `<c r="${r}" s="${s}"/>` : '';
+    return typeof v === 'number' ? `<c r="${r}" s="${s}"><v>${v}</v></c>` : `<c r="${r}" t="inlineStr" s="${s}"><is><t xml:space="preserve">${xl.x(v)}</t></is></c>`;
   },
-  sheet(rows, widths, head = 1) {
+  // סגנונות (תואם ל-cellXfs ב-xl/styles.xml): ממוספרים לפי הסדר שם
+  ST: { def: 0, h1: 1, h2: 2, num: 3, chg: 4, rank: 5, txt: 6, meNum: 7, meChg: 8, meRank: 9, meTxt: 10, natNum: 11, natChg: 12, natTxt: 13, title: 14, note: 15, key: 16, wrap: 17 },
+  sheet(rows, { widths, merges = [], freeze, heights = {} }) {
     const cols = widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('');
-    const body = rows.map((row, ri) => `<row r="${ri + 1}"${ri < head ? ' ht="32" customHeight="1"' : ''}>${row.map((c, ci) => c && typeof c === 'object' && !Array.isArray(c) ? xl.cell(c.v, ci, ri, c.s) : xl.cell(c, ci, ri, ri < head ? 1 : 0)).join('')}</row>`).join('');
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane xSplit="${head ? 1 : 0}" ySplit="${head}" topLeftCell="${head ? 'B' : 'A'}${head + 1}" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData></worksheet>`;
+    const body = rows.map((row, ri) => `<row r="${ri + 1}"${heights[ri] ? ` ht="${heights[ri]}" customHeight="1"` : ''}>${row.map((c, ci) => xl.cell(c, ci, ri)).join('')}</row>`).join('');
+    const pane = freeze ? `<pane xSplit="${freeze[0]}" ySplit="${freeze[1]}" topLeftCell="${xl.col(freeze[0])}${freeze[1] + 1}" activePane="bottomRight" state="frozen"/>` : '';
+    const mg = merges.length ? `<mergeCells count="${merges.length}">${merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView rightToLeft="1" workbookViewId="0">${pane}</sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData>${mg}<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
   },
 };
+// ייצוא הטבלה "כל מדדי הליבה בקבוצה", בדיוק כפי שהיא מוצגת: אותה קבוצה, אותו מיון, אותה אוכלוסייה
 function exportXlsx() {
-  const c = city(), { list } = groupOf(), key = S.sort || S.m, dir = S.dir || -1, py = hebYear(PY());
+  const c = city(), { list, lab } = groupOf(), key = S.sort || S.m, dir = S.dir || -1, py = hebYear(PY()), ty = hebYear(Y()), ST = xl.ST;
   const sorted = list.slice().sort((a, b) => {
     const va = val(a, key, Y()), vb = val(b, key, Y());
     if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1;
     return dir < 0 ? vb - va : va - vb;
   });
   const r1 = x => x == null ? null : Math.round(x * 10) / 10;
-  const head = ['רשות', `מקום (לפי ${label(key)})`];
-  CORE.forEach(({ t }) => head.push(`${t} ${hebYear(Y())} (%)`, `${t} מקום`, `${t} ${py} (%)`, `${t} שינוי (נק׳)`, `${t} שינוי יחסי (%)`, ...(natOn() ? [`${t} פער מהארצי (נק׳)`] : [])));
-  const row = (name, rank, get, getPrev, nat, bold, rk) => {
-    const out = [{ v: name, s: bold ? 4 : 0 }, rank];
+  const nat = natOn();
+  const rankOf = (r, v) => { const a = val(r, v, Y()); return a == null ? null : 1 + sorted.filter(q => (val(q, v, Y()) ?? -1) > a).length; };
+  const per = nat ? 6 : 5;                         // עמודות לכל מדד: השנה, מקום, שנה קודמת, שינוי נק׳, שינוי יחסי, [פער מהארצי]
+  const nCols = 2 + CORE.length * per;
+  const blank = n => Array(n).fill(null);
+  const pad = (row) => row.concat(blank(nCols - row.length));
+  const title = pad([{ v: `כל מדדי הליבה בקבוצה · ${c.n} · ${lab} · ${ty}`, s: ST.title }]);
+  const note = pad([{ v: `${S.pop === '12' ? 'כלל תלמידי י״ב' : 'י״ב ללא חינוך מיוחד'}. הערכים באחוזים מתלמידי י״ב ברשות. ממוין לפי ${label(key)}, ${dir < 0 ? 'מהגבוה לנמוך' : 'מהנמוך לגבוה'}. מקום בקבוצה: 1 = הערך הגבוה ביותר. שינוי בנקודות אחוז (נק׳) וכשיעור שינוי יחסי (%).`, s: ST.note }]);
+  const h1 = [{ v: 'רשות', s: ST.h1 }, { v: `מקום לפי ${label(key)}`, s: ST.h1 }];
+  const h2 = [{ v: null, s: ST.h2 }, { v: null, s: ST.h2 }];
+  CORE.forEach(({ t }) => {
+    h1.push({ v: t, s: ST.h1 }, ...blank(per - 1).map(() => ({ v: null, s: ST.h1 })));
+    h2.push(...[`${ty} (%)`, 'מקום בקבוצה', `${py} (%)`, `שינוי מ${py} (נק׳)`, `שינוי מ${py} (%)`, ...(nat ? ['פער מהארצי (נק׳)'] : [])].map(v => ({ v, s: ST.h2 })));
+  });
+  const merges = ['A3:A4', 'B3:B4'];
+  CORE.forEach((_, i) => { const a = xl.col(2 + i * per), b = xl.col(2 + i * per + per - 1); merges.push(`${a}3:${b}3`); });
+  merges.push(`A1:${xl.col(nCols - 1)}1`, `A2:${xl.col(nCols - 1)}2`);
+  const dataRow = (name, rank, get, getPrev, me, natRow, rk) => {
+    const k = natRow ? ['natTxt', 'natNum', 'natChg', 'natNum'] : me ? ['meTxt', 'meNum', 'meChg', 'meRank'] : ['txt', 'num', 'chg', 'rank'];
+    const sTxt = ST[k[0]], sNum = ST[k[1]], sChg = ST[k[2]], sRank = ST[k[3]] ?? ST[natRow ? 'natNum' : 'rank'];
+    const out = [{ v: name, s: sTxt }, { v: rank, s: sRank }];
     CORE.forEach(({ v }) => {
-      const a = get(v), b = getPrev(v), n = nat ? natVal(v, Y()) : null;
-      out.push({ v: r1(a), s: 2 }, { v: rk && a != null ? 1 + sorted.filter(q => (val(q, v, Y()) ?? -1) > a).length : null, s: 5 }, { v: r1(b), s: 2 }, { v: a != null && b != null ? r1(a - b) : null, s: 3 }, { v: r1(rel(a, b)), s: 3 });
-      if (natOn()) out.push({ v: a != null && n != null ? r1(a - n) : null, s: 3 });
+      const a = get(v), b = getPrev(v), n = natRow ? null : (nat ? natVal(v, Y()) : null);
+      out.push({ v: r1(a), s: sNum }, { v: rk ? rankOf(rk, v) : null, s: sRank }, { v: r1(b), s: sNum },
+        { v: a != null && b != null ? r1(a - b) : null, s: sChg }, { v: r1(rel(a, b)), s: sChg });
+      if (nat) out.push({ v: a != null && n != null ? r1(a - n) : null, s: sChg });
     });
     return out;
   };
-  const rows1 = [head, ...sorted.map((r, i) => row(r.n, i + 1, v => val(r, v, Y()), v => val(r, v, PY()), true, r === c, true))];
-  if (natOn()) rows1.push(row('ממוצע ארצי', '', v => natVal(v, Y()), v => natVal(v, PY()), false, true));
-  const w1 = [22, 14, ...head.slice(2).map(() => 15)];
+  const rows = [title, note, h1, h2, ...sorted.map((r, i) => dataRow(r.n, i + 1, v => val(r, v, Y()), v => val(r, v, PY()), r === c, false, r))];
+  if (nat) rows.push(dataRow('ממוצע ארצי (כלל י״ב)', null, v => natVal(v, Y()), v => natVal(v, PY()), false, true, null));
+  const widths = [24, 14, ...CORE.flatMap(() => [11, 10, 11, 13, 12, ...(nat ? [14] : [])])];
+  const sheet1 = xl.sheet(rows, { widths, merges, freeze: [2, 4], heights: { 0: 24, 1: 32, 2: 22, 3: 44 } });
 
-  const coreSet = new Set(CORE.map(x => x.v));
-  const keys = [...new Set([...Object.keys(OTHER_NAMES), ...Object.keys(c.h?.[S.pop] || {})])].filter(v => !coreSet.has(v) && val(c, v, Y()) != null);
-  const rows2 = [['מדד', `${hebYear(Y())} (%)`, `${py} (%)`, 'שינוי (נק׳)', 'שינוי יחסי (%)', ...(natOn() ? ['ארצי (%)', 'פער מהארצי (נק׳)'] : [])],
-    ...keys.map(v => { const a = val(c, v, Y()), b = val(c, v, PY()), n = natOn() ? natVal(v, Y()) : null;
-      return [label(v), { v: r1(a), s: 2 }, { v: r1(b), s: 2 }, { v: a != null && b != null ? r1(a - b) : null, s: 3 }, { v: r1(rel(a, b)), s: 3 },
-        ...(natOn() ? [{ v: r1(n), s: 2 }, { v: a != null && n != null ? r1(a - n) : null, s: 3 }] : [])]; })];
-  const rows3 = [['סינון', 'ערך'], ...filterLines(), ['מקור הנתונים', 'שקיפות בחינוך, משרד החינוך'],
-    ['הנתונים נאספו', D.collected ? dmy(D.collected) : ''], ['הופק בתאריך', dmy(new Date().toISOString())],
-    ['פותח על ידי', 'רמי שקד, כשירות לרשויות · https://www.ramishaked.com/']];
-
-  const sheets = [['השוואה', xl.sheet(rows1, w1)]];
-  if (keys.length) sheets.push(['מדדים נוספים', xl.sheet(rows2, [30, 14, 14, 14, 16, 14, 16])]);
-  sheets.push(['סינון', xl.sheet(rows3, [24, 60])]);
+  const rows2 = [
+    [{ v: 'סינון', s: ST.h1 }, { v: 'ערך', s: ST.h1 }],
+    ...filterLines().map(([k, v]) => [{ v: k, s: ST.key }, { v, s: ST.wrap }]),
+    [{ v: 'מקור הנתונים', s: ST.key }, { v: 'שקיפות בחינוך, משרד החינוך', s: ST.wrap }],
+    [{ v: 'הנתונים נאספו', s: ST.key }, { v: D.collected ? dmy(D.collected) : '', s: ST.wrap }],
+    [{ v: 'הופק בתאריך', s: ST.key }, { v: dmy(new Date().toISOString()), s: ST.wrap }],
+    [{ v: 'פותח על ידי', s: ST.key }, { v: 'רמי שקד, כשירות לרשויות · https://www.ramishaked.com/', s: ST.wrap }],
+  ];
+  const sheet2 = xl.sheet(rows2, { widths: [24, 64], heights: { 0: 22 } });
+  const sheets = [['מדדי ליבה', sheet1], ['סינון והסברים', sheet2]];
   const ns = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', rn = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const B = '<border><left style="thin"><color rgb="FFD9D2E6"/></left><right style="thin"><color rgb="FFD9D2E6"/></right><top style="thin"><color rgb="FFD9D2E6"/></top><bottom style="thin"><color rgb="FFD9D2E6"/></bottom></border>';
+  const xf = (o = {}) => `<xf numFmtId="${o.fmt || 0}" fontId="${o.font || 0}" fillId="${o.fill || 0}" borderId="${o.border || 0}" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="${o.h || 'general'}" vertical="center"${o.wrap ? ' wrapText="1"' : ''}/></xf>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet ${ns}><numFmts count="2"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="+0.0;-0.0;0.0"/></numFmts>`
+    + `<fonts count="5"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font><font><sz val="10"/><color rgb="FF5B5670"/><name val="Arial"/></font><font><b/><sz val="15"/><color rgb="FF4A2972"/><name val="Arial"/></font></fonts>`
+    + `<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF4A2972"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFDE8D8"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEEEBF3"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE6DDF2"/></patternFill></fill></fills>`
+    + `<borders count="2"><border/>${B}</borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="18">`
+    + [xf(),
+       xf({ font: 1, fill: 2, border: 1, h: 'center', wrap: 1 }),                 // 1 h1
+       xf({ font: 2, fill: 5, border: 1, h: 'center', wrap: 1 }),                 // 2 h2
+       xf({ fmt: 164, border: 1, h: 'center' }),                                  // 3 num
+       xf({ fmt: 165, border: 1, h: 'center' }),                                  // 4 chg
+       xf({ fmt: 1, border: 1, h: 'center' }),                                    // 5 rank
+       xf({ border: 1, h: 'right' }),                                             // 6 txt
+       xf({ fmt: 164, font: 2, fill: 3, border: 1, h: 'center' }),                // 7 meNum
+       xf({ fmt: 165, font: 2, fill: 3, border: 1, h: 'center' }),                // 8 meChg
+       xf({ fmt: 1, font: 2, fill: 3, border: 1, h: 'center' }),                  // 9 meRank
+       xf({ font: 2, fill: 3, border: 1, h: 'right' }),                           // 10 meTxt
+       xf({ fmt: 164, font: 2, fill: 4, border: 1, h: 'center' }),                // 11 natNum
+       xf({ fmt: 165, font: 2, fill: 4, border: 1, h: 'center' }),                // 12 natChg
+       xf({ font: 2, fill: 4, border: 1, h: 'right' }),                           // 13 natTxt
+       xf({ font: 4, h: 'right' }),                                               // 14 title
+       xf({ font: 3, h: 'right', wrap: 1 }),                                      // 15 note
+       xf({ font: 2, border: 1, h: 'right' }),                                    // 16 key
+       xf({ border: 1, h: 'right', wrap: 1 })].join('') + `</cellXfs></styleSheet>`;
   const files = [
     ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
     ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rn}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
     ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook ${ns} xmlns:r="${rn}"><sheets>${sheets.map(([n], i) => `<sheet name="${xl.x(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`],
     ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="${rn}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="${rn}/styles" Target="styles.xml"/></Relationships>`],
-    ['xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet ${ns}><numFmts count="2"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="+0.0;-0.0;0.0"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF4A2972"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="6"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="164" applyNumberFormat="1"/><xf numFmtId="165" applyNumberFormat="1"/><xf fontId="2" applyFont="1"/><xf numFmtId="1" applyNumberFormat="1"/></cellXfs></styleSheet>`],
+    ['xl/styles.xml', styles],
     ...sheets.map(([, xml], i) => [`xl/worksheets/sheet${i + 1}.xml`, xml]),
   ];
   const blob = zipStore(files), a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `התמונה-החינוכית-${c.n.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '-')}-${Y()}.xlsx`;
+  a.download = `מדדי-ליבה-${c.n.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '-')}-${Y()}.xlsx`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
@@ -874,7 +922,7 @@ function addCustom() {
 let wasNarrow = window.innerWidth < 600;
 window.addEventListener('resize', () => { const n = window.innerWidth < 600; if (D && n !== wasNarrow) { wasNarrow = n; render(); } });
 $('#pdfBtn').addEventListener('click', () => window.print());
-$('#xlsBtn').addEventListener('click', exportXlsx);
+document.addEventListener('click', e => { if (e.target.closest('#xlsTbl')) exportXlsx(); });
 (() => {
   const dlg = $('#aboutDlg');
   $('#aboutBtn').addEventListener('click', () => dlg.showModal());
