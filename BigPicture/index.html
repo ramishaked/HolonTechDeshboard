@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>התמונה החינוכית</title>
+<meta property="og:title" content="התמונה החינוכית: מדדי בגרות והשוואה בין רשויות">
+<meta property="og:description" content="זכאות לבגרות, בגרות מצטיינת, בגרות טק, אנגלית ומתמטיקה 5 יח״ל, שינוי מהשנה שעברה והשוואה לרשויות דומות. נתוני שקיפות בחינוך, משרד החינוך.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
 <meta name="description" content="דשבורד התמונה החינוכית לפי נתוני שקיפות בחינוך של משרד החינוך: מדדי ליבה, מגמה שנתית והשוואה לרשויות דומות.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap">
@@ -226,7 +230,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
   <div id="content"></div>
 
-  <section class="card">
+  <section class="card" id="updCard" hidden>
     <details class="upd" id="upd">
       <summary>עדכון הנתונים ממשרד החינוך</summary>
       <p class="lede" style="margin-top:10px">הדף נפתח מקובץ הנתונים data.json שבתיקייה, שנאסף מאתר משרד החינוך. האתר חוסם שרתים בחו״ל ולא מתיר קריאה מדומיין אחר, ולכן את הקובץ מרעננים פעם בשנה, בדפדפן שיושב בישראל, כשמתפרסמת תמונה חינוכית חדשה.</p>
@@ -249,7 +253,7 @@ details.upd > summary { cursor: pointer; font-weight: 700; color: var(--primary-
 
 <script>
 'use strict';
-const BUILD = 17;
+const BUILD = 18;
 
 /* ── הגדרות ────────────────────────────────────────────────────── */
 // מזהי המדדים כפי שהם ב-API של שקיפות בחינוך (rashutAkavish.Var_id).
@@ -312,6 +316,7 @@ const S = { city: DEFAULT_CITY, g: 'custom', m: CORE[0].v, pop: '12', min: MIN12
 function readHash() {
   const q = new URLSearchParams(location.search.slice(1));
   new URLSearchParams(location.hash.slice(1)).forEach((v, k) => q.set(k, v));
+  if (q.has('update')) { const u = document.getElementById('updCard'); if (u) u.hidden = false; }
   const c = (q.get('city') || '').trim();
   if (/^\d+$/.test(c)) S.city = +c; else if (c) S.cityName = c;
   S.cityGiven = !!c;
@@ -390,6 +395,12 @@ function enrich() {
 const CENTRAL = d => /מרכז|תל.?אביב/.test(d || '');
 const sizeWord = k => k === 'pop' ? 'אוכלוסייה' : k === 'students' ? 'מספר תלמידים' : 'מספר תלמידי י״ב';
 function passMin(r, c) { return r === c || !S.min || r.n12 == null || r.n12 >= S.min; }
+// העמיתות הקרובות ביותר: אותו אשכול קודם, ואחריו הקרובות בגודל. ברירת המחדל של "בחירה ידנית" לכל רשות שאינה חולון
+function peersOf(c, n) {
+  const pool = R.filter(r => r !== c && r.n12 >= MIN12 && CORE.some(({ v }) => val(r, v, Y()) != null));
+  const score = r => Math.abs((r.cluster ?? 99) - (c.cluster ?? 99)) * 10 + (r.size && c.size ? Math.abs(Math.log(r.size / c.size)) : 5);
+  return pool.sort((a, b) => score(a) - score(b)).slice(0, n).map(r => +r.s);
+}
 function groupOf(g = S.g) {
   const c = city(); let list = [], lab = '';
   if (g === 'cluster') {
@@ -412,7 +423,9 @@ function groupOf(g = S.g) {
       lab = central ? 'אזור המרכז' : `מחוז ${c.district}`;
     } else lab = 'אזור לא ידוע לרשות הזו';
   } else {
-    if (!S.custom) S.custom = CUSTOM_DEFAULT.map(n => R.find(r => norm(r.n).startsWith(norm(n)))).filter(Boolean).map(r => +r.s).filter(s => s !== +c.s);
+    if (!S.custom) S.custom = S.city === DEFAULT_CITY
+      ? CUSTOM_DEFAULT.map(n => R.find(r => norm(r.n).startsWith(norm(n)))).filter(Boolean).map(r => +r.s).filter(s => s !== +c.s)
+      : peersOf(c, 9);
     list = [c, ...S.custom.map(s => BY.get(s)).filter(Boolean)];
     lab = 'בחירה ידנית';
   }
@@ -629,7 +642,11 @@ function render() {
   if (!has120 && S.pop === '120') S.pop = '12';
   document.querySelectorAll('[data-pop]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.pop === S.pop)); if (b.dataset.pop === '120') { b.disabled = !has120; b.title = has120 ? '' : 'אין נתון ללא חינוך מיוחד לרשות הזו'; } });
   $('#citySel').value = String(S.city);
-  $('#content').innerHTML = `<div style="display:grid;gap:20px">${renderCore()}${renderCompare()}
+  const hasData = CORE.some(({ v }) => val(c, v, Y()) != null);
+  $('#content').innerHTML = !hasData
+    ? `<section class="card empty"><h2>אין נתוני בגרות לרשות הזו</h2><p class="lede">באתר שקיפות בחינוך אין נתוני זכאות לבגרות עבור ${esc(c.n)} בשנת ${hebYear(Y())}. אפשר לבחור רשות אחרת בבורר שבכותרת.</p></section>
+    <datalist id="rList"></datalist>`
+    : `<div style="display:grid;gap:20px">${renderCore()}${renderCompare()}
     ${renderGeneral()}${renderOther()}</div>
     <datalist id="rList">${R.map(r => `<option value="${esc(r.n)}">`).join('')}</datalist>`;
   writeHash();
@@ -662,7 +679,8 @@ function load(data) {
   if (!S.cityName && !BY.has(S.city)) { S.bad = S.bad || String(S.city); const h = R.find(r => norm(r.n) === norm('חולון')); S.city = h ? +h.s : +R[0].s; S.cityGiven = false; }
   // רשות שאינה חולון: ברירת המחדל היא השוואה לאשכול שלה, כי רשימת "בחירה ידנית" בנויה סביב חולון
   if (S.cityGiven && !S.gGiven && S.city !== DEFAULT_CITY && BY.has(S.city)) {
-    const cc = BY.get(S.city); S.g = cc.cluster ? 'cluster' : cc.size ? 'size' : 'custom'; S.gGiven = true;
+    S.g = 'cluster'; S.gGiven = true;
+    for (const g of ['cluster', 'size', 'region']) { S.g = g; if (groupOf(g).list.length >= 5) break; S.g = 'size'; }
   }
   const sel = $('#citySel');
   sel.innerHTML = R.slice().sort((a, b) => a.n.localeCompare(b.n, 'he')).map(r => `<option value="${r.s}">${esc(r.n)}</option>`).join('');
@@ -674,7 +692,7 @@ function showEmpty(msg) {
   $('#subtitle').textContent = 'מדדי הבגרות והשוואה לרשויות דומות';
   $('#content').innerHTML = `<section class="card empty"><h2>הנתונים לא נטענו</h2>
     <p class="lede">${esc(msg)}</p><p class="lede">הפתרון הקבוע: לאסוף את הנתונים פעם אחת ולשמור אותם בקובץ data.json בתיקייה הזו. ההוראות ב"עדכון הנתונים" למטה.</p></section>`;
-  $('#upd').open = true; renderDiag();
+  $('#updCard').hidden = false; $('#upd').open = true; renderDiag();
 }
 
 /* ── אירועים ───────────────────────────────────────────────────── */

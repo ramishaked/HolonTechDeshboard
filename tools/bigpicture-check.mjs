@@ -194,7 +194,7 @@ if (browser) {
       await rp.page.selectOption('#citySel', String(no120.s));
       (await rp.page.locator('[data-pop="120"]').isDisabled()) ? pass(`${no120.n}: אין נתוני חנ״מ, המתג מנוטרל`) : fail(`${no120.n}: המתג פעיל בלי נתון`);
     }
-    (await rp.page.locator('.kpi .v').first().innerText()).length ? pass('הדף מציג רשות עם נתונים חלקיים בלי לקרוס') : fail('תצוגה ריקה');
+    (await rp.page.locator('.kpi .v, .empty h2').first().innerText()).length ? pass('רשות בלי נתוני זכאות מוצגת בלי לקרוס') : fail('תצוגה ריקה');
     rp.errors.forEach(e => fail('data.json האמיתי, שגיאה: ' + e));
     await rp.page.close();
   } else fail('BigPicture/data.json חסר');
@@ -229,6 +229,59 @@ if (browser) {
     /\?city=62000/.test(u) && !u.includes('#') ? pass(`הכתובת מתעדכנת לשיתוף: ${u.replace('http://bp.local', '')}`) : fail('הכתובת לא עודכנה: ' + u);
     (await hp.page.locator('#copyLink').getAttribute('data-url')) === 'http://bp.local/BigPicture/?city=62000' ? pass('כפתור "העתקת קישור לרשות": קישור נקי לרשות הנוכחית') : fail('data-url שגוי: ' + await hp.page.locator('#copyLink').getAttribute('data-url'));
     await hp.page.close();
+  }
+
+  // גנריות: שום דבר שהוגדר לחולון לא מופיע אצל רשות אחרת
+  if (fs.existsSync(realPath)) {
+    const real3 = JSON.parse(fs.readFileSync(realPath, 'utf8'));
+    const byName = n => real3.rashuyot.find(r => r.n.replace(/-/g, ' ').startsWith(n));
+    const bat = byName('בת ים'), omer = byName('עומר'), yaarim = byName('קרית יערים');
+    const sOf = r => r.k.MATSAV_SOTSYOEKONOMI;
+    // "בחירה ידנית" לרשות אחרת: עמיתות מאותו אשכול ומאותו גודל, לא הרשימה שנקבעה לחולון
+    const gp = await openPage(browser, real3, { width: 1280, height: 900 }, null, `?city=${bat.s}&g=custom`);
+    const peers = (await gp.page.locator('.bar .nm .t').allInnerTexts()).map(x => x.trim()).filter(x => !x.startsWith('בת ים'));
+    const cl = peers.map(n => byName(n.replace(/-/g, ' ')))
+      .filter(Boolean).map(r => Math.abs(sOf(r) - sOf(bat))).sort((a, b) => a - b);
+    peers.length >= 8 && cl[Math.floor(cl.length / 2)] <= 1 ? pass(`בת ים, "בחירה ידנית": ${peers.length} עמיתות קרובות באשכול (חציון פער אשכול ${cl[Math.floor(cl.length / 2)]})`) : fail(`בת ים, בחירה ידנית: ${peers.length} רשויות, פערי אשכול ${cl}`);
+    await gp.page.close();
+    // רשות יחידה באשכול שלה (עומר): ההשוואה לא מתכווצת לרשות אחת
+    const op = await openPage(browser, real3, { width: 1280, height: 900 }, null, `?city=${omer.s}`);
+    const og = await op.page.locator('.pill[data-g][aria-pressed="true"]').first().getAttribute('data-g'), on = await op.page.locator('.bar').count();
+    og !== 'cluster' && on >= 5 ? pass(`${omer.n} (אשכול ${sOf(omer)}, יחידה בו): ברירת מחדל ${og}, ${on} רשויות`) : fail(`${omer.n}: קבוצה ${og}, ${on} רשויות`);
+    await op.page.close();
+    // רשות בלי נתוני בגרות: הודעה ברורה
+    const yp = await openPage(browser, real3, { width: 1280, height: 900 }, null, `?city=${yaarim.s}`);
+    (await yp.page.locator('.empty h2').innerText().catch(() => '')).includes('אין נתוני בגרות') ? pass(`${yaarim.n}: הודעה "אין נתוני בגרות", בלי חמישה "אין נתון"`) : fail(`${yaarim.n}: אין הודעה`);
+    (await yp.page.locator('#citySel').count()) === 1 ? pass('בורר הרשות נשאר זמין גם כשאין נתונים') : fail('הבורר נעלם');
+    await yp.page.close();
+    // כרטיס "עדכון הנתונים" שייך למתחזק: מוסתר, ומופיע רק עם ?update
+    const u0 = await openPage(browser, real3, { width: 1280, height: 900 }, null, '');
+    const u1 = await openPage(browser, real3, { width: 1280, height: 900 }, null, '?update=1');
+    !(await u0.page.locator('#updCard').isVisible()) && (await u1.page.locator('#updCard').isVisible()) ? pass('"עדכון הנתונים" מוסתר מקוראים, ומופיע עם ?update') : fail('כרטיס העדכון: נראות שגויה');
+    (await u0.page.locator('meta[property="og:title"]').count()) === 1 ? pass('תצוגה מקדימה לקישור (og:title) כללית') : fail('og:title חסר');
+    const visible = await u0.page.evaluate(() => document.body.innerText);
+    /Claude|שיקגו|EducationPicture|ramishaked/.test(visible) ? fail('טקסט פנימי נראה בדף') : pass('אין טקסט פנימי בדף (שמות מערכת, מזהים)');
+    await u0.page.close(); await u1.page.close();
+    // סריקה מלאה של כל הרשויות (--sweep): טעינה, חמישה אריחים, כל קבוצת השוואה, קונסול נקי
+    if (process.argv.includes('--sweep')) {
+      const sp = await openPage(browser, real3);
+      let bad = 0;
+      for (const r of real3.rashuyot.filter(r => Object.keys(r.h).length)) {
+        const e0 = sp.errors.length;
+        await sp.page.goto('http://bp.local/BigPicture/?city=' + r.s); await sp.page.waitForSelector('#title');
+        const ok = (await sp.page.locator('#title').innerText()).includes(r.n.replace(/-/g, ' ').split(' ')[0]);
+        const nk = await sp.page.locator('.kpi').count(), none = await sp.page.locator('.empty h2').count();
+        if (!ok || (nk !== 5 && !none) || sp.errors.length > e0) { bad++; fail(`סריקה, ${r.n}: כותרת ${ok}, אריחים ${nk}, שגיאות ${sp.errors.slice(e0)}`); }
+        if (nk === 5) for (const g of ['custom', 'cluster', 'size', 'region']) {
+          const pill = sp.page.locator(`.pill[data-g="${g}"]`);
+          if (await pill.isDisabled()) continue;
+          await pill.click();
+          if ((await sp.page.locator('.bar').count()) < 1) { bad++; fail(`סריקה, ${r.n}/${g}: קבוצה ריקה`); }
+        }
+      }
+      bad === 0 ? pass(`סריקה מלאה: ${real3.rashuyot.length} רשויות, כולן נטענות עם כל קבוצות ההשוואה`) : fail(`סריקה: ${bad} בעיות`);
+      await sp.page.close();
+    }
   }
 
   // סקריפט הרענון (tools/refresh-data.mjs) מול ה-API המדומה: הקובץ שהוא כותב נטען בדף
