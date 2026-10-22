@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* מחיל קובץ rashutEduPic שנשלף (tools/probe-page.mjs) על BigPicture/data.json, בלי רשת.
-   שימוש:  node tools/apply-edupic.mjs [BigPicture/probe-all.json.gz] [--dry]
+   שימוש:  node tools/apply-edupic.mjs FILE [--dry]   (FILE: הפלט של tools/probe-page.mjs, probe-all.json.gz)
    הלוגיקה ב-tools/edupic.mjs (משותפת עם refresh-data.mjs). */
 import fs from 'node:fs';
 import zlib from 'node:zlib';
@@ -9,7 +9,9 @@ import { fileURLToPath } from 'node:url';
 import { mergeEduPic } from './edupic.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), dry = args.includes('--dry');
-const src = path.resolve(args.find(a => !a.startsWith('--')) || path.join(ROOT, 'BigPicture', 'probe-all.json.gz'));
+const arg = args.find(a => !a.startsWith('--'));
+if (!arg) { console.error('חסר קובץ קלט. שימוש: node tools/apply-edupic.mjs FILE [--dry]'); process.exit(1); }
+const src = path.resolve(arg);
 const OUT = path.join(ROOT, 'BigPicture', 'data.json');
 let raw = fs.readFileSync(src); if (src.endsWith('.gz')) raw = zlib.gunzipSync(raw);
 const pic = JSON.parse(raw), data = JSON.parse(fs.readFileSync(OUT, 'utf8'));
