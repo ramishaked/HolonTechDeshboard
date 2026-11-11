@@ -1345,6 +1345,17 @@ body{
       <div id="ddCohort"></div>
     </div>
 
+    <!-- צפי ויעד לבית הספר (v113) -->
+    <div class="card" id="ddPlanCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">צפי ויעד</div>
+          <div class="card-sub" id="ddPlanSub">—</div>
+        </div>
+      </div>
+      <div id="ddPlan"></div>
+    </div>
+
     <!-- School journey + subjects per grade -->
     <div class="two-col">
       <div class="card">
@@ -1388,8 +1399,31 @@ body{
       </div>
     </div>
 
+
+    <!-- תלמידות לפי שכבה ומקצוע (v113) -->
+    <div class="card" id="ddGirlsCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">תלמידות לפי שכבה ומקצוע</div>
+          <div class="card-sub" id="ddGirlsSub">—</div>
+        </div>
+      </div>
+      <div id="ddGirls"></div>
+    </div>
+
+    <!-- עתיד טק של בית הספר (v113) -->
+    <div class="card" id="ddFtCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">עתיד טק בבית הספר</div>
+          <div class="card-sub" id="ddFtSub">—</div>
+        </div>
+      </div>
+      <div id="ddFt"></div>
+    </div>
+
     <!-- vs City avg -->
-    <div class="card">
+    <div class="card" id="ddCompareCard">
       <div class="card-head">
         <div>
           <div class="card-title">השוואה לממוצע העירוני</div>
@@ -1410,6 +1444,17 @@ body{
         </div>
       </div>
       <div id="ddInsights"></div>
+    </div>
+
+    <!-- בדיקת הנתונים שהוזנו לבית הספר (v113) -->
+    <div class="card" id="ddDataCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">בדיקת הנתונים שהוזנו</div>
+          <div class="card-sub" id="ddDataSub">—</div>
+        </div>
+      </div>
+      <div id="ddData"></div>
     </div>
 
   </section>
@@ -2969,6 +3014,138 @@ function renderDDWork(school){
   coBox.style.display = '';
 }
 
+// ── העמקה: צפי ויעד, תלמידות, עתיד טק ובדיקת נתונים (v113) ───────
+// המשך רשימת המנהל. הכל הרכבה: `fcSchools`/`fcCity` (צפי), `execCtx`/`execTgtIn`
+// (יעד), `girlsPctOfSubjAtGrade` (תלמידות), `ftFunnelRows`/`ftCityFunnel` (עתיד
+// טק). רק בדיקת הנתונים חדשה, והיא אינה מדד אלא רשימת חריגות בשורות הגיליון.
+function renderDDPlan(school){
+  const show = (id, on)=> { document.getElementById(id + 'Card').style.display = on ? '' : 'none'; };
+  const put  = (id, html)=> { document.getElementById(id).innerHTML = html; };
+  const sub  = (id, t)=> { document.getElementById(id + 'Sub').textContent = t; };
+  const th   = t => `<th style="cursor:default;text-align:center;">${t}</th>`;
+  const td   = h => `<td style="text-align:center;">${h}</td>`;
+  const dash = '<span style="color:var(--muted);">—</span>';
+  const grades = GRADES.filter(g=> school.grades[g]);
+
+  // ── צפי ויעד ──
+  (function(){
+    const c = fcCity(), R = c && c.R;
+    const f = R ? fcSchools(R).find(x=> x.name === school.name) : null;
+    const ex = execCtx(), tgtIn = (ex.gap != null && ex.tgtPct != null) ? execTgtIn(ex) : null;
+    if(!f || !grades.length){ show('ddPlan', false); return; }
+    // עמודה לכל מחזור: יב׳ היום, יא׳ היום (יב׳ בשנה הבאה), י׳ היום (יב׳ בעוד שנתיים).
+    const cols = [
+      { g:'יב', lbl:`יב׳ ${fcShort(c.curLabel)}${c.open ? ' · רשומים' : ''}`, n:f.now },
+      { g:'יא', lbl:`צפי ${c.y1.label} <span style="font-weight:500;">(יא׳ היום)</span>`, n:f.y1 },
+      { g:'י',  lbl:`צפי ${c.y2.label} <span style="font-weight:500;">(י׳ היום)</span>`,  n:f.y2 }
+    ].filter(x=> x.n != null && school.grades[x.g]);
+    if(!cols.length){ show('ddPlan', false); return; }
+    const need = x => tgtIn == null ? null : Math.round(tgtIn/100 * school.grades[x.g][0]);
+    const gapCell = x => { const nd = need(x); if(nd == null) return dash;
+      const d = x.n - nd;
+      return d >= 0 ? `<span style="font-weight:900;color:#137333;">✓ ביעד</span>`
+                    : `<span style="font-weight:900;color:#a04a10;">חסרים ${num(-d)}</span>`; };
+    sub('ddPlan', `כמה זכאים צפויים בשכבת יב׳, לפי השכבות שכבר בבית הספר` + (tgtIn != null ? `, ומול היעד העירוני` : ''));
+    put('ddPlan',
+      `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>${cols.map(x=> th(x.lbl)).join('')}</tr></thead><tbody>` +
+      `<tr><td class="nm">זכאים למדד טק</td>${cols.map(x=> td(`<strong>${num(x.n)}</strong> <span class="alt-num">${(x.n/school.grades[x.g][0]*100).toFixed(1)}%</span>`)).join('')}</tr>` +
+      (tgtIn != null
+        ? `<tr><td class="nm">נדרש ביעד (${tgtIn.toFixed(1)}% מהשכבה)</td>${cols.map(x=> td(num(need(x)))).join('')}</tr>` +
+          `<tr><td class="nm">מול היעד</td>${cols.map(x=> td(gapCell(x))).join('')}</tr>` : '') +
+      `</tbody></table></div>` +
+      `<div class="cmp-note">הצפי הוא הרשומים היום כפול שיעור השמירה ${f.own
+          ? `<strong>של בית הספר</strong> (${(f.rate*100).toFixed(0)}% מ-יא׳ ל-יב׳, נמדד בין שתי דגימות סוף-השנה האחרונות)`
+          : `<strong>העירוני</strong> (${(f.rate*100).toFixed(0)}%), כי לבית הספר אין בסיס מדידה משלו`}` +
+        `${c.open ? ', ובניכוי השמירה העירונית בתוך השנה' : ''}. שיעור מעל 100% מוגבל ל-100%, והצפי מניח שהרשומים ישלימו גם אנגלית 5 יח״ל. ` +
+        (tgtIn != null ? `היעד הוא הסף לחמישייה הראשונה בין 20 הרשויות הגדולות, מתורגם למכנה של בתי הספר ומוחל באותו שיעור על כל בית ספר. זו אמת מידה משותפת, לא מכסה שהוקצתה לבית הספר.` : '') +
+      `</div>`);
+    show('ddPlan', true);
+  })();
+
+  // ── תלמידות לפי שכבה ומקצוע ──
+  (function(){
+    const SUBJ = [[4,'זכאות למדד טק'],[3,'מתמטיקה 5 יח״ל'],[2,'פיזיקה 5 יח״ל'],[1,'מדעי המחשב 5 יח״ל']];
+    const gIdx = i => i===1?5 : i===2?6 : i===3?9 : 7;
+    const rows = SUBJ.filter(([i])=> grades.some(g=> school.grades[g][i] > 0));
+    if(!grades.length || !rows.length){ show('ddGirls', false); return; }
+    const city = (g, i)=> cityGirlsPctOfSubjAtGrade(ALL_GRADES.indexOf(g), i);
+    const cell = (g, i)=>{ const r = school.grades[g], n = r[i], gi = r[gIdx(i)];
+      if(!(n > 0)) return td(dash);
+      const p = gi/n*100, cp = city(g, i);
+      return td(`<strong>${p.toFixed(0)}%</strong> <span class="alt-num">${num(gi)} מתוך ${num(n)}</span>` +
+        (cp != null ? `<div style="font-size:11.5px;margin-top:2px;color:var(--muted);">עירוני ${cp.toFixed(0)}%</div>` : '')); };
+    sub('ddGirls', 'חלקן של התלמידות מתוך לומדי כל מקצוע, מול אותו שיעור בעיר');
+    put('ddGirls',
+      `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>${grades.map(g=> th(g + '׳')).join('')}</tr></thead><tbody>` +
+      rows.map(([i,l])=> `<tr><td class="nm">${l}</td>${grades.map(g=> cell(g, i)).join('')}</tr>`).join('') +
+      `</tbody></table></div>`);
+    show('ddGirls', true);
+  })();
+
+  // ── עתיד טק של בית הספר: לכל שנה שלמה, ולשנה שנפתחה ──
+  (function(){
+    const lines = [];
+    const open = periodsSorted().filter(p=> p.half === 1).pop();
+    const years = ftYears();
+    if(open && !years.some(y=> y.year === open.year)){
+      // אותה שכבה של השנה השלמה האחרונה, כמו בתצוגת עתיד טק; בתשפ"ז השורה מוזנת בכל השכבות.
+      const g = years[0] ? ftGrade([years[0].start, years[0].end]) : ftGrade([open]);
+      const me = g ? open.schools.find(x=> x.name === school.name) : null;
+      const n = me ? ftAt(me, g) : null;
+      if(n != null){ const coh = me.grades[g][0];
+        lines.push(`<tr><td class="nm">${fcShort(open.label)} · ${g}׳</td>${td(`<strong>${num(n)}</strong>` + (coh ? ` <span class="alt-num">${(n/coh*100).toFixed(0)}% מהשכבה</span>` : ''))}` +
+          td('<span style="color:var(--muted);">יימדד בסוף השנה</span>') + td(dash) + td(dash) + `</tr>`); }
+    }
+    years.forEach(y=>{
+      const g = ftGrade([y.start, y.end]); if(!g) return;
+      const r = ftFunnelRows(y.start, y.end, g).find(x=> x.name === school.name);
+      if(!r || r.entered == null) return;
+      const cc = ftCityFunnel(y.start, y.end, g);
+      lines.push(`<tr><td class="nm">${y.label} · ${g}׳</td>` +
+        td(`<strong>${num(r.entered)}</strong>` + (r.entryPct != null ? ` <span class="alt-num">${r.entryPct.toFixed(0)}% מהשכבה</span>` : '')) +
+        td(r.chose != null ? `<strong>${num(r.chose)}</strong>` : dash) +
+        td(r.convPct != null ? `<strong style="color:${ftStep(r.convPct).color};">${r.convPct.toFixed(0)}%</strong>` : dash) +
+        td(cc.convPct != null ? `${cc.convPct.toFixed(0)}%` : dash) + `</tr>`);
+    });
+    if(!lines.length){ show('ddFt', false); return; }
+    sub('ddFt', 'כמה נכנסו לתוכנית בתחילת השנה, וכמה מהם בחרו במקצועות הטק בסופה · כל השנים, בלי קשר לתקופה שנבחרה');
+    put('ddFt',
+      `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>${th('נכנסו לתוכנית')}${th('בחרו במקצועות הטק')}${th('המרה')}${th('המרה עירונית')}</tr></thead><tbody>` +
+      lines.join('') + `</tbody></table></div>` +
+      `<div class="cmp-note">אי אפשר למדוד מכאן את השפעת התוכנית על ההישגים: אין רשומות תלמיד ואין קבוצת השוואה.</div>`);
+    show('ddFt', true);
+  })();
+
+  // ── בדיקת הנתונים שהוזנו: חריגות בשורות בית הספר, לא מדד ──
+  (function(){
+    const F = [[4,'זכאות למדד טק',7],[3,'מתמטיקה 5 יח״ל',9],[2,'פיזיקה 5 יח״ל',6],[1,'מדעי המחשב 5 יח״ל',5],[14,'אנגלית 5 יח״ל',null],[12,'מתמטיקה 3 יח״ל',null],[13,'מתמטיקה 4 יח״ל',null]];
+    const err = [], miss = [];
+    ALL_GRADES.filter(g=> school.grades[g]).forEach(g=>{
+      const r = school.grades[g], tot = r[0], high = GRADES.indexOf(g) >= 0;
+      F.forEach(([i,l,gi])=>{
+        if(tot && r[i] > tot) err.push(`${g}׳: ${l} (${num(r[i])}) גדול ממספר התלמידים בשכבה (${num(tot)})`);
+        if(gi != null && r[gi] > r[i]) err.push(`${g}׳: ${l}, מספר התלמידות (${num(r[gi])}) גדול מסך הלומדים (${num(r[i])})`);
+      });
+      if(tot && r[12] + r[13] + r[3] > tot) err.push(`${g}׳: סכום לומדי המתמטיקה ב-3, 4 ו-5 יח״ל (${num(r[12]+r[13]+r[3])}) גדול ממספר התלמידים (${num(tot)})`);
+      if(high && r[4] > r[3]) err.push(`${g}׳: זכאי המדד (${num(r[4])}) רבים מלומדי מתמטיקה 5 יח״ל (${num(r[3])}), אף שהמדד דורש אותה`);
+      if(high && tot){
+        [[4,'זכאות למדד טק'],[3,'מתמטיקה 5 יח״ל'],[14,'אנגלית 5 יח״ל']].forEach(([i,l])=>{
+          // שדה נחשב חסר רק אם בתי ספר אחרים הזינו אותו בתקופה הזו (אנגלית לא הוזנה בטאבים ישנים)
+          const others = SCHOOLS.some(s=> s !== school && s.grades[g] && s.grades[g][i] > 0);
+          if(!(r[i] > 0) && others) miss.push(`${g}׳: ${l}`);
+        });
+      }
+    });
+    const li = a => `<ul style="margin:6px 18px 0 0;padding:0;line-height:1.8;">${a.map(x=> `<li>${x}</li>`).join('')}</ul>`;
+    sub('ddData', `${DATA_LABEL || ''} · בדיקה אוטומטית של השורות שבית הספר הזין בגיליון`);
+    put('ddData', (!err.length && !miss.length)
+      ? `<div class="insight"><div class="insight-t">✓ לא נמצאו חריגות</div><div class="insight-b">כל הערכים קטנים ממספר התלמידים בשכבה, והשדות הנדרשים למדד מלאים. הבדיקה אינה יודעת אם המספרים עצמם נכונים.</div></div>`
+      : (err.length ? `<div class="insight warn"><div class="insight-t">${err.length === 1 ? 'ערך אחד שאינו מתיישב' : err.length + ' ערכים שאינם מתיישבים'}</div><div class="insight-b">${li(err)}</div></div>` : '') +
+        (miss.length ? `<div class="insight"><div class="insight-t">${miss.length === 1 ? 'שדה אחד ריק' : miss.length + ' שדות ריקים'}</div><div class="insight-b">שדה ריק נספר כאפס בכל המדדים שבעמוד.${li(miss)}</div></div>` : ''));
+    show('ddData', true);
+  })();
+}
+
 function renderDeepDive(){
   const name=document.getElementById('schoolSelect').value;
   const school=SCHOOLS.find(s=>s.name===name); if(!school) return;
@@ -2983,6 +3160,7 @@ function renderDeepDive(){
   document.getElementById('ddDrop').textContent  = dp===null? '—' : (dp < 0 ? '▲ ' : '▼ ')+Math.abs(dp).toFixed(1)+'%';
 
   renderDDWork(school);
+  renderDDPlan(school);
 
   // ── התפתחות המדדים הרשמיים של בית הספר (v107) ──────────────────
   // חמשת מדדי הבגרות של משרד החינוך, כלל י"ב, לכל השנים שיש באתר. זה
@@ -3209,7 +3387,9 @@ function renderDeepDive(){
   // Compare to city + national
   destroyChart('ddCompare');
   const cityAvg=cityOverallPct();
-  const sorted=[...SCHOOLS].sort((a,b)=> schoolTechPct(b)-schoolTechPct(a));
+  // בלי שמות, מוט של 0% לחטיבה שאין לה י׳–יב׳ נקרא כבית ספר בלי לומדי טק (v113).
+  const sorted=SCHOOLS.filter(s=> schoolStudentTotal(s) > 0).sort((a,b)=> schoolTechPct(b)-schoolTechPct(a));
+  document.getElementById('ddCompareCard').style.display = schoolStudentTotal(school) > 0 ? '' : 'none';
   charts.ddCompare = new Chart(document.getElementById('ddCompare'), {
     type:'bar',
     // רק שם בית הספר שנבחר מוצג (v111, בקשת משתמש): הדף ייפתח לבתי הספר,
@@ -7045,7 +7225,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v112';
+const BUILD = 'v113';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 

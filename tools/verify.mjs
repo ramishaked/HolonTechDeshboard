@@ -501,6 +501,31 @@ async function browserRun() {
   else if (!dd.ht || !dd.pot || !dd.co) fail(`העמקה (${dd.name}) — תא אינו תואם לשורות הגולמיות: מדד "${dd.htCell}" · מחזור "${dd.coCell}"`);
   else pass(`העמקה — שנה מול שנה, פוטנציאל ומעקב מחזור תואמים לשורות הגולמיות (${dd.name})`);
 
+  // ── העמקה: צפי ויעד, תלמידות, בדיקת נתונים, גרף ההשוואה (v113) ──
+  // נבדק על בית הספר שנבחר בבדיקה הקודמת: הכרטיסים מוצגים, שיעור התלמידות
+  // תואם לשורה הגולמית, ובגרף ההשוואה אין מוט לבית ספר בלי י׳–יב׳ ואין שם זר.
+  if (!dd.skip) {
+    const dp = await page.evaluate(`(function(){
+      var name = document.getElementById('schoolSelect').value;
+      var s = SCHOOLS.filter(function(x){ return x.name === name; })[0], r = s.grades['י'];
+      var vis = function(id){ return document.getElementById(id).style.display !== 'none'; };
+      var gCell = document.querySelector('#ddGirls tbody tr').children[1].innerText;
+      var labels = charts.ddCompare.data.labels;
+      var high = SCHOOLS.filter(function(x){ return ['י','יא','יב'].some(function(g){ return x.grades[g] && x.grades[g][0] > 0; }); }).length;
+      return { plan: vis('ddPlanCard') === !!fcCity(), planRows: document.querySelectorAll('#ddPlan tbody tr').length,
+        girls: gCell.indexOf(Math.round(r[7]/r[4]*100) + '%') === 0, gCell: gCell,
+        data: vis('ddDataCard') && document.getElementById('ddData').innerText.length > 10,
+        bars: labels.length, high: high,
+        named: labels.filter(function(l){ return l; }).join('|'), name: name };
+    })()`);
+    if (!dp.plan) fail('העמקה — כרטיס "צפי ויעד" אינו תואם לזמינות הצפי העירוני');
+    else if (!dp.girls) fail(`העמקה — שיעור התלמידות במדד בי׳ אינו תואם לשורה הגולמית: "${dp.gCell}"`);
+    else if (!dp.data) fail('העמקה — כרטיס בדיקת הנתונים ריק או מוסתר');
+    else if (dp.bars !== dp.high) fail(`העמקה — ${dp.bars} מוטות בגרף ההשוואה מול ${dp.high} בתי ספר עם י׳–יב׳`);
+    else if (dp.named !== dp.name) fail(`העמקה — בגרף ההשוואה מופיע שם שאינו של בית הספר שנבחר: "${dp.named}"`);
+    else pass(`העמקה — צפי ויעד, תלמידות ובדיקת נתונים מוצגים · בגרף ההשוואה ${dp.bars} מוטות ושם אחד`);
+  }
+
   // ── תצוגה 14: צפי מחזור ────────────────────────────────────────
   // הצפי מוצלב מול חישוב עצמאי על השורות הגולמיות (לא דרך `fcCity`),
   // ונבדק שהאקורדיאון של בתי הספר סגור בברירת מחדל.
