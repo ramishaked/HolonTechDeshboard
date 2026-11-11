@@ -538,6 +538,30 @@ async function browserRun() {
     else if (dp.bars !== dp.high) fail(`העמקה — ${dp.bars} מוטות בגרף ההשוואה מול ${dp.high} בתי ספר עם י׳–יב׳`);
     else if (dp.named !== dp.name) fail(`העמקה — בגרף ההשוואה מופיע שם שאינו של בית הספר שנבחר: "${dp.named}"`);
     else pass(`העמקה — צפי ויעד, תלמידות ובדיקת נתונים מוצגים · בגרף ההשוואה ${dp.bars} מוטות ושם אחד`);
+    // v115: מתג השכבה בגרף ההשוואה, קיבוץ התובנות, שעון התלמידות והרמזור בצפי.
+    await page.click('#ddCmpSeg button[data-g="י"]');
+    await page.waitForTimeout(150);
+    const d5 = await page.evaluate(`(function(){
+      var name = document.getElementById('schoolSelect').value;
+      var s = SCHOOLS.filter(function(x){ return x.name === name; })[0], r = s.grades['י'];
+      var ds = charts.ddCompare.data, i = ds.labels.indexOf(name);
+      var with10 = SCHOOLS.filter(function(x){ return x.grades['י'] && x.grades['י'][0] > 0; }).length;
+      var out = { bars: ds.labels.length, with10: with10,
+        val: Math.abs(ds.datasets[0].data[i] - r[4]/r[0]*100) < 0.01,
+        ref: Math.abs(ds.datasets[1].data[0] - cityPct(0)) < 0.01,
+        pressed: document.querySelector('#ddCmpSeg button[data-g="י"]').getAttribute('aria-pressed') === 'true',
+        groups: document.querySelectorAll('#ddInsights .qi-group').length,
+        items: document.querySelectorAll('#ddInsights .qi').length,
+        girlsGauge: !!charts.ddG3, lightRow: document.getElementById('ddPlan').innerText.indexOf('שינוי מול יב׳ היום') >= 0 || !fcCity() };
+      DD_CMP = 'all'; renderDeepDive();
+      return out;
+    })()`);
+    if (!d5.pressed || d5.bars !== d5.with10) fail(`העמקה — מתג השכבה בגרף ההשוואה: ${d5.bars} מוטות מול ${d5.with10} בתי ספר עם י׳`);
+    else if (!d5.val || !d5.ref) fail('העמקה — גרף ההשוואה בשכבה י׳ אינו תואם לשורה הגולמית או למדד העירוני של השכבה');
+    else if (!d5.groups || !d5.items) fail('העמקה — התובנות אינן מקובצות לשימור ולשיפור');
+    else if (!d5.girlsGauge) fail('העמקה — שעון התלמידות חסר ברצועה העליונה');
+    else if (!d5.lightRow) fail('העמקה — שורת הרמזור חסרה בכרטיס הצפי');
+    else pass(`העמקה — מתג השכבה (${d5.bars} מוטות בי׳) · ${d5.groups} קבוצות תובנות · שעון תלמידות · רמזור בצפי`);
   }
 
   // ── תצוגה 14: צפי מחזור ────────────────────────────────────────

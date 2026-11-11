@@ -184,6 +184,9 @@ body{
 .dd-hero .card{margin-bottom:0;display:flex;flex-direction:column;}
 .dd-hero .chart-box{flex:1;min-height:300px;}
 #ddHeroChart{direction:ltr;}
+.dd-hero .pr-g-wrap{height:104px;margin-top:4px;}
+.dd-hero .kpi{padding-top:14px;padding-bottom:12px;}
+.dd-hero .kpi-sub{font-size:11.5px;margin-top:5px;}
 .dd-big{font-size:34px;font-weight:900;line-height:1.05;}
 .dd-big small{font-size:14px;font-weight:700;margin-right:5px;}
 @media(max-width:1150px){.dd-hero{grid-template-columns:1fr;}.dd-hero-col{flex-direction:row;flex-wrap:wrap;}.dd-hero-col .kpi{min-width:220px;}}
@@ -1383,7 +1386,7 @@ details.dd-detail > summary small{font-size:12px;font-weight:500;color:var(--mut
     <div class="card" id="ddPlanCard" style="display:none;">
       <div class="card-head">
         <div>
-          <div class="card-title">צפי ויעד</div>
+          <div class="card-title">צפי מחזור ויעד</div>
           <div class="card-sub" id="ddPlanSub">—</div>
         </div>
       </div>
@@ -1461,7 +1464,13 @@ details.dd-detail > summary small{font-size:12px;font-weight:500;color:var(--mut
       <div class="card-head">
         <div>
           <div class="card-title">השוואה לממוצע העירוני</div>
-          <div class="card-sub">מיקום בית הספר ביחס לבתי הספר האחרים, בלי שמותיהם</div>
+          <div class="card-sub" id="ddCmpSub">מיקום בית הספר ביחס לבתי הספר האחרים, בלי שמותיהם</div>
+        </div>
+        <div class="dseg" id="ddCmpSeg">
+          <button type="button" data-g="all">מצרפי י׳–יב׳</button>
+          <button type="button" data-g="י">י׳</button>
+          <button type="button" data-g="יא">יא׳</button>
+          <button type="button" data-g="יב">יב׳</button>
         </div>
       </div>
       <div class="chart-box">
@@ -2937,8 +2946,16 @@ function goToDeepDive(name){ switchView('deepdive'); document.getElementById('sc
 // למנהל שאינו קורא טבלאות: שני שעונים, גרף אחד ושלושה אריחים, ומתחתם
 // כל הפירוט באזור נפתח. **תלמידים ולא נקודות אחוז, ומילת הכיוון נגזרת.**
 // הכל הרכבה של מה שכבר מחושב בפירוט; אריח או שעון בלי נתון אינו נבנה.
+// רמזור על אחוז שינוי (v115): ירוק מ-+5%, אדום מ-−5%, צהוב ביניהם. אותם
+// צבעים של `fcChg` בצפי העירוני, ועוד פס אמצע כי שינוי של תלמיד או שניים אינו כיוון.
+const DD_LIGHT_TOL = 5;
+function ddLight(pc){
+  const up = pc >= DD_LIGHT_TOL, dn = pc <= -DD_LIGHT_TOL;
+  return { color: up ? '#137333' : dn ? '#c5221f' : '#b06d00', cls: up ? 'good' : dn ? 'dred' : 'warn',
+    txt: Math.abs(pc) < 0.5 ? 'ללא שינוי' : `${pc > 0 ? '▲' : '▼'} ${Math.abs(pc).toFixed(0)}%` };
+}
 function renderDDHero(school){
-  ['ddG1','ddG2','ddHeroChart'].forEach(destroyChart);
+  ['ddG1','ddG2','ddG3','ddHeroChart'].forEach(destroyChart);
   const prevP = ddPrevPeriod();
   const prev  = prevP ? (ALLDATA[prevP.key].schools.find(s=> s.name === school.name) || null) : null;
   const prevS = prevP ? fcShort(prevP.label) : '';
@@ -2959,14 +2976,25 @@ function renderDDHero(school){
 
   if(top){
     const gi = GRADES.indexOf(top), r = school.grades[top];
-    // ── שעון 1: כמה מתלמידי השכבה הבוגרת במסלול, מול הממוצע בעיר ──
+    // ── שעון 1: היחס ליעד העירוני, כמו במפגש המנהלים (v115). הרצועה הירוקה
+    //    מתחילה ביעד (`execTgtIn`, מתורגם למכנה בתי הספר). בלי יעד: מול הממוצע בעיר. ──
     const p = r[0] ? r[4]/r[0]*100 : 0, cp = cityPct(gi);
-    const mx = Math.max(30, Math.ceil(Math.max(p, ...SCHOOLS.map(s=> schoolGradePct(s, gi)))/10)*10);
-    const above = p >= cp;
-    gauges.push(gauge(above ? 'good' : 'acc', `תלמידי ${top}׳ במסלול בגרות טק`, 'ddG1', p.toFixed(0)+'%',
-      above ? GOOD : COL.accent,
-      `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} · ${Math.round(p) === Math.round(cp) ? 'כמו הממוצע' : dirWord(p-cp, 'מעל הממוצע', 'מתחת לממוצע')} בעיר, ${cp.toFixed(0)}%`));
-    paint.push(()=> prGauge('ddG1', p, mx, above ? COL.good : COL.accent, {step: mx/5, zone:[cp, mx]}));
+    const ex = execCtx(), tgtIn = (ex.tgtPct != null && ex.gap != null) ? execTgtIn(ex) : null;
+    const mx = Math.max(30, Math.ceil(Math.max(p, tgtIn || 0, ...SCHOOLS.map(s=> schoolGradePct(s, gi)))/10)*10);
+    if(tgtIn != null){
+      const need = Math.round(tgtIn/100 * r[0]), hit = r[4] >= need;
+      gauges.push(gauge(hit ? 'good' : 'acc', `היחס ליעד העירוני · שכבת ${top}׳`, 'ddG1', p.toFixed(0)+'%',
+        hit ? GOOD : COL.accent,
+        `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} במסלול · ` +
+        `הרצועה הירוקה: היעד, ${tgtIn.toFixed(0)}% · ` + (hit ? '<strong>ביעד</strong>' : `<strong>חסרים ${num(need - r[4])}</strong>`)));
+      paint.push(()=> prGauge('ddG1', p, mx, hit ? COL.good : COL.accent, {step: mx/5, zone:[tgtIn, mx]}));
+    } else {
+      const above = p >= cp;
+      gauges.push(gauge(above ? 'good' : 'acc', `תלמידי ${top}׳ במסלול בגרות טק`, 'ddG1', p.toFixed(0)+'%',
+        above ? GOOD : COL.accent,
+        `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} · ${Math.round(p) === Math.round(cp) ? 'כמו הממוצע' : dirWord(p-cp, 'מעל הממוצע', 'מתחת לממוצע')} בעיר, ${cp.toFixed(0)}%`));
+      paint.push(()=> prGauge('ddG1', p, mx, above ? COL.good : COL.accent, {step: mx/5, zone:[cp, mx]}));
+    }
 
     // ── שעון 2: כמה נשארו במסלול מהשנה שעברה. בלי בסיס: חלקן של התלמידות ──
     const from = GRADES[gi-1];
@@ -2981,11 +3009,14 @@ function renderDDHero(school){
         ok ? GOOD : COL.accent,
         `<strong>${num(r[4])} מתוך ${num(was)}</strong> שהיו במסלול ב${from}׳ ב${prevS}` + (ck != null ? ` · בעיר ${ck.toFixed(0)}%` : '')));
       paint.push(()=> prGauge('ddG2', keep, 100, ok ? COL.good : COL.accent, {step:25, pad:24, zone: ck != null ? [ck, 100] : null}));
-    } else if(schoolTechTotal(school) > 0){
-      const gp = schoolGirlsPctOfTech(school), cg = cityGirlsPctOfTech();
-      gauges.push(gauge('pri', 'תלמידות מתוך לומדי הטק', 'ddG2', gp.toFixed(0)+'%', COL.primary,
-        `<strong>${num(schoolGirlsTotal(school))} מתוך ${num(schoolTechTotal(school))}</strong> · בעיר ${cg.toFixed(0)}%`));
-      paint.push(()=> prGauge('ddG2', gp, 60, COL.primary, {step:10, zone:[cg, 60]}));
+    }
+    // ── שעון 3: תלמידות במדד, סגול (v115). בית ספר חד-מגדרי: אין מה למדוד ──
+    const oneSex = school.note && (school.note.includes('בנות') || school.note.includes('בנים'));
+    if(!oneSex && schoolTechTotal(school) > 0){
+      const gp = schoolGirlsPctOfTech(school), cg = cityGirlsPctOfTech(), gmx = gp > 50 ? 100 : 50;
+      gauges.push(gauge('pri', 'תלמידות במדד הטק', 'ddG3', gp.toFixed(0)+'%', COL.primary,
+        `<strong>${num(schoolGirlsTotal(school))} מתוך ${num(schoolTechTotal(school))}</strong> בשכבות י׳ עד יב׳ · בעיר ${cg.toFixed(0)}%`));
+      paint.push(()=> prGauge('ddG3', gp, gmx, COL.primary, {step: gmx/5, pad: gmx === 100 ? 24 : 18}));
     }
 
     // ── אריח 1: מול שנה שעברה, באותה שכבה, בתלמידים ──
@@ -2995,6 +3026,13 @@ function renderDDHero(school){
         d === 0 ? 'ללא שינוי' : `${d > 0 ? '▲' : '▼'} ${num(Math.abs(d))}<small>${Math.abs(d) === 1 ? 'תלמיד' : 'תלמידים'}</small>`,
         d === 0 ? NEU : d > 0 ? GOOD : BAD,
         `${num(prev.grades[top][4])} במסלול ב${top}׳ ב${prevS}, <strong>${num(r[4])}</strong> היום`));
+    }
+    // ── אריח: צפי לשנה הבאה, עם רמזור על אחוז השינוי (v115) ──
+    const fcC = fcCity(), fcF = fcC ? fcSchools(fcC.R).find(x=> x.name === school.name) : null;
+    if(fcF && fcF.y1 != null && fcF.now > 0){
+      const L = ddLight((fcF.y1 - fcF.now)/fcF.now*100);
+      tiles.push(tile(L.cls, `צפי ליב׳ ב${fcC.y1.label}`, `${num(fcF.y1)}<small>זכאים</small>`, L.color,
+        `<strong style="color:${L.color};">${L.txt}</strong> מול ${num(fcF.now)} היום, לפי תלמידי יא׳ שכבר במסלול`));
     }
     // ── אריח 2: המאגר הגדול ביותר, והשכבה שבה הוא נמצא ──
     const pots = grades.map(g=> ({ g, n: ddPot(school, g) })).sort((a,b)=> b.n - a.n);
@@ -3242,6 +3280,10 @@ function renderDDPlan(school){
     put('ddPlan',
       `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>${cols.map(x=> th(x.lbl)).join('')}</tr></thead><tbody>` +
       `<tr><td class="nm">זכאים למדד טק</td>${cols.map(x=> td(`<strong>${num(x.n)}</strong> <span class="alt-num">${(x.n/school.grades[x.g][0]*100).toFixed(1)}%</span>`)).join('')}</tr>` +
+      ((f.now > 0 && cols.some(x=> x.g !== 'יב'))
+        ? `<tr><td class="nm">שינוי מול יב׳ היום</td>${cols.map(x=>{ if(x.g === 'יב') return td(dash);
+            const L = ddLight((x.n - f.now)/f.now*100);
+            return td(`<span style="display:inline-block;padding:2px 10px;border-radius:9px;font-weight:900;color:#fff;background:${L.color};">${L.txt}</span>`); }).join('')}</tr>` : '') +
       (tgtIn != null
         ? `<tr><td class="nm">נדרש ביעד (${tgtIn.toFixed(1)}% מהשכבה)</td>${cols.map(x=> td(num(need(x)))).join('')}</tr>` +
           `<tr><td class="nm">מול היעד</td>${cols.map(x=> td(gapCell(x))).join('')}</tr>` : '') +
@@ -3339,6 +3381,7 @@ function renderDDPlan(school){
   })();
 }
 
+let DD_CMP = 'all';      // מתג גרף ההשוואה: 'all' או שכבה. מקומי, לא נשמר
 function renderDeepDive(){
   const _det = document.getElementById('ddDetail');
   if(_det && !_det._wired){
@@ -3588,24 +3631,42 @@ function renderDeepDive(){
   });
 
   // Compare to city + national
+  // המתג (v115, בקשת משתמש): מצרפי י׳–יב׳ או שכבה אחת, וכל אחד מול המדד
+  // העירוני **שלו** (`cityOverallPct` / `cityPct`). מקומי לכרטיס, לא נשמר.
+  // שכבה שאין לבית הספר מנוטרלת. הארצי מוצג במצרפי וביב׳ בלבד (מודד בוגרים).
   destroyChart('ddCompare');
-  const cityAvg=cityOverallPct();
+  const seg = document.getElementById('ddCmpSeg');
+  if(!seg._wired){ seg._wired = true;
+    seg.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b || b.disabled) return;
+      DD_CMP = b.dataset.g; renderDeepDive(); }); }
+  if(DD_CMP !== 'all' && !(school.grades[DD_CMP] && school.grades[DD_CMP][0] > 0)) DD_CMP = 'all';
+  seg.querySelectorAll('button').forEach(b=>{ const g = b.dataset.g;
+    b.disabled = g !== 'all' && !(school.grades[g] && school.grades[g][0] > 0);
+    b.style.opacity = b.disabled ? 0.4 : '';
+    b.setAttribute('aria-pressed', String(g === DD_CMP)); });
+  const cgi = GRADES.indexOf(DD_CMP);
+  const cmpVal = s=> cgi < 0 ? schoolTechPct(s) : schoolGradePct(s, cgi);
+  const cityAvg = cgi < 0 ? cityOverallPct() : cityPct(cgi);
   // בלי שמות, מוט של 0% לחטיבה שאין לה י׳–יב׳ נקרא כבית ספר בלי לומדי טק (v113).
-  const sorted=SCHOOLS.filter(s=> schoolStudentTotal(s) > 0).sort((a,b)=> schoolTechPct(b)-schoolTechPct(a));
+  const sorted=SCHOOLS.filter(s=> cgi < 0 ? schoolStudentTotal(s) > 0 : totalStudents(s, cgi) > 0).sort((a,b)=> cmpVal(b)-cmpVal(a));
   document.getElementById('ddCompareCard').style.display = schoolStudentTotal(school) > 0 ? '' : 'none';
+  const cmpPos = sorted.findIndex(s=> s.name === name) + 1;
+  document.getElementById('ddCmpSub').innerHTML =
+    `${cgi < 0 ? 'כל השכבות י׳–יב׳ יחד' : 'שכבת ' + DD_CMP + '׳'}: <strong>${cmpVal(school).toFixed(1)}%</strong> במסלול, ` +
+    `${dirWord(cmpVal(school)-cityAvg, 'מעל המדד', 'מתחת למדד', 'כמו המדד')} העירוני ${cgi < 0 ? 'המצרפי' : 'של השכבה'} (${cityAvg.toFixed(1)}%)` +
+    (cmpPos > 0 ? ` · מקום ${cmpPos} מתוך ${sorted.length}, בלי שמות בתי הספר האחרים` : '');
   charts.ddCompare = new Chart(document.getElementById('ddCompare'), {
     type:'bar',
     // רק שם בית הספר שנבחר מוצג (v111, בקשת משתמש): הדף ייפתח לבתי הספר,
     // וכל אחד רואה את מיקומו בלי לזהות את האחרים. גם ה-tooltip אינו חושף שם.
     data:{ labels: sorted.map(s=> s.name===name ? s.name : ''),
       datasets:[
-        { label:'% טק', data: sorted.map(s=>schoolTechPct(s)),
+        { label:'% טק', data: sorted.map(cmpVal),
           backgroundColor: sorted.map(s=> s.name===name? COL.accent : (s.partial?'#cfc6e0':'#d8d0e8')), borderRadius:6,
           datalabels:{anchor:'end',align:'end',color:sorted.map(s=> s.name===name?COL.accent:'#7a6d92'),
             font:hf2(),formatter:v=>v.toFixed(0)+'%'} },
-        refLine('ממוצע עירוני', cityAvg, COL.bad),
-        refLine('ארצי '+NATIONAL+'%', NATIONAL, COL.info)
-      ]},
+        refLine('מדד עירוני ' + (cgi < 0 ? 'מצרפי' : DD_CMP + '׳') + ' ' + cityAvg.toFixed(1) + '%', cityAvg, COL.bad)
+      ].concat((cgi < 0 || DD_CMP === 'יב') ? [refLine('ארצי '+NATIONAL+'%', NATIONAL, COL.info)] : []) },
     options:{ responsive:true,maintainAspectRatio:false, layout:{padding:{top:12}},
       plugins:{legend:{display:true,labels:{font:HF,color:'#5f6368',filter:i=>i.text!=='% טק'}},
         tooltip:{callbacks:{title:it=> (it[0] && it[0].label) ? it[0].label : 'בית ספר אחר'}}},
@@ -3653,14 +3714,7 @@ function generateSchoolInsights(school){
       title:'5 יח"ל מתמטיקה — השער למסלול הארצי',
       body:`<strong>${ma9}</strong> תלמידים ב-5 יח"ל מתמ׳ בשכבה ט׳ (<strong>${tot9?(ma9/tot9*100).toFixed(0):0}%</strong> מהשכבה). מתמטיקה היא הפילטר הקריטי — תלמיד שיורד ל-4 יח"ל בחט"ע יוצא ממסלול הבגרוטק גם אם הוא חזק במדמ"ח. <strong>ההמלצה:</strong> דוח מיומנויות אישי שעובר עם התלמיד לבית הספר המקבל.`
     });
-    return insights.map(i=>`
-      <div class="qi qi-${i.kind}">
-        <div class="qi-ico">${i.icon}</div>
-        <div class="qi-body">
-          <div class="qi-title">${i.title}</div>
-          <div class="qi-text">${i.body}</div>
-        </div>
-      </div>`).join('');
+    return qiGroups(insights);
   }
 
   const has = (gi)=> hasGrade(school, gi);
@@ -3806,15 +3860,29 @@ function generateSchoolInsights(school){
     });
   }
 
-  // הרכבת HTML
-  return insights.map(ins=>`
+  return qiGroups(insights);
+}
+// התובנות מסודרות לפי שימור ושיפור (v115, בקשת משתמש). הקבוצה נגזרת מה-`kind`
+// שכל תובנה כבר קבעה מהמספרים: good = לשימור, warn = לשיפור, השאר לידיעה.
+// קבוצה ריקה אינה מוצגת.
+function qiGroups(insights){
+  const one = ins=> `
     <div class="qi qi-${ins.kind}">
       <div class="qi-ico">${ins.icon}</div>
       <div class="qi-body">
         <div class="qi-title">${ins.title}</div>
         <div class="qi-text">${ins.body}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  const G = [
+    ['לשימור', 'מה שעובד וכדאי להמשיך', '#137333', i=> i.kind === 'good'],
+    ['לשיפור', 'היכן כדאי להתמקד',       '#a04a10', i=> i.kind === 'warn'],
+    ['לידיעה', 'הקשר, בלי הכרעה לכאן או לכאן', 'var(--muted)', i=> i.kind !== 'good' && i.kind !== 'warn']
+  ];
+  return G.map(([t, sub, col, f])=>{ const a = insights.filter(f); if(!a.length) return '';
+    return `<div class="qi-group" style="margin:14px 0 8px;display:flex;align-items:baseline;gap:9px;border-bottom:2px solid ${col};padding-bottom:5px;">` +
+      `<strong style="font-size:15px;color:${col};">${t}</strong><span style="font-size:12px;color:var(--muted);">${sub} · ${a.length}</span></div>` +
+      a.map(one).join(''); }).join('');
 }
 // עזר: % מקצוע ב-יב׳ עירוני
 function cityFinalSubjPct(idx){
@@ -7428,7 +7496,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v114';
+const BUILD = 'v115';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
