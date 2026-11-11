@@ -1552,7 +1552,7 @@ body{
     </div>
   </section>
 
-  <!-- VIEW 8: השוואה שנתית — שתי דגימות סוף שנה -->
+  <!-- VIEW 8: השוואה שנתית — הדגימה האחרונה מול אותה נקודה אשתקד -->
   <section class="view" id="view-trends">
     <div class="page-head">
       <div>
@@ -1561,7 +1561,7 @@ body{
       </div>
       <div class="page-meta">
         <div class="meta-pill"><strong id="yyMetaN">—</strong> בתי ספר בהשוואה <i class="ti" data-tip="בתי ספר שיש להם נתונים בשתי הדגימות. בית ספר שקיים רק באחת מהן מופיע בטבלה בנפרד וללא ערך שינוי.">i</i></div>
-        <div class="meta-pill"><strong>שתי דגימות סוף שנה</strong> <i class="ti" data-tip="התצוגה משווה את שתי דגימות סוף-השנה האחרונות ואינה מושפעת מבורר התקופה שבסיידבר. דגימות תחילת-שנה אינן נכללות — הן מודדות את אותה שכבה בתוך אותה שנה.">i</i></div>
+        <div class="meta-pill"><strong id="yyMetaKind">שתי דגימות</strong> <i class="ti" data-tip="התצוגה משווה את הדגימה האחרונה לאותה נקודה בשנה שלפניה (תחילת שנה מול תחילת שנה, או סוף מול סוף), ואינה מושפעת מבורר התקופה שבסיידבר. דגימות משני חצאי שנה שונים אינן מושוות: הן מודדות את אותה שכבה בתוך אותה שנה.">i</i></div>
       </div>
     </div>
 
@@ -3928,6 +3928,18 @@ function renderFutureTech(){
   }
   empty.innerHTML=''; kpis.style.display=''; funCard.style.display=''; tblCard.style.display='';
 
+  // שנה שנפתחה ועוד לא נסגרה (v104): יש לה טאב תחילת שנה בלבד, ולכן אין
+  // לה עדיין שיעור המרה. הכניסה כבר ידועה ומוצגת, כדי שהנתון החדש לא
+  // ייעלם עד סוף השנה. המשפך עצמו נשאר על השנה השלמה האחרונה.
+  const _open = periodsSorted().filter(p=> p.half === 1 && p.year > y.year).pop();
+  if(_open){
+    const eN = ftSumAtGrade(_open.schools, g), coh = studentsAtGrade(_open.schools, g);
+    if(eN > 0) empty.innerHTML = `<div class="insight" style="margin:0 0 16px;">
+      <div class="insight-t">${fcShort(_open.label)}: ${eN.toLocaleString('he-IL')} תלמידי ${g}׳ נכנסו לתוכנית${coh ? ` (${(eN/coh*100).toFixed(1)}% מהשכבה)` : ''}</div>
+      <div class="insight-b">ההמרה של ${fcShort(_open.label)} תימדד כשיוזן טאב סוף השנה. עד אז המשפך שלמטה מציג את <strong>${y.label}</strong>, השנה השלמה האחרונה.</div>
+    </div>`;
+  }
+
   const c   = ftCityFunnel(y.start, y.end, g);
   const cst = ftStep(c.convPct);
   // מדד הטק העירוני של אותה תקופה — עוגן לעמודה שהטבלה ממוינת לפיה.
@@ -4087,15 +4099,28 @@ function trDeltaChip(d, invert, suffix){
 }
 
 // ─── בחירת שתי הדגימות ──────────────────────────────────────────
-// סוף שנה בלבד. דגימת תחילת-שנה מודדת את אותה שכבה בתוך אותה שנה
-// ולכן אינה השוואה שנתית. נגזר מהנתונים — יישאר נכון כשיתווספו טאבים.
-function yyPeriods(){
+// שתי דגימות סוף-השנה האחרונות. משמש את מה שמודד מחזור שסיים: שיעורי
+// השמירה של הצפי (`fcRates`) וגרף הבוגרים.
+function yyEndPeriods(){
   const all = periodsSorted();
   const ends = all.filter(p=> p.half === 2);
   if(ends.length >= 2) return { pair: ends.slice(-2), exact: true };
   if(all.length >= 2)  return { pair: all.slice(-2),  exact: false };
   return { pair: all, exact: false };
 }
+// זוג ההשוואה השנתית (v104): **הדגימה האחרונה מול אותה נקודה בשנה שלפניה**,
+// תחילת שנה מול תחילת שנה או סוף מול סוף. עד v103 הזוג היה נעול על סוף
+// שנה, ולכן טאב תחילת שנה חדש (תשפ"ז) לא הופיע בהשוואה כלל. דגימות משני
+// חצאים שונים עדיין אינן מושוות: הן מודדות אותה שכבה בתוך אותה שנה.
+// כשאין לדגימה האחרונה בת זוג, נופלים לשתי דגימות סוף-השנה.
+function yyPeriods(){
+  const all = periodsSorted().filter(p=> p.year > 0);
+  const last = all[all.length-1];
+  const prev = last && all.find(p=> p.year === last.year-1 && p.half === last.half);
+  if(prev) return { pair: [prev, last], exact: true, half: last.half };
+  return Object.assign(yyEndPeriods(), { half: 2 });
+}
+const halfName = h => h === 1 ? 'תחילת שנה' : 'סוף שנה';
 
 // מקרא הצבעים של ההשוואה — כתום = התקופה הקודמת, סגול = הנוכחית (v80–v81).
 // אותו מקרא בשלושת הכרטיסים: המדד, המקצועות ובתי הספר.
@@ -4145,7 +4170,9 @@ function renderTrends(){
   document.getElementById('yyTitle').textContent = 'השוואה שנתית';
   document.getElementById('yySub').innerHTML =
     `<strong>${A.label}</strong> מול <strong>${B.label}</strong>` +
-    (exact ? '' : ' <span class="alt-num">(אין שתי דגימות סוף-שנה — מוצגות שתי הדגימות האחרונות)</span>');
+    (exact ? '' : ' <span class="alt-num">(אין שתי דגימות מאותה נקודה בשנה, מוצגות שתי הדגימות האחרונות)</span>');
+  const _kind = document.getElementById('yyMetaKind');
+  if(_kind) _kind.textContent = exact ? 'שתי דגימות ' + halfName(B.half) : 'שתי הדגימות האחרונות';
 
   renderYYDecade(A, B);
   renderYYIndex(A, B);
@@ -4195,7 +4222,20 @@ function renderYYDecade(A, B){
   destroyChart('yyDecade');
   const sT = holonSeries('tech'), sM = holonSeries('ma5');
   const nR = sT.length;                                   // אינדקס התפר
-  const ours = [A, B].map(p=> ({ p, g: yyGrade12(p.key) })).filter(o=> o.g);
+  // הנקודות שלנו (v104): **כל דגימות סוף-השנה**, כי הגרף מודד בוגרים. אם
+  // הדגימה האחרונה בגיליון היא תחילת שנה של שנה חדשה, היא מצטרפת כנקודה
+  // אחרונה **מסומנת** (`open`): הרשומים ליב׳ כעת, לא תוצאת סוף שנה. היא
+  // אינה נכנסת להשוואות שבכרטיס (`closed`), שנשארות סוף מול סוף.
+  const _per  = periodsSorted().filter(p=> p.year > 0);
+  const _ends = _per.filter(p=> p.half === 2);
+  const _lastP = _per[_per.length-1];
+  const _tail = (_ends.length && _lastP && _lastP.half === 1 && _lastP.year > _ends[_ends.length-1].year) ? _lastP : null;
+  const ours = (_ends.length ? _ends.concat(_tail ? [_tail] : []) : [A, B])
+    .map(p=> ({ p, g: yyGrade12(p.key), open: p === _tail })).filter(o=> o.g);
+  const closed = ours.filter(o=> !o.open);
+  const cA = closed.length > 1 ? closed[closed.length-2] : null;
+  const cB = closed.length > 1 ? closed[closed.length-1] : null;
+  const openPt = ours.find(o=> o.open) || null;
 
   // המתג קובע איך מחושבות **התקופות שלנו בלבד**. השנים ההיסטוריות מגיעות
   // ממשה"ח כאחוז מוגמר ואין לנו נתון גולמי לחשב אותן מחדש — הן לא זזות.
@@ -4205,7 +4245,10 @@ function renderYYDecade(A, B){
   const tOf = g=> onMatz ? (g.tech ?? g.techAlt) : g.techAlt;
   const mOf = g=> onMatz ? (g.ma5  ?? g.ma5Alt)  : g.ma5Alt;
 
-  const labels = sT.map(p=> String(p.y)).concat(ours.map(o=> o.p.label.replace(/\s*\(.*\)/,'')));
+  const labels = sT.map(p=> String(p.y)).concat(ours.map(o=>{
+    const nm = o.p.label.replace(/\s*\(.*\)/,'');
+    return o.open ? [nm, 'תחילת שנה'] : nm;                // שתי שורות בציר
+  }));
   const techData = sT.map(p=> p.v).concat(ours.map(o=> tOf(o.g)));
   const ma5Data  = sM.map(p=> p.v).concat(ours.map(o=> mOf(o.g)));
   const exact    = sT.map(p=> p.exact).concat(ours.map(()=> true));
@@ -4353,7 +4396,7 @@ function renderYYDecade(A, B){
             // ואילך אתר משה"ח (§12.5)
             title: items=>{
               const i = items[0].dataIndex;
-              return labels[i] + ' — ' + (i >= nR ? 'נתוני הגיליון'
+              return [].concat(labels[i]).join(' · ') + ' — ' + (i >= nR ? 'נתוני הגיליון'
                 : !exact[i] ? 'מדידה מהגרף' : i === 0 ? 'דו״ח המצוינות' : 'משרד החינוך');
             },
             // ערך אחד בלבד — המכנה שהמתג בחר. הצגת שני החישובים סתרה את המתג.
@@ -4376,7 +4419,8 @@ function renderYYDecade(A, B){
   document.getElementById('yyDecadeSub').innerHTML =
     `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
     `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
-    `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
+    `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${ours.length ? ours[0].p.label : A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
+    (openPt ? `<strong>הנקודה האחרונה (${openPt.p.label.replace(/\s*\(.*\)/,'')}) היא דגימת תחילת שנה</strong>: הרשומים לשכבת יב׳ כעת, לפני שהשנה הסתיימה. ` : '') +
     `<span class="alt-num">הקו האפור הוא <strong>בגרות הייטק הארצית</strong> (משרד החינוך, ${NAT.years[0]}–${NAT.years[NAT.years.length-1]}). ` +
     `במתמטיקה 5 יח״ל הארצי עומד על ${_last(NAT.ma5).toFixed(1)}% — קו ארצי שני היה חוצה כאן את קו ההייטק של חולון ולכן אינו מוצג.</span>`;
 
@@ -4400,8 +4444,8 @@ function renderYYDecade(A, B){
   // בלי ההפרדה הזו הקורא מייחס את כל הירידה לביצועים, וזה פשוט לא נכון.
   const dvBox = document.getElementById('yyDiverge');
   dvBox.style.display = 'none';
-  if(ours.length > 1){
-    const a = ours[0].g, b = ours[1].g;
+  if(cA && cB){
+    const a = cA.g, b = cB.g;
     const den = g=> onMatz ? (g.matz || g.students) : g.students;
     const dTech = tOf(b) - tOf(a), dMa5 = mOf(b) - mOf(a);
 
@@ -4460,8 +4504,8 @@ function renderYYDecade(A, B){
       const fnl = `<div class="fnl">
         <div class="fnl-s">המדד = <b style="color:#0e8f8f;">הקטע הטורקיז</b> חלקי
           <b style="color:#6f5f95;">המוט העליון</b>. העליון גדל, הטורקיז לא — וזה כל הסיפור.</div>
-        ${grp(A.label.replace(/\s*\(.*\)/,''), a, tOf(a), null)}
-        ${grp(B.label.replace(/\s*\(.*\)/,''), b, tOf(b), dTech)}
+        ${grp(cA.p.label.replace(/\s*\(.*\)/,''), a, tOf(a), null)}
+        ${grp(cB.p.label.replace(/\s*\(.*\)/,''), b, tOf(b), dTech)}
         <div class="fnl-key">
           <span><i style="background:#16b3b3;"></i>המשיכו לפיזיקה/מדמ״ח = זכאי המדד</span>
           <span><i style="background:#c8952f;"></i>עצרו במתמטיקה</span>
@@ -4497,8 +4541,11 @@ function renderYYDecade(A, B){
   const estN = sT.filter(p=> !p.exact).length, est = sT.filter(p=> !p.exact);
 
   // המשוקלל י׳–יב׳ של אותן תקופות — כדי לומר במפורש כשהוא הולך לכיוון ההפוך
-  const wA = trOverall(A.key), wB = trOverall(B.key);
-  const d12 = (last && ours.length>1) ? tOf(ours[1].g) - tOf(ours[0].g) : null;
+  // ההערה מפנה ל"מספר הגדול שבכרטיס הבא", ולכן היא מוצגת רק כשהכרטיס
+  // הבא משווה את אותן שתי דגימות (סוף מול סוף).
+  const samePair = cA && cB && cA.p.key === A.key && cB.p.key === B.key;
+  const wA = samePair ? trOverall(A.key) : null, wB = samePair ? trOverall(B.key) : null;
+  const d12 = samePair ? tOf(cB.g) - tOf(cA.g) : null;
   const dW  = (wA!=null && wB!=null) ? wB - wA : null;
   const opposed = d12!=null && dW!=null && Math.sign(d12) !== Math.sign(dW) && Math.abs(d12)>0.3 && Math.abs(dW)>0.3;
 
@@ -4576,7 +4623,7 @@ function renderYYIndex(A, B){
   if(d10 != null && d12 != null){
     if(d10 > 0.3 && d12 < -0.3){
       t = 'הכניסה גדלה, הבוגרים הצטמצמו';
-      b = `שכבה י׳ עלתה ב-<strong>${d10.toFixed(1)} נק׳</strong> ושכבה יב׳ ירדה ב-<strong>${Math.abs(d12).toFixed(1)} נק׳</strong>. יותר תלמידים נכנסים למסלול, אבל המחזור שסיים השנה קטן מזה שסיים אשתקד. <strong>המספר המשוקלל מסתיר את זה</strong> — הוא עולה בזכות השכבות הצעירות. הפער יגיע לשכבת הבוגרים בשנים הבאות רק אם ישמרו על הנכנסים.`;
+      b = `שכבה י׳ עלתה ב-<strong>${d10.toFixed(1)} נק׳</strong> ושכבה יב׳ ירדה ב-<strong>${Math.abs(d12).toFixed(1)} נק׳</strong>. יותר תלמידים נכנסים למסלול, אבל ${B.half === 1 ? 'שכבת יב׳ של השנה קטנה במסלול מזו של אשתקד' : 'המחזור שסיים השנה קטן מזה שסיים אשתקד'}. <strong>המספר המשוקלל מסתיר את זה</strong> — הוא עולה בזכות השכבות הצעירות. הפער יגיע לשכבת הבוגרים בשנים הבאות רק אם ישמרו על הנכנסים.`;
     } else if(d10 > 0.3 && d12 > 0.3){
       t = 'עלייה בכל אורך המסלול';
       b = `גם הכניסה וגם הסיום עלו — י׳ ב-<strong>${d10.toFixed(1)} נק׳</strong> ו-יב׳ ב-<strong>${d12.toFixed(1)} נק׳</strong>. זו התמונה הבריאה: המסלול גדל וגם שומר על מי שנכנס אליו.`;
@@ -5301,7 +5348,7 @@ function execCtx(){
            need, gap, cost12, heads12 };
 }
 
-// הכיוון בין שתי דגימות סוף-השנה, **באותו מכנה** שבו נמדד היעד.
+// הכיוון בין שתי דגימות ההשוואה (`yyPeriods`), **באותו מכנה** שבו נמדד היעד.
 // דרך `withPeriod` על נוסחה קיימת ולא נוסחה מקבילה (ראה CLAUDE.md).
 function execTrend(onAlt){
   const yp = yyPeriods();
@@ -5542,7 +5589,7 @@ function execPositives(c){
            (opposed
              ? ` <strong>באותה תקופה שכבת יב׳ לבדה ירדה ב-${Math.abs(tr.d).toFixed(1)} נק׳</strong> ` +
                `(${ntPc(tr.from)} ← ${ntPc(tr.to)}, מכנה המצבת). שני המספרים נכונים ומודדים סקופ שונה: ` +
-               `המשוקלל כולל את י׳ ו-יא׳ שגדלו, ו-יב׳ הוא המחזור שכבר סיים. ` +
+               `המשוקלל כולל את י׳ ו-יא׳ שגדלו, ו-יב׳ הוא המחזור ${B.half === 1 ? 'שמסיים השנה' : 'שכבר סיים'}. ` +
                `<strong>הכניסה למסלול מתרחבת לפני שהיציאה ממנו מספיקה להדביק.</strong>`
              : '') });
     }
@@ -6586,7 +6633,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v103';
+const BUILD = 'v104';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -6929,7 +6976,7 @@ function fcDen(g){
 
 // שיעורי השמירה העירוניים, נמדדים משתי דגימות סוף-השנה האחרונות.
 function fcRates(){
-  const yp = yyPeriods();
+  const yp = yyEndPeriods();
   if(!yp.pair || yp.pair.length < 2 || !yp.exact) return null;
   const A = yp.pair[0], B = yp.pair[1];
   const ht = (key, gi)=> withPeriod(key, ()=> cityTotal(gi));
@@ -6947,10 +6994,30 @@ function fcRates(){
            base10: a10, base11: a11, got11: b11, got12: b12 };
 }
 
-// המחזור שסיים (נמדד, לייחוס) · צפי לשנה שנפתחת · צפי לשנה שאחריה.
+// ── דגימת תחילת שנה (v104) ──────────────────────────────────────
+// כשהתקופה הנבחרת היא תחילת שנה, שכבת יב׳ שלה **עוד לא סיימה**: היא
+// המחזור של השנה הזו, ולכן היא מוט צפי ולא משפט ייחוס. ושיעורי `fcRates`
+// נמדדו מסוף שנה לסוף שנה, כך שעל רישום של תחילת שנה חסר להם קטע אחד:
+// השמירה **בתוך** השנה. היא נמדדת מהשנה האחרונה שיש לה שתי דגימות
+// (`ftYears`, אותו זיווג של תצוגה 7), עם אותו קלמפ ל-1.
+// `get(key)` מחזירה [י׳, יא׳, יב׳] לתקופה; ברירת המחדל היא זכאי המדד.
+function fcWithin(get){
+  const cur = ALLDATA[CURRENT_PERIOD];
+  if(!cur || cur.half !== 1) return null;                 // סוף שנה: אין מה לנכות
+  const y = ftYears()[0]; if(!y) return { year: null, r: null, p: [1,1,1] };
+  const g = get || (key => [0,1,2].map(gi=> withPeriod(key, ()=> cityTotal(gi))));
+  const s = g(y.start.key), e = g(y.end.key);
+  if(!s || !e || s.some(v=> !v)) return { year: null, r: null, p: [1,1,1] };
+  const r = s.map((v,i)=> e[i]/v);
+  return { year: y, r, p: r.map(v=> Math.min(1, v)), capped: r.some(v=> v > 1) };
+}
+
+// סוף שנה: המחזור שסיים (נמדד, לייחוס) · צפי לשנה שנפתחת · ולשנה שאחריה.
+// תחילת שנה: צפי לסוף השנה הזו (יב׳ הרשומה) · לשנה הבאה · ולשנה שאחריה.
 function fcCity(){
   const R = fcRates(); if(!R) return null;
   const cur = ALLDATA[CURRENT_PERIOD];
+  const W = fcWithin(), w = W ? W.p : [1,1,1], open = !!W;
   const gr = g => { const gi = GRADES.indexOf(g);
     const d = fcDen(g);
     return { ht: cityTotal(gi), den: d.den, onMatz: d.onMatz }; };
@@ -6960,10 +7027,16 @@ function fcCity(){
     pct: c.den ? ht/c.den*100 : null, year, label: hebYearName(year) });
   return {
     R, target: (CITIES[RANK_TGT-1] || {}).tech || null,
-    now: pt(now.ht, now, cur ? cur.year : R.yearB),
-    y1:  pt(c11.ht * R.p11, c11, (cur? cur.year : R.yearB) + 1),
-    y2:  pt(c10.ht * R.p10 * R.p11, c10, (cur? cur.year : R.yearB) + 2),
-    from11: c11.ht, from10: c10.ht
+    now: pt(now.ht * w[2], now, cur ? cur.year : R.yearB),
+    y1:  pt(c11.ht * w[1] * R.p11, c11, (cur? cur.year : R.yearB) + 1),
+    y2:  pt(c10.ht * w[0] * R.p10 * R.p11, c10, (cur? cur.year : R.yearB) + 2),
+    from12: now.ht, from11: c11.ht, from10: c10.ht,
+    open, W, curLabel: cur ? cur.label : R.B.label,
+    // המחזור האחרון שסיים: בתחילת שנה זו שכבת יב׳ של דגימת סוף-השנה האחרונה.
+    ref: open
+      ? withPeriod(R.B.key, ()=>{ const d = fcDen('יב'), h = cityTotal(2);
+          return d.den ? { ht: h, pct: h/d.den*100, label: fcShort(R.B.label) } : null; })
+      : { ht: now.ht, pct: now.den ? now.ht/now.den*100 : null, label: fcShort(cur ? cur.label : R.B.label) }
   };
 }
 
@@ -6973,6 +7046,7 @@ function fcSchools(R){
     const s = SCHOOLS.find(x=> x.name === name); const r = s && s.grades[g];
     return r ? r[4] : null;
   });
+  const W = fcWithin(), w = W ? W.p : [1,1,1];       // תחילת שנה: השמירה העירונית בתוך השנה
   return SCHOOLS.filter(s=> s.grades['י'] || s.grades['יא']).map(s=>{
     const a11 = at(R.A.key, s.name, 'יא');
     const own = (a11 != null && a11 >= FC_MIN_BASE) ? (s.grades['יב'] ? s.grades['יב'][4] : 0) / a11 : null;
@@ -6983,8 +7057,8 @@ function fcSchools(R){
     const h11 = s.grades['יא'] ? s.grades['יא'][4] : null;
     const h10 = s.grades['י']  ? s.grades['י'][4]  : null;
     return { name: s.name, note: badge(s), own: own != null, rate,
-      now, y1: h11 != null ? Math.round(h11 * pr) : null,
-      y2: h10 != null ? Math.round(h10 * pr10 * pr) : null };
+      now, y1: h11 != null ? Math.round(h11 * w[1] * pr) : null,
+      y2: h10 != null ? Math.round(h10 * w[0] * pr10 * pr) : null };
   }).map(x=> Object.assign(x, { chg: (x.y2 != null && x.now != null) ? x.y2 - x.now : null }))
     .sort((a,b)=> (b.chg == null ? -1e9 : b.chg) - (a.chg == null ? -1e9 : a.chg));
 }
@@ -7003,9 +7077,10 @@ function fcSubjects(R){
     if(!a[0] || !a[1] || !(n[0] + n[1] + n[2])) return null;
     const r10 = b[1]/a[0], r11 = b[2]/a[1];
     const p10 = Math.min(1, r10), p11 = Math.min(1, r11);
+    const W = fcWithin(key => by(key, sub.idx)), w = W ? W.p : [1,1,1];   // לכל מקצוע בנפרד
     return Object.assign(sub, { r10, r11,
       base10: a[0], got11: b[1], base11: a[1], got12: b[2],   // המחזור שנמדד (לגלאי הצינור)
-      now: n[2], y1: Math.round(n[1] * p11), y2: Math.round(n[0] * p10 * p11) });
+      now: n[2], y1: Math.round(n[1] * w[1] * p11), y2: Math.round(n[0] * w[0] * p10 * p11) });
   }).filter(Boolean);
 }
 
@@ -7030,7 +7105,7 @@ function fcSubjCard(R, c){
       </div></div>
       <div style="overflow-x:auto;"><table class="tbl"><thead><tr>
         <th style="cursor:default;">מקצוע</th>
-        <th style="cursor:default;text-align:center;">יב׳ ${fcShort(R.B.label)}</th>
+        <th style="cursor:default;text-align:center;">יב׳ ${fcShort(c.curLabel)}${c.open ? ' · רשומים' : ''}</th>
         <th style="cursor:default;text-align:center;">צפי ${c.y1.label}</th>
         <th style="cursor:default;text-align:center;">צפי ${c.y2.label}</th>
         <th style="cursor:default;text-align:center;">שמירה מי׳ ליא׳ · מיא׳ ליב׳</th>
@@ -7060,7 +7135,7 @@ function renderForecast(){
   }
   const { R } = c;
   document.getElementById('fcSub').innerHTML =
-    `לפי הרשומים בדגימה האחרונה (${fcShort(R.B.label)}), ושיעור השמירה שנמדד בין <strong>${R.A.label}</strong> ל-<strong>${R.B.label}</strong>. ` +
+    `לפי הרשומים ב<strong>${c.curLabel}</strong>, ושיעור השמירה שנמדד בין <strong>${R.A.label}</strong> ל-<strong>${R.B.label}</strong>. ` +
     `<span class="alt-num">צפי, לא תחזית: אין כאן הנחה על מי שטרם נרשם.</span>`;
 
   // ── שני מוטות צפי בלבד (v98, החלטת משתמש 03.09): אנחנו בפתיחת שנת
@@ -7068,7 +7143,10 @@ function renderForecast(){
   // ב"איך חושבנו", ולא נמחק. סקאלה משותפת, וסימן היעד עליהם.
   // היעד נמדד במצבת (תצוגה 9), ולכן על המכנה העירוני הסימן והמשפט יורדים.
   const tgt = FC_DENOM === 'matz' ? c.target : null;
-  const pts = [c.y1, c.y2];
+  // בדגימת תחילת שנה (v104) נוסף מוט שלישי, ראשון: שכבת יב׳ הרשומה כעת.
+  // זו אינה שנת עבר אלא המחזור של השנה הזו, שעוד לא סיים.
+  const curS = fcShort(c.curLabel);
+  const pts = c.open ? [c.now, c.y1, c.y2] : [c.y1, c.y2];
   const scale = Math.max(...pts.map(p=> p.pct), tgt || 0) * 1.16;
   const w = v => Math.max(1.5, Math.min(100, v/scale*100));
   const row = (p, est, cap, first)=> `
@@ -7104,22 +7182,27 @@ function renderForecast(){
           <button type="button" data-d="city" aria-pressed="${FC_DENOM==='city'}">סה״כ עירוני</button>
         </div>
       </div>
-      ${row(c.y1, true, `צפי, מ-${num(c.from11)} תלמידי המסלול ביא׳ ${fcShort(R.B.label)}`, true)}
-      ${row(c.y2, true, `צפי, מ-${num(c.from10)} בי׳ ${fcShort(R.B.label)}`)}
+      ${c.open ? row(c.now, true, `צפי לסוף השנה, מ-${num(c.from12)} הרשומים ביב׳ ${curS}`, true) : ''}
+      ${row(c.y1, true, `צפי, מ-${num(c.from11)} תלמידי המסלול ביא׳ ${curS}`, !c.open)}
+      ${row(c.y2, true, `צפי, מ-${num(c.from10)} בי׳ ${curS}`)}
       <div class="fc-how">
         <strong>איך חושבנו.</strong> עקבנו אחרי אותם תלמידים משנה לשנה:
         מ-${num(R.base10)} במסלול בשכבה י׳ ב${String(R.A.label).replace(/\s*\(.*\)\s*$/,'')} נשארו ${num(R.got11)} ביא׳, כלומר <strong>${(R.r10*100).toFixed(0)}%</strong>;
         מיא׳ ליב׳ נשארו <strong>${(R.r11*100).toFixed(0)}%</strong>.
-        הצפי מכפיל את תלמידי המסלול של ${fcShort(R.B.label)}, שעולים עכשיו שכבה, בשיעורים האלה.
-        לשם ייחוס: המחזור שסיים ב${fcShort(R.B.label)} עמד על <strong>${ntPc(c.now.pct)}</strong> (${num(c.now.ht)} זכאים).${
-          R.capped ? ' שיעור שנמדד מעל 100% מוגבל ל-100%.' : ''}
+        הצפי מכפיל את תלמידי המסלול של ${curS}, ${c.open ? 'כפי שנרשמו בתחילת השנה' : 'שעולים עכשיו שכבה'}, בשיעורים האלה.${
+          !c.open ? '' : (c.W && c.W.r)
+            ? ` הדגימה היא מתחילת השנה, ולכן נוסף שיעור השמירה <strong>בתוך השנה</strong>, שנמדד ב${c.W.year.label} מתחילתה לסופה:
+               ${(c.W.r[0]*100).toFixed(0)}% בי׳, ${(c.W.r[1]*100).toFixed(0)}% ביא׳, ${(c.W.r[2]*100).toFixed(0)}% ביב׳.`
+            : ' הדגימה היא מתחילת השנה, ואין שנה עם שתי דגימות למדוד ממנה את השמירה בתוך השנה; הצפי אינו מנכה אותה.'}
+        ${c.ref ? `לשם ייחוס: המחזור שסיים ב${c.ref.label} עמד על <strong>${ntPc(c.ref.pct)}</strong> (${num(c.ref.ht)} זכאים).` : ''}${
+          (R.capped || (c.W && c.W.capped)) ? ' שיעור שנמדד מעל 100% מוגבל ל-100%.' : ''}
         זה נמדד ממחזור אחד, וההנחה היא שהרשומים ישלימו גם 5 יח״ל אנגלית.
         האחוזים במכנה ${FC_DENOM === 'city' ? 'סה"כ תלמידי השכבה בגיליון (לפי המתג)' : c.y2.onMatz ? 'המצבת' : 'סכום בתי הספר (אין מצבת)'}.
       </div>
     </div>
     ${fcSubjCard(R, c)}
     ${execCard('fcsch', 'הצפי לפי בית ספר',
-      'ממוינת לפי השינוי הצפוי בין המחזור שסיים ב' + fcShort(R.B.label) + ' לצפי ' + c.y2.label + '. שיעור השמירה הוא של בית הספר עצמו כשהבסיס מספיק, אחרת העירוני.',
+      'ממוינת לפי השינוי הצפוי בין ' + (c.open ? 'הרשומים ביב׳ ב' : 'המחזור שסיים ב') + curS + ' לצפי ' + c.y2.label + '. שיעור השמירה הוא של בית הספר עצמו כשהבסיס מספיק, אחרת העירוני.',
       fcTable(R, c))}`;
 
   // הרכיב נבנה מחדש בכל רינדור, ולכן הקשירה כאן ולא חד-פעמית.
@@ -7143,7 +7226,7 @@ function fcTable(R, c){
   const cell = v => v == null ? '<span style="color:var(--muted);">—</span>' : num(v);
   return `<div style="overflow-x:auto;"><table class="tbl"><thead><tr>
       <th style="cursor:default;">בית ספר</th>
-      <th style="cursor:default;text-align:center;">יב׳ ${fcShort(R.B.label)}</th>
+      <th style="cursor:default;text-align:center;">יב׳ ${fcShort(c.curLabel)}${c.open ? ' · רשומים' : ''}</th>
       <th style="cursor:default;text-align:center;">צפי ${c.y1.label}</th>
       <th style="cursor:default;text-align:center;">צפי ${c.y2.label}</th>
       <th style="cursor:default;text-align:center;">שינוי</th>
