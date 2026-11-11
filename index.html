@@ -4557,6 +4557,25 @@ function renderYYDecade(A, B){
   const jump = first ? tOf(first.g) - anchorV : null;
   const estN = sT.filter(p=> !p.exact).length, est = sT.filter(p=> !p.exact);
 
+  // ── כיול מול הרשמי (v106) ──────────────────────────────────────
+  // שנה שיש לה **גם** דגימת סוף שנה שלנו **וגם** נתון רשמי היא המדידה
+  // היחידה של כמה הגיליון רחוק מהמספר שמשרד החינוך מפרסם. הפער מוצג כפי
+  // שנמדד, במכנה שהמתג בחר, ואינו מתוקן לתוך הנקודות: אין לנו בסיס להניח
+  // שהוא קבוע משנה לשנה (שורת המצבת עצמה השתנתה בתשפ"ז).
+  const _ov = closed.map(o=>{
+    const i = sT.findIndex(p=> p.y === o.p.year);
+    return i < 0 ? null : { o, offT: sT[i].v, offM: (sM.find(p=> p.y === o.p.year) || {}).v };
+  }).filter(Boolean).pop();
+  const calib = !_ov ? '' : (()=>{
+    const nm = _ov.o.p.label.replace(/\s*\(.*\)/,'');
+    const dT = tOf(_ov.o.g) - _ov.offT, dM = _ov.offM == null ? null : mOf(_ov.o.g) - _ov.offM;
+    return `<br><strong>כיול מול הרשמי.</strong> ${nm} היא השנה היחידה שיש לה גם דגימה שלנו וגם נתון רשמי: ` +
+      `במדד הגיליון נתן <strong>${tOf(_ov.o.g).toFixed(1)}%</strong> והרשמי <strong>${_ov.offT.toFixed(1)}%</strong> ` +
+      `(${dirWord(dT, 'גבוה', 'נמוך')} ב-${Math.abs(dT).toFixed(1)} נק׳)` +
+      (dM == null ? '' : `, ובמתמטיקה 5 ${mOf(_ov.o.g).toFixed(1)}% מול ${_ov.offM.toFixed(1)}% (${Math.abs(dM).toFixed(1)} נק׳)`) +
+      `. <strong>נקודות הגיליון שמימין לתפר אינן מכוילות למספר הרשמי</strong>, ויש לקרוא אותן בהתאם. `;
+  })();
+
   // המשוקלל י׳–יב׳ של אותן תקופות — כדי לומר במפורש כשהוא הולך לכיוון ההפוך
   // ההערה מפנה ל"מספר הגדול שבכרטיס הבא", ולכן היא מוצגת רק כשהכרטיס
   // הבא משווה את אותן שתי דגימות (סוף מול סוף).
@@ -4578,6 +4597,7 @@ function renderYYDecade(A, B){
       : `כרגע <strong>סה״כ עירוני</strong> — סכום שורות <em>כמות תלמידים</em>, המספר שמופיע בכל שאר הדשבורד ובכרטיס שמתחת. ` +
         `<strong style="color:#a04a10;">שים לב: המכנה הזה קטן מהמצבת, ולכן הוא מגדיל את האחוז ומוסיף לתפר קפיצה שמקורה בספירה ולא בהישג.</strong> `) +
     (noMatz.length ? `<strong style="color:#a04a10;">ל-${noMatz.join(' ו-')} אין שורת מצבת, ולכן ${noMatz.length>1?'הם מוצגים':'הוא מוצג'} בסה״כ העירוני בשני המצבים.</strong> ` : '') +
+    calib +
     `<br><strong>איך לקרוא את התפר.</strong> עד ${anchorY} המקור הוא <strong>אתר משרד החינוך</strong> (§12.5); משם הקו ממשיך מהגיליון ולכן מקווקו. ` +
     `הגדרת <strong>זכאות למדד טק</strong> שבגיליון כוללת גם 5 יח״ל אנגלית, כמו ההגדרה הארצית — כלומר <strong>שני צדי התפר מודדים את אותו דבר</strong>. ` +
     (jump != null && Math.abs(jump) > 1.5
@@ -6665,7 +6685,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v105';
+const BUILD = 'v106';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
