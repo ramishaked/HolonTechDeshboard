@@ -1676,7 +1676,7 @@ body{
         <p class="page-sub" id="ntSub">—</p>
       </div>
       <div class="page-meta">
-        <div class="meta-pill">מקור: דו"ח המצוינות של ישראל 2024</div>
+        <div class="meta-pill">מדד: התמונה החינוכית תשפ״ה · משרד החינוך</div>
         <div class="meta-pill" style="cursor:pointer;" onclick="switchView('cities')">📋 טבלה מלאה ←</div>
       </div>
     </div>
@@ -1972,8 +1972,8 @@ let DATA_LABEL = '';
 //
 //   socio  — אשכול חברתי-כלכלי, הלמ"ס. הצלבת שלושה מקורות (§12.4)
 //   pop    — אוכלוסייה ביחידות של 10,000 (19.2 = 192 אלף), למ"ס
-//   tech   — % זכאי בגרות הייטק מהשנתון (5 מתמ׳ + 5 אנג׳ + 5 פיזיקה/מדמ"ח)
-//   girls  — % תלמידות בקרב זכאי ההייטק
+//   tech   — % זכאי בגרות טק מכלל י"ב, **2025** (5 מתמ׳ + 5 אנג׳ + 5 פיזיקה/מדמ"ח)
+//   girls  — % תלמידות בקרב זכאי ההייטק, **2024**
 //   pot    — % התלמידים עם 5 יח"ל (הפוטנציאל), עמ׳ 26–27. null = לא פורסם
 //   potG   — % תלמידות מתוך הפוטנציאל
 //   lead20 — נמנית עם 20 המובילות ארצית (עמ׳ 9)
@@ -1982,43 +1982,51 @@ let DATA_LABEL = '';
 //   ראה כרטיס "המכנה" בתצוגה, §3.2 ו-§12.3 במפרט.
 // רשויות שאינן יהודיות אינן נכללות, לפי הנחיית המשתמש.
 // ════════════════════════════════════════════════════════════════
-const CITY_YEAR = 2024;
+// **המדד (`tech`) הוא של תשפ"ה, 2025** (v105): התמונה החינוכית של משרד
+// החינוך (shkifut.education.gov.il, פורסמה 21.10.2026), מתוך
+// `BigPicture/data.json`, כלל י"ב. ערכי 2024 של אותו מקור זהים לדו"ח
+// המצוינות ב-32 מתוך 33 הרשויות (תל אביב 13.4 מול 13.3), כלומר אותה הגדרה.
+// **שיעור התלמידות, הפוטנציאל ו-`lead20` נשארו של 2024** (דו"ח המצוינות):
+// התמונה החינוכית אינה מפרסמת אותם. כל טקסט שמציג אותם נושא את
+// `CITY_GIRLS_YEAR`, ולא את `CITY_YEAR`.
+const CITY_YEAR = 2025;
+const CITY_GIRLS_YEAR = 2024;
 const CITY_ME   = 'חולון';
 //                name             socio  pop   tech  girls  pot  potG  region      lead20
 const CITY_DATA = [
-  ['גבעת שמואל',      8,   2.9,  31.6,  29.8, null, null, 'מרכז',    true ],
-  ['רמת השרון',       9,   4.9,  29.5,  35.7,   18,   53, 'מרכז',    true ],
-  ['קרית אונו',       9,   4.5,  26.7,  37.0, null, null, 'מרכז',    true ],
-  ['תל מונד',         9,   1.5,  23.9,  25.4, null, null, 'מרכז',    true ],
-  ['נס ציונה',        8,   4.7,  23.1,  38.4,   14,   51, 'מרכז',    true ],
-  ['הרצליה',          8,  11.0,  22.0,  36.4,   14,   59, 'מרכז',    true ],
-  ['זכרון יעקב',      8,   2.4,  21.9,  48.8, null, null, 'צפון',    true ],
-  ['גני תקווה',       9,   2.5,  21.9,  30.3, null, null, 'מרכז',    true ],
-  ['מזכרת בתיה',      8,   1.6,  21.5,  22.2, null, null, 'מרכז',    true ],
-  ['בנימינה-גב"ע',    8,   1.6,  20.8,  23.1, null, null, 'צפון',    true ],
-  ['רמת גן',          8,  17.2,  19.7,  35.0,   12,   55, 'מרכז',    true ],
-  ['מודיעין מכ"ר',    9,  10.0,  19.4,  36.9,   11,   48, 'מרכז',    true ],
-  ['שוהם',            9,   2.4,  19.4,  31.4, null, null, 'מרכז',    true ],
-  ['הוד השרון',       9,   6.6,  19.3,  39.6,   14,   48, 'מרכז',    true ],
-  ['קדימה-צורן',      7,   2.3,  19.3,  37.3, null, null, 'מרכז',    true ],
-  ['גבעתיים',         9,   5.9,  18.9,  35.8,   14,   58, 'מרכז',    true ],
-  ['ראשון לציון',     7,  25.9,  18.4,  39.5,   10,   56, 'מרכז',    false],
-  ['כפר סבא',         8,   9.9,  17.4,  30.2,   11,   56, 'מרכז',    false],
-  ['חיפה',            7,  29.7,  16.7,  36.3, null, null, 'צפון',    false],
-  ['רחובות',          7,  15.5,  15.0,  30.1, null, null, 'מרכז',    false],
-  ['חולון',           7,  19.2,  13.7,  41.6, null, null, 'מרכז',    false],
-  ['תל אביב-יפו',     8,  49.5,  13.3,  30.6, null, null, 'מרכז',    false],
-  ['פתח תקווה',       7,  27.0,  13.1,  37.5, null, null, 'מרכז',    false],
-  ['אשדוד',           5,  22.9,  12.0,  41.4, null, null, 'דרום',    false],
-  ['אשקלון',          5,  16.7,  11.4,  43.2, null, null, 'דרום',    false],
-  ['באר שבע',         5,  22.4,   9.9,  34.9, null, null, 'דרום',    false],
-  ['נתניה',           6,  23.5,   9.6,  35.8, null, null, 'שרון',    false],
-  ['לוד',             3,   9.4,   8.8,  42.3, null, null, 'מרכז',    false],
-  ['חדרה',            6,  10.8,   8.7,  40.5, null, null, 'שרון',    false],
-  ['בת ים',           5,  12.9,   8.7,  36.2, null, null, 'מרכז',    false],
-  ['ירושלים',         2, 105.0,   5.5,  29.9, null, null, 'ירושלים', false],
-  ['בית שמש',         2,  17.7,   3.6,  67.9, null, null, 'ירושלים', false],
-  ['בני ברק',         2,  23.0,   1.3,  18.8, null, null, 'מרכז',    false],
+  ['גבעת שמואל',      8,   2.9,  39.2,  29.8, null, null, 'מרכז',    true ],
+  ['רמת השרון',       9,   4.9,  32.1,  35.7,   18,   53, 'מרכז',    true ],
+  ['קרית אונו',       9,   4.5,  26.9,  37.0, null, null, 'מרכז',    true ],
+  ['תל מונד',         9,   1.5,  30.7,  25.4, null, null, 'מרכז',    true ],
+  ['נס ציונה',        8,   4.7,  24.3,  38.4,   14,   51, 'מרכז',    true ],
+  ['הרצליה',          8,  11.0,  23.3,  36.4,   14,   59, 'מרכז',    true ],
+  ['זכרון יעקב',      8,   2.4,  25.1,  48.8, null, null, 'צפון',    true ],
+  ['גני תקווה',       9,   2.5,  17.4,  30.3, null, null, 'מרכז',    true ],
+  ['מזכרת בתיה',      8,   1.6,  16.4,  22.2, null, null, 'מרכז',    true ],
+  ['בנימינה-גב"ע',    8,   1.6,  19.6,  23.1, null, null, 'צפון',    true ],
+  ['רמת גן',          8,  17.2,  19.5,  35.0,   12,   55, 'מרכז',    true ],
+  ['מודיעין מכ"ר',    9,  10.0,  19.8,  36.9,   11,   48, 'מרכז',    true ],
+  ['שוהם',            9,   2.4,  24.5,  31.4, null, null, 'מרכז',    true ],
+  ['הוד השרון',       9,   6.6,  26.1,  39.6,   14,   48, 'מרכז',    true ],
+  ['קדימה-צורן',      7,   2.3,  20.7,  37.3, null, null, 'מרכז',    true ],
+  ['גבעתיים',         9,   5.9,  22.8,  35.8,   14,   58, 'מרכז',    true ],
+  ['ראשון לציון',     7,  25.9,  19.0,  39.5,   10,   56, 'מרכז',    false],
+  ['כפר סבא',         8,   9.9,  21.9,  30.2,   11,   56, 'מרכז',    false],
+  ['חיפה',            7,  29.7,  19.5,  36.3, null, null, 'צפון',    false],
+  ['רחובות',          7,  15.5,  14.9,  30.1, null, null, 'מרכז',    false],
+  ['חולון',           7,  19.2,  14.8,  41.6, null, null, 'מרכז',    false],
+  ['תל אביב-יפו',     8,  49.5,  14.3,  30.6, null, null, 'מרכז',    false],
+  ['פתח תקווה',       7,  27.0,  14.1,  37.5, null, null, 'מרכז',    false],
+  ['אשדוד',           5,  22.9,  12.2,  41.4, null, null, 'דרום',    false],
+  ['אשקלון',          5,  16.7,  12.9,  43.2, null, null, 'דרום',    false],
+  ['באר שבע',         5,  22.4,  11.7,  34.9, null, null, 'דרום',    false],
+  ['נתניה',           6,  23.5,  11.0,  35.8, null, null, 'שרון',    false],
+  ['לוד',             3,   9.4,   9.9,  42.3, null, null, 'מרכז',    false],
+  ['חדרה',            6,  10.8,   8.3,  40.5, null, null, 'שרון',    false],
+  ['בת ים',           5,  12.9,   9.3,  36.2, null, null, 'מרכז',    false],
+  ['ירושלים',         2, 105.0,   5.7,  29.9, null, null, 'ירושלים', false],
+  ['בית שמש',         2,  17.7,   2.9,  67.9, null, null, 'ירושלים', false],
+  ['בני ברק',         2,  23.0,   1.0,  18.8, null, null, 'מרכז',    false],
 ].map(r=> ({ name:r[0], socio:r[1], pop:r[2]*10000, tech:r[3], girls:r[4],
              pot:r[5], potG:r[6], region:r[7], lead20:r[8] }))
  .sort((a,b)=> b.tech - a.tech);
@@ -2064,14 +2072,18 @@ const HOLON_POT_2024 = {
   en5 :   2    // חסרים רק 5 יח"ל אנגלית
 };
 
-// ── הסדרה הרשמית של משרד החינוך, תשע"ו–תשפ"ד (§12.5) ────────────
-// **מקור רשמי** — הופק ע"י המשתמש מאתר משרד החינוך (16.08.2026), דף חולון.
-// מחליף את ערכי המדידה-מהגרף שהיו כאן ב-v23–v24: כשיש נתון רשמי הוא גובר.
-// תשפ"ד = 2024 · תשע"ו = 2016. תשפ"ד תואם במדויק את הדו"ח (13.7 / 20.6).
+// ── הסדרה הרשמית של משרד החינוך, תשע"ד–תשפ"ה (§12.5) ────────────
+// **מקור רשמי אחד לכל הסדרה (v105):** התמונה החינוכית, רשות חולון (66001),
+// כלל י"ב, מתוך `BigPicture/data.json` (נשלף 22.10.2026). מחליף את הסדרה
+// 2016–2024 שהופקה ידנית ב-16.08.2026 ומוסיף את 2014, 2015 ו-**2025**.
+// שני הבדלים מהסדרה הקודמת, שניהם עדכון של המקור הרשמי: מתמטיקה 5 ב-2024
+// היא 20.7 (היה 20.6), ו-2015 רשמי (8.0 / 10.6) במקום המדידה מהגרף.
+// ⚠ מדד תשפ"ה של חולון, 14.8, הוא הערך שבעמוד הרשמי; ה-API מחזיר 14.6
+// (`BigPicture/overrides.json`). אין לשנות ל-14.6.
 const HOLON_MOE = {
-  years:[2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-  tech: [ 9.6, 11.0, 12.0, 11.8, 13.5, 15.0, 13.6, 13.4, 13.7],
-  ma5:  [13.3, 16.7, 18.1, 17.8, 18.3, 21.0, 20.6, 21.1, 20.6]
+  years:[2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+  tech: [ 7.4,  8.0,  9.6, 11.0, 12.0, 11.8, 13.5, 15.0, 13.6, 13.4, 13.7, 14.8],
+  ma5:  [10.0, 10.6, 13.3, 16.7, 18.1, 17.8, 18.3, 21.0, 20.6, 21.1, 20.7, 21.9]
 };
 
 // ── 2015 בלבד — הערך המשוער היחיד שנותר (§12.5) ─────────────────
@@ -2079,7 +2091,7 @@ const HOLON_MOE = {
 // המדידה אומתה בדיעבד מול 9 הערכים הרשמיים שלמעלה: הפרש מרבי 0.4 נק',
 // ממוצע 0.16 — ולכן 2015 נשאר, מסומן כמשוער.
 // **להחזרה:** למחוק את הקבוע — `holonSeries()` תדלג על 2015 בלי שינוי נוסף.
-const HOLON_MID = { years:[2015], tech:[7.9], ma5:[10.6] };
+const HOLON_MID = { years:[], tech:[], ma5:[] };   // ריק מ-v105: 2015 רשמי, אין עוד ערך משוער
 
 // הסדרה המלאה. סדר קדימות: רשמי משה"ח > מודפס בדו"ח > משוער.
 // מחזירה [{y, v, exact}] — הדגל מאפשר להציג את ההבחנה במקום להחביא אותה.
@@ -4230,9 +4242,14 @@ function renderYYDecade(A, B){
   const _ends = _per.filter(p=> p.half === 2);
   const _lastP = _per[_per.length-1];
   const _tail = (_ends.length && _lastP && _lastP.half === 1 && _lastP.year > _ends[_ends.length-1].year) ? _lastP : null;
+  // שנה שיש לה נתון רשמי אינה מצוירת שוב מהגיליון (v105: תשפ"ה רשמי).
+  // ההשוואות שבכרטיס (`closed`) נשענות על המספרים הגולמיים שבגיליון, ולכן
+  // ממשיכות להשתמש בכל דגימות סוף-השנה, גם באלה שאינן על הגרף.
+  const _offLast = sT.length ? sT[sT.length-1].y : 0;
+  const _mk = p=> ({ p, g: yyGrade12(p.key), open: p === _tail });
   const ours = (_ends.length ? _ends.concat(_tail ? [_tail] : []) : [A, B])
-    .map(p=> ({ p, g: yyGrade12(p.key), open: p === _tail })).filter(o=> o.g);
-  const closed = ours.filter(o=> !o.open);
+    .filter(p=> p.year > _offLast).map(_mk).filter(o=> o.g);
+  const closed = _ends.map(_mk).filter(o=> o.g);
   const cA = closed.length > 1 ? closed[closed.length-2] : null;
   const cB = closed.length > 1 ? closed[closed.length-1] : null;
   const openPt = ours.find(o=> o.open) || null;
@@ -4397,7 +4414,7 @@ function renderYYDecade(A, B){
             title: items=>{
               const i = items[0].dataIndex;
               return [].concat(labels[i]).join(' · ') + ' — ' + (i >= nR ? 'נתוני הגיליון'
-                : !exact[i] ? 'מדידה מהגרף' : i === 0 ? 'דו״ח המצוינות' : 'משרד החינוך');
+                : !exact[i] ? 'מדידה מהגרף' : 'משרד החינוך');
             },
             // ערך אחד בלבד — המכנה שהמתג בחר. הצגת שני החישובים סתרה את המתג.
             label: ctx=> ctx.parsed.y == null ? null
@@ -4419,7 +4436,7 @@ function renderYYDecade(A, B){
   document.getElementById('yyDecadeSub').innerHTML =
     `שיעור הזכאים לבגרות הכוללת 5 יח״ל מתמטיקה ובגרות הייטק, <strong>בשכבת יב׳ בלבד</strong> — ` +
     `הדו״ח מודד בוגרים, ולכן זו השכבה בת-ההשוואה. <strong>המספר הגדול שבכרטיס הבא הוא המשוקלל של י׳–יב׳ ולכן שונה.</strong><br>` +
-    `<strong>2014–2024 ממשרד החינוך</strong>, ומ-${ours.length ? ours[0].p.label : A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
+    `<strong>${sT[0].y}–${_offLast} ממשרד החינוך</strong>, ומ-${ours.length ? ours[0].p.label : A.label} ואילך <strong>מהגיליון העירוני</strong> — שני מקורות, ולכן התפר מסומן. ` +
     (openPt ? `<strong>הנקודה האחרונה (${openPt.p.label.replace(/\s*\(.*\)/,'')}) היא דגימת תחילת שנה</strong>: הרשומים לשכבת יב׳ כעת, לפני שהשנה הסתיימה. ` : '') +
     `<span class="alt-num">הקו האפור הוא <strong>בגרות הייטק הארצית</strong> (משרד החינוך, ${NAT.years[0]}–${NAT.years[NAT.years.length-1]}). ` +
     `במתמטיקה 5 יח״ל הארצי עומד על ${_last(NAT.ma5).toFixed(1)}% — קו ארצי שני היה חוצה כאן את קו ההייטק של חולון ולכן אינו מוצג.</span>`;
@@ -4983,7 +5000,7 @@ function ntGenderStrip(me){
   document.getElementById('ntGsSide').innerHTML =
     `<div class="gs-num">${ntPc(me.girls)}</div>
      <div class="gs-lbl">מהזכאים לבגרות הייטק ב${CITY_ME} הן תלמידות<br>
-       ממוצע העשירייה ${ntPc(avg)} · ארצי ${ntPc(NAT_GIRLS_2024.tech)}</div>`;
+       ממוצע העשירייה ${ntPc(avg)} · ארצי ${ntPc(NAT_GIRLS_2024.tech)} · נתוני ${CITY_GIRLS_YEAR}</div>`;
 
   document.getElementById('ntGsBars').innerHTML = top10
     .slice().sort((a,b)=> b.girls - a.girls)
@@ -5026,7 +5043,7 @@ function ntRanking(me, nat){
     CITIES.map((c,i)=> ntCityRow(c, i+1, scale, nat, i === 0)).join('');
 
   document.getElementById('ntRankSub').innerHTML =
-    `הרשויות מעל 80,000 תושבים, ${CITY_YEAR}. ♀ = % תלמידות בקרב הזכאים. ` +
+    `הרשויות מעל 80,000 תושבים, מדד ${CITY_YEAR}. ♀ = % תלמידות בקרב הזכאים (${CITY_GIRLS_YEAR}). ` +
     `הקו המקווקו — הממוצע הארצי. <span class="alt-num">* מגזר שאינו ניגש לבגרות עיונית מלאה.</span>`;
 
   const leader = CITIES[0], tlv = cityBy('תל אביב-יפו');
@@ -5216,7 +5233,7 @@ function cvRender(){
   document.getElementById('cvCount').textContent = rows.length;
   document.getElementById('cvNat').textContent = ntPc(nat);
   document.getElementById('cvSub').innerHTML =
-    `${cvRows().length} רשויות מדו"ח המצוינות ${CITY_YEAR} — מדד, ייצוג תלמידות, אשכול, אוכלוסייה, אזור ופוטנציאל. ` +
+    `${cvRows().length} רשויות: מדד ${CITY_YEAR} מהתמונה החינוכית של משרד החינוך, ייצוג תלמידות ופוטנציאל מ-${CITY_GIRLS_YEAR}, אשכול, אוכלוסייה ואזור. ` +
     `לחיצה על כותרת עמודה ממיינת.`;
 
   const arrow = k => CV.sort === k ? (CV.dir === -1 ? ' ▾' : ' ▴') : '';
@@ -5275,7 +5292,7 @@ function cvRender(){
   }
 
   document.getElementById('cvNote').innerHTML =
-    `דו"ח המצוינות ${CITY_YEAR} (עמ׳ 9, 10, 26–27) · אשכול: הלמ"ס, הצלבת שלושה מקורות · אוכלוסייה: הלמ"ס. ` +
+    `מדד: התמונה החינוכית ${hebYearName(CITY_YEAR)}, משרד החינוך · תלמידות ופוטנציאל: דו"ח המצוינות ${CITY_GIRLS_YEAR} (עמ׳ 10, 26–27) · אשכול: הלמ"ס, הצלבת שלושה מקורות · אוכלוסייה: הלמ"ס. ` +
     `<strong>פוטנציאל</strong> = % התלמידים עם 5 יח"ל; פורסם לחלק מהרשויות בלבד. ` +
     `<strong>*</strong> מגזר שאינו ניגש לבגרות עיונית מלאה — מוחרג מכל ממוצע. רשויות שאינן יהודיות אינן נכללות.`;
 }
@@ -5495,13 +5512,20 @@ function execBottomLine(c){
   // מספרים שסוגרים את קווי חולון בגרף המפגש (`prSheetPts` → `yyGrade12`),
   // ולא נוסחה מקבילה. השנה נגזרת (רשמי + 1), לא צרובה; בלי דגימה כזו —
   // האריח אינו מוצג.
-  const offT = holonSeries('tech').slice(-1)[0] || null;
-  const offM = holonSeries('ma5').slice(-1)[0]  || null;
+  // v105: כשאין דגימה כזו (השנה הרשמית האחרונה היא גם האחרונה שבטווח),
+  // האריח מציג את שתי השנים הרשמיות האחרונות, ומסומן "רשמי".
+  const _sT = holonSeries('tech'), _sM = holonSeries('ma5');
+  const offT = _sT.slice(-1)[0] || null, offM = _sM.slice(-1)[0] || null;
+  const pvT = _sT.length > 1 ? _sT[_sT.length-2] : null, pvM = _sM.length > 1 ? _sM[_sM.length-2] : null;
   const live = offT ? prSheetPts().find(o=> o.year === offT.y + 1) : null;
   const prog = (offT && offM && live && live.tech != null && live.ma5 != null) ? {
-    from: hebYearName(offT.y), to: hebYearName(live.year), onMatz: live.onMatz,
+    from: hebYearName(offT.y), to: hebYearName(live.year), src: live.onMatz ? 'מצבת' : 'ללא מצבת',
     rows: [ { l:'מדד הטק',        from: offT.v, to: live.tech },
             { l:'מתמטיקה 5 יח׳',  from: offM.v, to: live.ma5  } ]
+  } : (offT && offM && pvT && pvM && pvT.y === offT.y - 1 && pvM.y === offM.y - 1) ? {
+    from: hebYearName(pvT.y), to: hebYearName(offT.y), src: 'רשמי',
+    rows: [ { l:'מדד הטק',        from: pvT.v, to: offT.v },
+            { l:'מתמטיקה 5 יח׳',  from: pvM.v, to: offM.v } ]
   } : null;
 
   // שיעור ההמרה של עתיד טק — השנה המזווגת האחרונה, מ-`ALLDATA` (חוצה-
@@ -5537,7 +5561,7 @@ function execBottomLine(c){
       sub:`חולון ${ntPc(c.me.tech)} · ארצי ${NATIONAL}%` },
     // ההתקדמות משנה לשנה (v78→v79, החליף את אריח היעד לתשפ״ט בבקשת
     // המשתמש): טבלה זעירה — שני האחוזים והשינוי לכל מדד, בלי מלל.
-    ...(prog ? [{ cls:'c3', lbl:`ההתקדמות מ${prog.from} ל${prog.to} · יב׳ (${prog.onMatz ? 'מצבת' : 'ללא מצבת'})`,
+    ...(prog ? [{ cls:'c3', lbl:`ההתקדמות מ${prog.from} ל${prog.to} · יב׳ (${prog.src})`,
       grid: { head: [prog.from, prog.to],
               rows: prog.rows.map(r=> ({ l:r.l, a: ntPc(r.from), b: ntPc(r.to), chip: chip(r.to - r.from) })) },
       sub: '' }] : []),
@@ -5547,7 +5571,7 @@ function execBottomLine(c){
     // הסקופ מסומן בקצרה: המספר הגדול י׳–יב׳ מהגיליון, הדירוג יב׳ רשמי.
     { cls:'c1', lbl:'תלמידות בקרב לומדי הטק · י׳–יב׳',
       num: ntPc(gLive),
-      sub: gRank ? `#${gRank} מתוך ${gRows.length} ארצי · יב׳ ${ntPc(c.me.girls)} (${CITY_YEAR})`
+      sub: gRank ? `#${gRank} מתוך ${gRows.length} ארצי · יב׳ ${ntPc(c.me.girls)} (${CITY_GIRLS_YEAR})`
                  : `מהגיליון החי` },
     ...(conv ? [{ cls:'c2', lbl:`המרת עתיד טק · ${conv.label}`,
       num:`${conv.convPct.toFixed(0)}%`, chip: chip(conv.d),
@@ -5612,7 +5636,7 @@ function execPositives(c){
             ? `מול <strong>${nat}%</strong> ארצית — <strong>${signed(gNow-nat)} נק׳ ` +
               `${dirWord(gNow-nat, 'מעל', 'מתחת')}</strong>. ` +
               (gr4.rank
-                ? `בנתוני ${CITY_YEAR} חולון <strong>#${gr4.rank}</strong> מתוך ${gr4.rows.length} הגדולות. `
+                ? `בנתוני ${CITY_GIRLS_YEAR} חולון <strong>#${gr4.rank}</strong> מתוך ${gr4.rows.length} הגדולות. `
                 : '')
             : '') +
          (gd != null
@@ -6261,10 +6285,12 @@ function prConv(){
 // הטווח היא החלטה ידנית** — לעדכן את הקבוע כשמחליטים להציג שנה נוספת.
 // המספרים המלאים, כולל תשפ"ו, מוצגים כרגיל בתצוגה 8 ובסקירה.
 const PR_SHEET_MAX_YEAR = 2025;   // תשפ"ה
+const _offLastYear = ()=> { const t = holonSeries('tech'); return t.length ? t[t.length-1].y : 0; };
 function prSheetPts(){
   return Object.keys(ALLDATA)
     .map(k=> Object.assign({ key:k }, ALLDATA[k]))
-    .filter(p=> p.half === 2 && p.year > 0 && p.year <= PR_SHEET_MAX_YEAR)
+    // שנה שכבר יש לה נתון רשמי אינה מוצגת שוב מהגיליון (v105)
+    .filter(p=> p.half === 2 && p.year > _offLastYear() && p.year <= PR_SHEET_MAX_YEAR)
     .sort((a,b)=> a.year - b.year)
     .map(p=> ({ p, g: yyGrade12(p.key) }))
     .filter(o=> o.g)
@@ -6436,7 +6462,7 @@ function renderPrincipals(){
     const gr = girlsRank();
     gauges.push(tile('pri', 'תלמידות בקרב זכאי ההייטק', 'prG3', ntPc(me.girls),
       COL.primary,
-      `#${gr.rank} מבין הרשויות הגדולות · ארצי ${ntPc(NATIONAL_GIRLS)}`));
+      `#${gr.rank} מבין הרשויות הגדולות · ארצי ${ntPc(NATIONAL_GIRLS)} · ${CITY_GIRLS_YEAR}`));
     paint.push(()=> prGauge('prG3', me.girls, 50, COL.primary, {step:10}));
   }
 
@@ -6472,7 +6498,13 @@ function renderPrincipals(){
   const ms = holonSeries('ma5');
   const msOfficial = ms.length ? ms[ms.length-1] : null;
   const msLive = pts.length ? pts[pts.length-1] : null;
-  if(msOfficial && msLive && msLive.ma5 > msOfficial.v){
+  const msPrev = ms.length > 1 ? ms[ms.length-2] : null;
+  if(!msLive && msOfficial && msPrev && msPrev.y === msOfficial.y - 1 && msOfficial.v > msPrev.v){
+    // אין המשך נדגם (השנה האחרונה רשמית): העלייה הרשמית משנה לשנה (v105)
+    cards.push(card('העלייה במתמטיקה 5 יח״ל',
+      `${ntPc(msPrev.v)} ← ${ntPc(msOfficial.v)}`,
+      `+${signed(msOfficial.v - msPrev.v)} נק׳ מ${hebYearName(msPrev.y)} ל${hebYearName(msOfficial.y)} · שכבת יב׳, נתוני משרד החינוך`));
+  } else if(msOfficial && msLive && msLive.ma5 > msOfficial.v){
     cards.push(card('העלייה במתמטיקה 5 יח״ל',
       `${ntPc(msOfficial.v)} ← ${ntPc(msLive.ma5)}`,
       `+${signed(msLive.ma5 - msOfficial.v)} נק׳ מ-${msOfficial.y} ל${msLive.label} · שכבת יב׳, הגיליון החי במכנה המצבת`));
@@ -6633,7 +6665,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v104';
+const BUILD = 'v105';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
