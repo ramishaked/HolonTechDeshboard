@@ -2594,9 +2594,9 @@ function renderSubjects(){
   // ועל ציר מאופס הירידה של מדמ"ח בין השכבות מצטמצמת לרצועה דקה בתחתית.
   // המילוי בוטל יחד עם הקיטוע: על ציר שאינו מאופס גודל השטח כבר אינו
   // פרופורציונלי לערך. `backgroundColor` נשאר — הוא צובע את ריבועי הלגנדה.
-  // אנגלית אינה על הגרף הזה (v107): כ-1,300 לומדים בשכבה מותחים את הציר
-  // ומכווצים את ארבעת הקווים האחרים זה על זה. היא באריח ובמשפך שמתחת.
-  const sjAx = niceAxis([].concat(htByGrade, cs, ph, ma), 8);
+  // אנגלית על הגרף (v108, בקשת המשתמש). היא גדולה פי כמה משאר המקצועות
+  // ומותחת את הציר; ב-v107 הושמטה מסיבה זו והמשתמש ביקש להחזיר.
+  const sjAx = niceAxis([].concat(htByGrade, cs, ph, ma, hasEn ? en : []), 8);
   // אחוז המקצוע מהשכבה לצד המספר המוחלט (v81). `citySubjPctAtGrade` עובדת
   // על אינדקס ALL_GRADES, ולכן י׳ = 3.
   const sjPc = (gi, idx, dec)=>{ const p = citySubjPctAtGrade(gi + 3, idx); return p == null ? '' : ` (${p.toFixed(dec)}%)`; };
@@ -2621,17 +2621,20 @@ function renderSubjects(){
           datalabels:{anchor:'end',align:'bottom',color:COL.ph,font:hf2(),formatter:sjLbl(2)}},
         {label:'מתמטיקה 5 יח"ל', data:ma, borderColor:COL.ma, backgroundColor:'rgba(52,168,83,0.07)',
           borderWidth:3, pointRadius:7, pointBackgroundColor:COL.ma, fill:false, tension:0.3, order:3,
-          borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:sjLbl(3)}}
+          borderDash:[6,4], datalabels:{anchor:'end',align:'top',color:COL.ma,font:hf2(),formatter:sjLbl(3)}},
+        ...(hasEn ? [{label:'אנגלית 5 יח"ל', data:en, borderColor:COL.en, backgroundColor:'rgba(14,143,154,0.07)',
+          borderWidth:3, pointRadius:7, pointBackgroundColor:COL.en, fill:false, tension:0.3, order:4,
+          borderDash:[2,4], datalabels:{anchor:'end',align:'top',color:COL.en,font:hf2(),formatter:sjLbl(EN)}}] : [])
       ]},
     options:{ responsive:true,maintainAspectRatio:false,
       // הנקודות הקיצוניות יושבות עכשיו על קצות הציר ולא באמצעו, והתוויות
       // (`anchor:'end'`) נחתכות בלי ריפוד — למעלה למדד ולמתמטיקה, למטה לפיזיקה.
-      layout:{padding:{top:22,bottom:8}},
+      layout:{padding:{top:22,bottom:8,left:34,right:34}},
       plugins:{legend:{position:'top',labels:{font:HF,color:'#5f6368'}},
         tooltip:{mode:'index',intersect:false,
           callbacks:{label:ctx=> ctx.datasetIndex===0
             ? 'מדד טק: '+ctx.parsed.y+' ('+cityPct(ctx.dataIndex).toFixed(1)+'%)'
-            : ctx.dataset.label+': '+ctx.parsed.y + sjPc(ctx.dataIndex, [0,1,2,3][ctx.datasetIndex], 1) }}},
+            : ctx.dataset.label+': '+ctx.parsed.y + sjPc(ctx.dataIndex, [0,1,2,3,EN][ctx.datasetIndex], 1) }}},
       scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{color:GC}},
                y:{beginAtZero:false, min:sjAx.lo, max:sjAx.hi,
                   ticks:{stepSize:sjAx.step,font:HF,color:'#5f6368'},grid:{color:GC}} } }
@@ -2641,8 +2644,6 @@ function renderSubjects(){
   document.getElementById('sjAxis').textContent = sjAx.lo > 0
     ? `הציר האנכי מתחיל ב-${sjAx.lo} ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = ${sjAx.step} תלמידים.`
     : `שנתה על הציר האנכי = ${sjAx.step} תלמידים.`;
-  if(hasEn) document.getElementById('sjAxis').textContent +=
-    ' אנגלית 5 יח״ל אינה על הגרף: היקפה גדול פי כמה משאר המקצועות והיה מכווץ את הקווים. היא באריח שלמעלה ובכרטיס שמתחת.';
 
   const drops=[
     {name:'מדעי המחשב', drop:parseFloat(d(1))},
@@ -6871,7 +6872,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v107';
+const BUILD = 'v108';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
