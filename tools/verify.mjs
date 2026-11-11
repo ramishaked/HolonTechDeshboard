@@ -150,7 +150,8 @@ function serve() {
 
 // ── 3. דפדפן ─────────────────────────────────────────────────────
 async function launch(chromium) {
-  const paths = [null, '/opt/pw-browsers/chromium', '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'];
+  const paths = [null, '/opt/pw-browsers/chromium', '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'];   // Mac מקומי, בלי דפדפן של playwright
   let last;
   for (const p of paths) {
     try { return await chromium.launch(p ? { executablePath: p } : {}); }

@@ -87,10 +87,13 @@ const MATZEVET = { 'ז': 400, 'ח': 400, 'ט': 350, 'י': 1050, 'יא': 870, 'י
 //        השנתית תראה שינוי אמיתי ולא שתי דגימות זהות.
 // noFT — 'עתיד טק' לא הוזן בתקופה הזו. משחזר את המצב האמיתי ב-§8
 //        (השורה קיימת בגיליון וריקה), ובודק ש-— מוצג ולא 0%.
+// noTlat — שורת 'מצבת בלי תלת' שנוספה בגיליון תשפ"ז. הדף מתעלם ממנה;
+//        הערכים כאן שגויים בכוונה, ואם יופיעו במסך הדילוג נשבר.
 export const PERIODS = [
   { gid: '392061415',  name: 'תשפ"ה (סוף שנה)',   mul: 1.00 },
   { gid: '1592440184', name: 'תשפ"ו (תחילת שנה)', mul: 1.20 },
   { gid: '543820427',  name: 'תשפ"ו (2)',         mul: 1.10, noFT: true },
+  { gid: '1320089175', name: 'תשפ"ז (1)',         mul: 1.15, noTlat: true },
 ];
 export const DEFAULT_GID = PERIODS[PERIODS.length - 1].gid;   // הדף נפתח על האחרונה
 
@@ -169,6 +172,14 @@ export function csvFor(gid) {
   mz[1] = 'כמות תלמידים';
   ALL_GRADES.forEach((g, i) => { if (MATZEVET[g]) mz[2 + i * 6 + 2] = MATZEVET[g]; });
   rows.push(mz);
+
+  if (PERIODS.find(x => x.gid === gid).noTlat) {
+    const nt = blankRow();
+    nt[0] = 'מצבת בלי תלת';
+    nt[1] = 'כלל תלמידי העיר ע"פ ספירה שלנו ללא התלתים';
+    ALL_GRADES.forEach((g, i) => { nt[2 + i * 6] = 77777; nt[2 + i * 6 + 2] = 77777; });
+    rows.push(nt);
+  }
 
   // סה"כ עיר — מספרים שגויים בכוונה. אם הם יופיעו במסך, §3.1 נשבר.
   for (const [label] of ROWS) {
