@@ -330,6 +330,7 @@ async function browserRun() {
     const live = await page.evaluate(() => ({
       NAT, NAT_2014, NAT_GIRLS_2024, HOLON_MOE, HOLON_HIST, HOLON_MID,
       HOLON_POT_2024, CITY_DATA, CITY_ASTERISK, CITY_NEAR, POP_BAND,
+      SCHOOL_MOE, SCHOOL_MOE_YEARS,
     }));
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     const nat = ref['ארצי_סדרות'], g = ref['ארצי_שיעור_תלמידות_2024'], c = ref['רשויות'];
@@ -358,6 +359,8 @@ async function browserRun() {
       ['33 רשויות',       live.CITY_DATA, c['שורות']],
       ['כוכבית',          live.CITY_ASTERISK, c['כוכבית']],
       ['רצועת גודל',      live.POP_BAND, c['רצועת_גודל']],
+      ['בתי ספר — שנים',  live.SCHOOL_MOE_YEARS, ref['בתי_ספר_סדרות']['שנים']],
+      ['בתי ספר — מדדים', live.SCHOOL_MOE, ref['בתי_ספר_סדרות']['שורות']],
     ];
     let bad = 0;
     for (const [name, a, b] of checks) if (!eq(a, b)) { fail(`${name}: index.html ≠ data/national.json`); bad++; }

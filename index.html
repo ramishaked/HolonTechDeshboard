@@ -175,6 +175,7 @@ body{
    **בקנבס הזה בלבד** — הלגנדה וה-tooltip מקבלים rtl מפורש בהגדרות הגרף,
    ותוויות הציר בעברית מרונדרות ע"י Chart.js ואינן מושפעות. */
 #yyDecade{direction:ltr;}
+#ddMoe{direction:ltr;}     /* אותו תיקון RTL של #yyDecade */
 /* אותו תיקון לגרף המקצועות (v82): עם התוויות הארוכות "883 (42%)" ההסטה
    הפכה לחיתוך של המספרים בקצה השמאלי. */
 #subjectsChart{direction:ltr;}
@@ -256,6 +257,8 @@ body{
 .subj-num.cs{color:var(--info);}
 .subj-num.ph{color:var(--bad);}
 .subj-num.ma{color:var(--good);}
+.subj-num.en{color:#0e8f9a;}
+.subj-grid.four{grid-template-columns:repeat(4,1fr);}
 .subj-trend{font-size:11px;color:var(--muted);}
 .subj-pct{font-size:14px;font-weight:700;color:var(--muted);}
 
@@ -1177,6 +1180,12 @@ body{
         <div class="subj-num ma" id="maTotal">—</div>
         <div class="subj-trend" id="maTrend">תלמידים בכלל השכבות</div>
       </div>
+      <!-- אנגלית (v107): מוצגת רק בתקופה שבה השורה מוזנת בגיליון -->
+      <div class="subj-card" id="enCard" style="display:none;">
+        <div class="subj-name">🔤 אנגלית (5 יח"ל) <i class="ti" data-tip="סך לומדי 5 יח״ל אנגלית בשכבות י׳–יב׳. אנגלית 5 היא חלק מהגדרת הזכאות למדד טק. השורה מוזנת בגיליון מתשפ״ז.">i</i></div>
+        <div class="subj-num en" id="enTotal">—</div>
+        <div class="subj-trend" id="enTrend">תלמידים בכלל השכבות</div>
+      </div>
     </div>
 
     <!-- Main subjects chart -->
@@ -1295,6 +1304,18 @@ body{
         <div class="kpi-val" id="ddDrop">—</div>
         <div class="kpi-sub">ירידה יחסית</div>
       </div>
+    </div>
+
+    <!-- התפתחות המדדים הרשמיים של בית הספר (v107). מוסתר לבית ספר בלי נתון רשמי -->
+    <div class="card" id="ddMoeCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">התפתחות המדדים</div>
+          <div class="card-sub" id="ddMoeSub">—</div>
+        </div>
+      </div>
+      <div class="chart-box tall"><canvas id="ddMoe"></canvas></div>
+      <div class="cmp-note" id="ddMoeNote"></div>
     </div>
 
     <!-- School journey + subjects per grade -->
@@ -2106,6 +2127,87 @@ function holonSeries(metric){
   return [...by.values()].sort((a,b)=> a.y-b.y);
 }
 
+// ── מדדי הבגרות הרשמיים לפי בית ספר, תשע"ד–תשפ"ה (v107) ───────────
+// מקור: התמונה החינוכית של משרד החינוך (shkifut.education.gov.il), נתוני
+// מוסד, **כלל תלמידי י"ב** (Class_Id 12), נשלף 11.11.2026 ב-`tools/fetch-schools.mjs`.
+// מוצג בגרף "התפתחות המדדים" שבהעמקה לבית ספר. אינו בגיליון ולכן צרוב, כמו
+// `HOLON_MOE`; העותק הקריא-מכונה ב-`data/national.json` ("בתי_ספר_סדרות").
+// המפתח הוא שם בית הספר **כפי שהוא בגיליון**. המיפוי לסמל מוסד אומת מול
+// הגיליון: מדד תשפ"ה ביב׳ שם מול הרשמי כאן, לכל 11 בתי הספר (פער מרבי
+// 2.2 נק׳). בית ספר שאין לו שכבת יב׳ (אלון, ארן, יונתן) אינו כאן, והגרף
+// אינו מוצג לו. null = אין נתון באתר לאותה שנה.
+//   zak = זכאות לבגרות · mitz = בגרות מצטיינת · tech = בגרות טק
+//   en5 = אנגלית 5 יח"ל · ma5 = מתמטיקה 5 יח"ל
+const SCHOOL_MOE_YEARS = [2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+const SCHOOL_MOE = {
+  'אורט': { semel:570168, official:"מקיף אורט למדע וטכנולוגיה",
+    zak: [94.6,95.9,95.5,96.2,98.2,95.2,97.6,96.3,93,98.1,95.9,94.6],
+    mitz:[7.6,10.7,11.5,14.4,11.4,14.1,12.7,18.6,18.7,20.6,14.5,14.7],
+    tech:[21.2,16.5,17.3,18.8,28.3,28.2,31,34.8,33.7,32.2,27.5,29],
+    en5: [62,57.2,62.1,68.8,64.8,70,66.3,64.5,68.5,79.9,69.1,77.8],
+    ma5: [22.8,18.9,20.6,33.7,31.1,33.3,39.3,40.2,42.5,41.6,35.3,37.3] },
+  'אילון': { semel:540294, official:"עירוני עש פנחס אילון",
+    zak: [78.9,83.8,85.2,87.7,76,79.7,86.5,90.8,91.5,94.1,88.5,85.6],
+    mitz:[10.2,8.4,14.3,13.7,21.1,10.9,16.9,21.8,18.2,14.6,15.2,21.4],
+    tech:[21.7,16.2,30.2,20.5,22.9,21,18,24.7,18.8,19,14.8,20.9],
+    en5: [52.4,52.6,59.9,54.1,57.1,45.7,46.6,48.3,52.8,75.1,56.7,60],
+    ma5: [23.5,21.4,36.8,25.3,35.4,33.3,25.3,34.5,31.3,40.5,30.4,35.3] },
+  'הייטק היי': { semel:540450, official:"קמפוס פרס ברוח הייטק היי",
+    zak: [null,null,null,null,88.8,86.4,86,85.4,97,92.9,95.4,92.3],
+    mitz:[null,null,null,null,1,4.5,10.5,6.3,7.1,1.2,7.3,8.8],
+    tech:[null,null,null,null,null,null,7,9.4,6.1,8.2,5.5,2.2],
+    en5: [null,null,null,null,43.9,38.6,36.8,44.8,60.6,58.8,58.7,72.5],
+    ma5: [null,null,null,null,12.2,4.5,10.5,16.7,14.1,12.9,10.1,8.8] },
+  'הרצוג': { semel:540864, official:"מקיף שש שנתי הרצוג",
+    zak: [72.8,73.4,75,80.4,80.6,81.6,80,93.8,80.6,83.9,78.8,71.7],
+    mitz:[3.2,6.3,2.2,5.7,0,5.6,4,8,2.9,7.7,1,5.5],
+    tech:[1.9,2.5,4.4,9.5,8.5,4.8,7.2,6.3,3.6,5.6,7.1,5.5],
+    en5: [24.1,37.3,40.2,44.9,37.2,38.4,36,42.9,39.6,44.8,41.4,44.1],
+    ma5: [4.4,6.3,7.6,15.2,14.7,10.4,10.4,11.6,7.2,13.3,16.2,8.7] },
+  'יבנה': { semel:540302, official:"חמ\"ד תיכון יבנה אולפנת חולון",
+    zak: [84.6,88.2,82.5,91.6,82.1,87.5,90,92.2,83.3,89.5,87.8,85.1],
+    mitz:[7.7,10.5,13.8,10.8,14.3,0,4,10.9,16.7,10.5,14.6,17.6],
+    tech:[7.7,6.6,6.3,8.4,10.7,null,8,6.3,6.7,7,9.8,8.1],
+    en5: [30.8,31.6,41.3,33.7,39.3,27.5,48,46.9,43.3,52.6,63.4,68.9],
+    ma5: [9,9.2,7.5,13.3,13.1,0,10,15.6,18.3,10.5,14.6,14.9] },
+  'נבון': { semel:544528, official:"מקיף ע\"ש יצחק נבון",
+    zak: [72.6,85.2,83.8,83,89.1,87.3,75.4,92.4,86.2,94.5,89.7,97.3],
+    mitz:[4.8,10.9,6.9,5.3,2.9,5.3,4,5.5,6.5,4.4,1.7,3.7],
+    tech:[4.8,10.2,5.4,12.3,14.6,10.7,13.5,9.7,8.1,7.1,10.3,13.8],
+    en5: [45.8,45.3,40,49.1,41.6,46,45.2,60.7,56.1,63.4,64,64.9],
+    ma5: [9.5,10.9,11.5,20.5,27,18.7,15.9,16.6,15.4,13.7,20.6,19.1] },
+  'עתידים': { semel:544593, official:"עתידים ע\"ש מ. אלישיב",
+    zak: [83.1,88.9,93,87.4,91.2,86.1,92.8,87.9,92,87.9,95.3,93.6],
+    mitz:[3.4,5.1,0.9,0.9,0.9,0.9,3.3,4.3,9.6,5.7,6.8,5.8],
+    tech:[7.9,11.1,9.7,15.3,8,6.1,15.7,12.8,10.4,17.2,12.8,12.8],
+    en5: [38.2,47.5,52.6,55,50.4,53,62.1,55.3,62.4,59.9,62.8,55.8],
+    ma5: [12.4,15.2,14.9,21.6,18.6,10.4,19,18.4,20.8,24.2,20.3,14.7] },
+  'קוגל': { semel:540310, official:"מקיף שש שנתי קוגל",
+    zak: [69.7,71.5,68.1,79.5,74.9,86.4,81.5,95.8,94.4,90.3,90.8,91.2],
+    mitz:[3.7,4.6,7.9,5.4,6.4,5.8,8.7,10.2,13.3,19.5,11.5,15.7],
+    tech:[4.1,5.4,6.3,8.8,10.1,13.6,16.9,16.3,16.1,15.4,18,18.5],
+    en5: [28.4,36.4,32.5,41,35.6,40.9,59.8,62,62.8,70.8,75.1,67.6],
+    ma5: [5,7.5,11.5,10.7,16.4,21.4,23.9,22.3,25,26.2,24.9,31] },
+  'קציר': { semel:544353, official:"מקיף אפרים קציר",
+    zak: [90.1,84.6,93.5,95.1,91,87.7,93.8,91.8,91.2,90,93.1,94.2],
+    mitz:[8.5,9.2,10.5,7.3,13.2,8.7,15.7,24.7,19,15.6,15.4,20.4],
+    tech:[8.5,8.5,14.4,12.2,17.5,14.9,20,23.4,22.4,25.6,24.3,26.7],
+    en5: [36.2,35.4,45.1,47,50.5,50.8,57.1,58.9,63.9,67.3,63.2,74.2],
+    ma5: [10.6,11.5,16.3,14,21.7,22.1,24.8,26,26.3,28.9,30.4,32] },
+  'קרית שרת': { semel:541110, official:"מקיף שש שנתי ק. שרת",
+    zak: [91,92,88.3,90.1,90.4,87.3,89.8,90.9,82.3,87.1,87.7,83.4],
+    mitz:[6,9.3,8.2,5.1,3.4,10.6,6.9,14.5,12.8,7.9,7.1,10.2],
+    tech:[5.7,8,7.1,12.4,11.7,11.9,11.3,13.1,11.8,9.3,12.3,12.5],
+    en5: [55,55.3,52.3,59.1,59.9,52.7,58.8,57.7,55.7,58.4,59.1,61.5],
+    ma5: [10.7,11.6,12.8,21.2,19.8,20.8,18.8,24.7,20.9,15.7,20.6,21] },
+  'הראל': { semel:544692, official:"ק.חינוך בנ\"ע חולון",
+    zak: [86.1,88.9,87.9,66.7,88.9,82.9,80.4,86.7,93.8,100,95.7,88.9],
+    mitz:[5.6,0,3,0,0,0,0,8.3,6.3,14.3,2.9,13.3],
+    tech:[5.6,8.3,9.1,null,5.6,4.9,null,8.3,12.5,11.9,15.9,17.8],
+    en5: [25,41.7,27.3,0,41.7,34.1,28.3,41.7,39.6,47.6,59.4,55.6],
+    ma5: [8.3,11.1,9.1,0,5.6,4.9,2.2,8.3,14.6,21.4,21.7,22.2] }
+};
+
 const POP_BAND = 0.25;                 // ±25% מאוכלוסיית חולון = "היקף דומה"
 
 
@@ -2303,7 +2405,8 @@ function ftCityFunnel(start, end, g){
 const COL = {
   primary:'#6a3e9c', primaryD:'#4a2972', primaryL:'#ede1f7', accent:'#f47b20',
   good:'#34a853', warn:'#fbbc04', bad:'#e84235', info:'#1a73e8',
-  cs:'#1a73e8', ph:'#e84235', ma:'#34a853'
+  cs:'#1a73e8', ph:'#e84235', ma:'#34a853',
+  en:'#0e8f9a'            // אנגלית 5 יח"ל (v107), מוזנת מתשפ"ז
 };
 const HF = {family:'Heebo',size:12};
 const GC = 'rgba(0,0,0,0.06)';
@@ -2458,6 +2561,9 @@ function renderOverview(){
 // ════════════════════════════════════════════════════════════════
 function renderSubjects(){
   const cs=citySubjectByGrade(1), ph=citySubjectByGrade(2), ma=citySubjectByGrade(3);
+  // אנגלית 5 יח"ל (v107): אינדקס 14. מוזנת בגיליון מתשפ"ז; בתקופה שבה
+  // השורה ריקה המקצוע אינו מוצג כלל (אריח, קו, משפך), לא מוצג כאפס.
+  const EN = 14, en = citySubjectByGrade(EN), hasEn = en.reduce((a,b)=>a+b,0) > 0;
   // לצד המספר המוחלט גם האחוז מכלל תלמידי י׳–יב׳ (v81) — אותו מכנה של
   // כרטיס "מקצועות הבסיס" בהתפתחות המדד, דרך `cityStudents`.
   const denAll = GRADES.reduce((t,_,i)=> t + cityStudents(i), 0);
@@ -2466,6 +2572,9 @@ function renderSubjects(){
   document.getElementById('csTotal').innerHTML = numPct(cs);
   document.getElementById('phTotal').innerHTML = numPct(ph);
   document.getElementById('maTotal').innerHTML = numPct(ma);
+  document.getElementById('enCard').style.display = hasEn ? '' : 'none';
+  document.getElementById('enCard').parentElement.classList.toggle('four', hasEn);
+  if(hasEn) document.getElementById('enTotal').innerHTML = numPct(en);
   // המגמה מחושבת על **אחוזים** ולא על מספרים — אותה הגדרה בדיוק שבה משתמשים
   // ה-KPI העירוני ו-`schoolDropPct`. על מספרים היא סופגת גם את ההפרש בגודל
   // השכבות, וזו בדיוק ההטיה שכרטיס "אפקט המשפך" נועד להפריד. `citySubjPctAtGrade`
@@ -2477,6 +2586,7 @@ function renderSubjects(){
   document.getElementById('csTrend').textContent = `בין שכבות י׳←יב׳: ${d(1)}%`;
   document.getElementById('phTrend').textContent = `בין שכבות י׳←יב׳: ${d(2)}%`;
   document.getElementById('maTrend').textContent = `בין שכבות י׳←יב׳: ${d(3)}%`;
+  if(hasEn) document.getElementById('enTrend').textContent = `בין שכבות י׳←יב׳: ${d(EN)}%`;
 
   destroyChart('subjectsChart');
   const htByGrade = GRADES.map((_,gi)=> cityTotal(gi));   // זכאי בגרוטק — מדד הטק
@@ -2484,6 +2594,8 @@ function renderSubjects(){
   // ועל ציר מאופס הירידה של מדמ"ח בין השכבות מצטמצמת לרצועה דקה בתחתית.
   // המילוי בוטל יחד עם הקיטוע: על ציר שאינו מאופס גודל השטח כבר אינו
   // פרופורציונלי לערך. `backgroundColor` נשאר — הוא צובע את ריבועי הלגנדה.
+  // אנגלית אינה על הגרף הזה (v107): כ-1,300 לומדים בשכבה מותחים את הציר
+  // ומכווצים את ארבעת הקווים האחרים זה על זה. היא באריח ובמשפך שמתחת.
   const sjAx = niceAxis([].concat(htByGrade, cs, ph, ma), 8);
   // אחוז המקצוע מהשכבה לצד המספר המוחלט (v81). `citySubjPctAtGrade` עובדת
   // על אינדקס ALL_GRADES, ולכן י׳ = 3.
@@ -2529,17 +2641,20 @@ function renderSubjects(){
   document.getElementById('sjAxis').textContent = sjAx.lo > 0
     ? `הציר האנכי מתחיל ב-${sjAx.lo} ולא באפס, כדי שהשינוי בין השכבות יהיה קריא. שנתה = ${sjAx.step} תלמידים.`
     : `שנתה על הציר האנכי = ${sjAx.step} תלמידים.`;
+  if(hasEn) document.getElementById('sjAxis').textContent +=
+    ' אנגלית 5 יח״ל אינה על הגרף: היקפה גדול פי כמה משאר המקצועות והיה מכווץ את הקווים. היא באריח שלמעלה ובכרטיס שמתחת.';
 
   const drops=[
     {name:'מדעי המחשב', drop:parseFloat(d(1))},
     {name:'פיזיקה', drop:parseFloat(d(2))},
-    {name:'מתמטיקה 5 יח"ל', drop:parseFloat(d(3))}
+    {name:'מתמטיקה 5 יח"ל', drop:parseFloat(d(3))},
+    ...(hasEn ? [{name:'אנגלית 5 יח"ל', drop:parseFloat(d(EN))}] : [])
   ].filter(x=>!isNaN(x.drop)).sort((a,b)=> b.drop-a.drop);
   if(drops.length){
     const w=drops[0];
     document.getElementById('insightSubjects').innerHTML = `
       <div class="insight-t">${w.name} — הפער החד ביותר בין השכבות</div>
-      <div class="insight-b">מבין שלושת המקצועות, ${w.name} מציג את הפער הגדול ביותר בין י׳ ל-יב׳ באותה דגימה
+      <div class="insight-b">מבין ${drops.length === 3 ? 'שלושת' : drops.length === 4 ? 'ארבעת' : drops.length} המקצועות, ${w.name} מציג את הפער הגדול ביותר בין י׳ ל-יב׳ באותה דגימה
         (<strong>${w.drop.toFixed(1)}%</strong>). שימו לב לפער המגדרי: בבתי ספר לבנות הפיזיקה כמעט נעלמת לטובת מדעי המחשב.</div>`;
   }
 
@@ -2547,11 +2662,13 @@ function renderSubjects(){
   const subs = [
     {name:'מדעי המחשב', icon:'💻', color:COL.cs, data:cs, subIdx:1},
     {name:'פיזיקה',     icon:'⚛',  color:COL.ph, data:ph, subIdx:2},
-    {name:'מתמטיקה 5 יח"ל', icon:'📐', color:COL.ma, data:ma, subIdx:3}
+    {name:'מתמטיקה 5 יח"ל', icon:'📐', color:COL.ma, data:ma, subIdx:3},
+    // לאנגלית אין בגיליון פילוח מגדרי במערך השורה, ולכן בלי שורת ♀
+    ...(hasEn ? [{name:'אנגלית 5 יח"ל', icon:'🔤', color:COL.en, data:en, subIdx:EN, noG:true}] : [])
   ];
   // לכל מקצוע — % תלמידות בכל שכבה (י,יא,יב). null למתמטיקה.
   const girlsByGrade = sub => {
-    if(sub.subIdx===null) return [null,null,null];
+    if(sub.subIdx===null || sub.noG) return [null,null,null];
     return [3,4,5].map(gi => cityGirlsPctOfSubjAtGrade(gi, sub.subIdx));  // ALL_GRADES: 3=י,4=יא,5=יב
   };
   document.getElementById('funnelBox').innerHTML = subs.map(sub=>{
@@ -2707,6 +2824,66 @@ function renderDeepDive(){
   const dp=schoolDropPct(school);
   document.getElementById('ddDrop').textContent  = dp===null? '—' : '▼ '+dp.toFixed(1)+'%';
 
+  // ── התפתחות המדדים הרשמיים של בית הספר (v107) ──────────────────
+  // חמשת מדדי הבגרות של משרד החינוך, כלל י"ב, לכל השנים שיש באתר. זה
+  // הנתון הרשמי של בית הספר ולא חישוב מהגיליון, ולכן אינו מושפע מבורר
+  // התקופה. שנים ריקות בתחילת הסדרה נחתכות (הייטק היי מתחיל ב-2018).
+  destroyChart('ddMoe');
+  const moe = SCHOOL_MOE[school.name] || null;
+  document.getElementById('ddMoeCard').style.display = moe ? '' : 'none';
+  if(moe){
+    const SER = [
+      { k:'zak',  label:'זכאות לבגרות',     color:'#5f6368',   w:2.5 },
+      { k:'en5',  label:'אנגלית 5 יח״ל',    color:COL.en,      w:2.5 },
+      { k:'ma5',  label:'מתמטיקה 5 יח״ל',   color:COL.ma,      w:2.5 },
+      { k:'mitz', label:'בגרות מצטיינת',    color:COL.accent,  w:2.5 },
+      { k:'tech', label:'בגרות טק',         color:COL.primary, w:4 }
+    ];
+    const has = i => SER.some(x=> moe[x.k][i] != null);
+    const i0 = SCHOOL_MOE_YEARS.findIndex((_,i)=> has(i));
+    const yrs = SCHOOL_MOE_YEARS.slice(i0);
+    const lastIdx = arr => { for(let i=arr.length-1; i>=0; i--) if(arr[i] != null) return i; return -1; };
+    charts.ddMoe = new Chart(document.getElementById('ddMoe'), {
+      type:'line',
+      data:{ labels: yrs.map(String),
+        datasets: SER.map(x=>{
+          const data = moe[x.k].slice(i0), li = lastIdx(data);
+          return { label:x.label, data, borderColor:x.color, backgroundColor:x.color,
+            borderWidth:x.w, tension:0.25, fill:false, spanGaps:true,
+            pointRadius: ctx=> ctx.dataIndex === li ? 5 : 3,
+            pointBackgroundColor:'#fff', pointBorderColor:x.color, pointBorderWidth:2,
+            // רק הנקודה האחרונה מתויגת: חמש סדרות על שתים עשרה שנים הן שישים
+            // תוויות. שאר הערכים ב-tooltip.
+            datalabels:{ display: ctx=> ctx.dataIndex === li && !ctx.chart.getDatasetMeta(ctx.datasetIndex).hidden,
+              anchor:'end', align:'right', offset:6, color:x.color,
+              backgroundColor:'#fff', borderRadius:3, padding:{top:1,bottom:1,left:3,right:3},
+              font:{family:'Heebo', size:12, weight:'900'},
+              formatter:v=> v == null ? '' : v.toFixed(1)+'%' } };
+        }) },
+      options:{ responsive:true, maintainAspectRatio:false,
+        layout:{ padding:{ top:10, right:54, left:8 } },
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ position:'top', align:'end', labels:{ font:HF, color:'#5f6368', boxWidth:14, padding:10 } },
+          tooltip:{ mode:'index', intersect:false,
+            callbacks:{ label: ctx=> ctx.parsed.y == null ? null : ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+'%' } }
+        },
+        scales:{ x:{ ticks:{ font:hf2(), color:'#5f6368' }, grid:{ display:false } },
+                 y:{ beginAtZero:true, max:100, ticks:{ stepSize:20, callback:v=> v+'%', font:HF, color:'#5f6368' }, grid:{ color:GC } } } }
+    });
+    const tech = moe.tech.slice(i0), tl = lastIdx(tech);
+    const tp = tl > 0 && tech[tl-1] != null ? tech[tl] - tech[tl-1] : null;
+    document.getElementById('ddMoeSub').innerHTML =
+      `חמשת מדדי הבגרות של בית הספר לפי משרד החינוך, כלל תלמידי י״ב, ${yrs[0]}–${yrs[yrs.length-1]}.` +
+      (tl >= 0 ? ` בגרות טק ב-${yrs[tl]}: <strong>${tech[tl].toFixed(1)}%</strong>` +
+        (tp == null ? '' : Math.abs(tp) < 0.05 ? ' (ללא שינוי מהשנה הקודמת)'
+          : ` (${dirWord(tp, 'עלייה', 'ירידה')} של ${Math.abs(tp).toFixed(1)} נק׳ מהשנה הקודמת)`) + '.' : '');
+    document.getElementById('ddMoeNote').innerHTML =
+      `מקור: התמונה החינוכית, משרד החינוך (שקיפות בחינוך), נתוני מוסד: ${moe.official}, סמל ${moe.semel}. ` +
+      `אלה הנתונים הרשמיים של בית הספר, ולכן הם אינם מושפעים מבורר התקופה ואינם זהים לחישוב מהגיליון שבשאר העמוד. ` +
+      `לחיצה על שם מדד במקרא מסתירה או מציגה אותו.`;
+  }
+
   // Journey — אחוז לומדי טק, י-יב
   destroyChart('ddJourney');
   charts.ddJourney = new Chart(document.getElementById('ddJourney'), {
@@ -2756,6 +2933,8 @@ function renderDeepDive(){
       {n:'מתמטיקה 5 יח"ל', v:lr[3], c:COL.ma},
       {n:'פיזיקה',          v:lr[2], c:COL.ph},
       {n:'מדעי המחשב',      v:lr[1], c:COL.cs},
+      // אנגלית (v107): רק כשהשורה מוזנת לבית הספר בשכבה הזו
+      ...(lr[14] > 0 ? [{n:'אנגלית 5 יח"ל', v:lr[14], c:COL.en}] : []),
       {n:'זכאות למדד טק',   v:lr[4], c:COL.primary, out:true}
     ];
     const gradeN = lr[0] || 0;
@@ -2782,12 +2961,19 @@ function renderDeepDive(){
   const subjMeta = [
     {idx:1, name:'מדעי המחשב',     color:COL.cs},
     {idx:2, name:'פיזיקה',          color:COL.ph},
-    {idx:3, name:'מתמטיקה 5 יח"ל', color:COL.ma}
+    {idx:3, name:'מתמטיקה 5 יח"ל', color:COL.ma},
+    // אנגלית (v107): רק כשיש לבית הספר נתון באחת השכבות
+    ...(ALL_GRADES.some(g=> school.grades[g] && school.grades[g][14] > 0)
+        ? [{idx:14, name:'אנגלית 5 יח"ל', color:COL.en, noAmat:true}] : [])
   ];
   // בשכבות עמ"ט (ז'-ט') המקצועות אינם מופרדים — לא מציירים שם קווי מקצוע,
   // אלא קו נפרד אחד: "קבוצת עמ"ט". כך נמנעים משלושה קווים חופפים ומטעים.
   subjMeta.forEach(sub=>{
-    const schoolLine = ALL_GRADES.map((_,gi)=> isAmat(school,gi) ? null : subjPctAtGrade(school, gi, sub.idx));
+    // אנגלית אינה חלק מרישום קבוצת עמ"ט, ולכן הקו שלה מצויר גם בז׳–ט׳.
+    // שכבה שבה השורה ריקה (0) אינה מצוירת כאפס.
+    const schoolLine = ALL_GRADES.map((_,gi)=> sub.noAmat
+      ? ((rowAll(school,gi) && rowAll(school,gi)[sub.idx] > 0) ? subjPctAtGrade(school, gi, sub.idx) : null)
+      : isAmat(school,gi) ? null : subjPctAtGrade(school, gi, sub.idx));
     const cityLine   = ALL_GRADES.map((_,gi)=> gi<3 ? null : citySubjPctAtGrade(gi, sub.idx));
     ds.push({
       label: sub.name + ' (בית ספר)',
@@ -6685,7 +6871,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v106';
+const BUILD = 'v107';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
