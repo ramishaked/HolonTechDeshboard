@@ -1290,16 +1290,19 @@ body{
       <div class="kpi pri">
         <div class="kpi-lbl">סך תלמידים <i class="ti" data-tip="תלמידי י׳–יב׳ בבית הספר.">i</i></div>
         <div class="kpi-val" id="ddTotal">—</div>
+        <div class="kpi-sub" id="ddTotalYY"></div>
       </div>
       <div class="kpi acc">
         <div class="kpi-lbl">לומדי טק <i class="ti" data-tip="זכאי בגרוטק (עמ׳ 22) בשכבות י׳–יב׳.">i</i></div>
         <div class="kpi-val" id="ddTech">—</div>
         <div class="kpi-sub" id="ddTechPct">—</div>
+        <div class="kpi-sub" id="ddTechYY"></div>
       </div>
       <div class="kpi good">
         <div class="kpi-lbl">מדד יב׳ — בוגרי טק <i class="ti" data-tip="לומדי טק בשכבה יב׳ חלקי סך תלמידי יב׳.">i</i></div>
         <div class="kpi-val" id="ddGrad">—</div>
         <div class="kpi-sub" id="ddGradPct">—</div>
+        <div class="kpi-sub" id="ddGradYY"></div>
       </div>
       <div class="kpi warn">
         <div class="kpi-lbl">מגמה י׳←יב׳ <i class="ti" data-tip="(אחוז_י׳ − אחוז_יב׳) חלקי אחוז_י׳.">i</i></div>
@@ -1318,6 +1321,28 @@ body{
       </div>
       <div class="chart-box tall"><canvas id="ddMoe"></canvas></div>
       <div class="cmp-note" id="ddMoeNote"></div>
+    </div>
+
+    <!-- שנה מול שנה לפי שכבה, כולל שורת הפוטנציאל (v112). נגזר מהגיליון -->
+    <div class="card" id="ddYoyCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title" id="ddYoyTitle">שנה מול שנה</div>
+          <div class="card-sub" id="ddYoySub">—</div>
+        </div>
+      </div>
+      <div id="ddYoy"></div>
+    </div>
+
+    <!-- מעקב מחזור: אותה שכבה שנה אחרי (v112) -->
+    <div class="card" id="ddCohortCard" style="display:none;">
+      <div class="card-head">
+        <div>
+          <div class="card-title">המחזורים שלי</div>
+          <div class="card-sub" id="ddCohortSub">—</div>
+        </div>
+      </div>
+      <div id="ddCohort"></div>
     </div>
 
     <!-- School journey + subjects per grade -->
@@ -2828,6 +2853,122 @@ function initDeepDiveSelect(){
 }
 function goToDeepDive(name){ switchView('deepdive'); document.getElementById('schoolSelect').value=name; renderDeepDive(); }
 
+// ── העמקה: שנה מול שנה, פוטנציאל ומעקב מחזור (v112) ─────────────
+// שלוש השאלות של מנהל שהעמוד לא ענה עליהן: האם השתפרנו, מה קרה למחזורים
+// שכבר אצלי, ועל כמה תלמידים מדובר. **אפס נוסחאות חדשות**: אותן שורות
+// גיליון של אותו בית ספר, בתקופה הנבחרת ובאותה נקודה שנה קודם. בית הספר
+// מועבר כפרמטר (הדרך של תצוגה 7), בלי `withPeriod`.
+// התקופה להשוואה נגזרת מהבורר: אותו חצי שנה, שנה אחת אחורה. אין כזו = אין
+// השוואה, והכרטיס מציג את השנה הנוכחית לבדה.
+function ddPrevPeriod(){
+  const cur = ALLDATA[CURRENT_PERIOD]; if(!cur) return null;
+  return periodsSorted().find(p=> p.year === cur.year-1 && p.half === cur.half) || null;
+}
+// השורות שבטבלאות. idx = מיקום בשורת השכבה. `good` = עלייה היא חדשות טובות.
+const DD_ROWS = [
+  { k:'total', lbl:'תלמידים בשכבה',       idx:0,  good:null },
+  { k:'ht',    lbl:'זכאות למדד טק',        idx:4,  good:true },
+  { k:'ma5',   lbl:'מתמטיקה 5 יח״ל',       idx:3,  good:true },
+  { k:'ph',    lbl:'פיזיקה 5 יח״ל',        idx:2,  good:true },
+  { k:'cs',    lbl:'מדעי המחשב 5 יח״ל',    idx:1,  good:true },
+  { k:'en',    lbl:'אנגלית 5 יח״ל',        idx:14, good:true }
+];
+const ddVal = (sch, g, idx)=> { const r = sch && sch.grades[g]; return r ? r[idx] : null; };
+// הפוטנציאל: לומדי מתמטיקה 5 שאינם במדד. אותה נוסחה של `execPotential`, קלמפ 0.
+const ddPot = (sch, g)=> { const r = sch && sch.grades[g]; return r ? Math.max(0, r[3] - r[4]) : null; };
+function ddDelta(d, good, unit){
+  if(d == null) return '';
+  const col = (d === 0 || good == null) ? '#5f6368' : ((d > 0) === good ? '#137333' : '#c5221f');
+  const arw = d === 0 ? '' : (d > 0 ? '▲ ' : '▼ ');
+  const mag = Number.isInteger(d) ? Math.abs(d) : Math.abs(d).toFixed(1);
+  // החץ נושא את הכיוון; סימן ליד מספר מתהפך בשורה מימין לשמאל.
+  return `<span style="font-weight:700;color:${col};white-space:nowrap;">${arw}${mag}${unit||''}</span>`;
+}
+
+function renderDDWork(school){
+  const prevP = ddPrevPeriod();
+  const prev  = prevP ? (ALLDATA[prevP.key].schools.find(s=> s.name === school.name) || null) : null;
+  const curLbl = DATA_LABEL || '', prevLbl = prevP ? prevP.label : '';
+  const grades = GRADES.filter(g=> school.grades[g]);
+  const yyBox = document.getElementById('ddYoyCard'), coBox = document.getElementById('ddCohortCard');
+
+  // ── שורות ההשוואה שבאריחים ──
+  const tile = (id, html)=> { document.getElementById(id).innerHTML = html; };
+  if(prev && GRADES.some(g=> prev.grades[g])){
+    const dT = schoolStudentTotal(school) - schoolStudentTotal(prev);
+    const dH = schoolTechTotal(school) - schoolTechTotal(prev);
+    const dP = schoolTechPct(school) - schoolTechPct(prev);
+    const shortLbl = fcShort(prevLbl);
+    tile('ddTotalYY', `${ddDelta(dT, null)} מול ${shortLbl}`);
+    tile('ddTechYY',  `${ddDelta(dH, true)} · ${ddDelta(dP, true, ' נק׳')} מול ${shortLbl}`);
+    tile('ddGradYY', (hasGrade(school,2) && prev.grades['יב'])
+      ? `${ddDelta(totalTech(school,2) - totalTech(prev,2), true)} מול יב׳ של ${shortLbl}` : '');
+  } else { tile('ddTotalYY',''); tile('ddTechYY',''); tile('ddGradYY',''); }
+
+  if(!grades.length){ yyBox.style.display = 'none'; coBox.style.display = 'none'; return; }
+
+  // ── כרטיס 1: שנה מול שנה לפי שכבה + שורת הפוטנציאל ──
+  const th = t => `<th style="cursor:default;text-align:center;">${t}</th>`;
+  const dash = '<span style="color:var(--muted);">—</span>';
+  const cell = (now, old, den, denOld, good)=>{
+    if(now == null) return `<td style="text-align:center;">${dash}</td>`;
+    const pct = (den && den !== now) ? ` <span class="alt-num">${(now/den*100).toFixed(1)}%</span>` : '';
+    let d = '';
+    if(old != null){
+      d = `<div style="font-size:11.5px;margin-top:2px;">${ddDelta(now-old, good)}` +
+          ((den && denOld && den !== now) ? ` · ${ddDelta(now/den*100 - old/denOld*100, good, ' נק׳')}` : '') + `</div>`;
+    }
+    return `<td style="text-align:center;"><strong>${num(now)}</strong>${pct}${d}</td>`;
+  };
+  const shown = DD_ROWS.filter(r=> r.k === 'total' || grades.some(g=> ddVal(school, g, r.idx) > 0));
+  const rowHtml = r => `<tr><td class="nm">${r.lbl}</td>` + grades.map(g=>{
+      const den = ddVal(school, g, 0), denOld = ddVal(prev, g, 0);
+      const now = ddVal(school, g, r.idx);
+      const old = (r.k !== 'total' && r.k !== 'ht' && !(ddVal(prev, g, r.idx) > 0)) ? null : ddVal(prev, g, r.idx);
+      return cell(now, old, r.k === 'total' ? null : den, denOld, r.good);
+    }).join('') + `</tr>`;
+  const anyMa5 = grades.some(g=> ddVal(school, g, 3) > 0);
+  const potRow = !anyMa5 ? '' : `<tr style="background:var(--accent-l);"><td class="nm">מתמטיקה 5 שאינם במדד` +
+      ` <i class="ti" data-tip="לומדי מתמטיקה 5 יח״ל פחות זכאי המדד, באותה שכבה. אלה התלמידים הקרובים ביותר למדד: יש להם את המתמטיקה, וחסר להם מקצוע מדעי או אנגלית 5 יח״ל.">i</i></td>` +
+      grades.map(g=> cell(ddPot(school, g), (prev && prev.grades[g] && prev.grades[g][3] > 0) ? ddPot(prev, g) : null, null, null, null)).join('') + `</tr>`;
+  document.getElementById('ddYoyTitle').textContent = prev ? 'שנה מול שנה, לפי שכבה' : 'המצב לפי שכבה';
+  document.getElementById('ddYoySub').textContent = prev
+    ? `${curLbl} מול ${prevLbl} · מספר תלמידים, אחוז מהשכבה, והשינוי`
+    : `${curLbl} · מספר תלמידים ואחוז מהשכבה. אין דגימה מקבילה משנה קודמת להשוואה`;
+  document.getElementById('ddYoy').innerHTML =
+    `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>` +
+    grades.map(g=> th(g + '׳')).join('') + `</tr></thead><tbody>` +
+    shown.map(rowHtml).join('') + potRow + `</tbody></table></div>` +
+    `<div class="cmp-note">` +
+    (prev ? `השינוי הוא מול <strong>אותה שכבה</strong> ב${prevLbl}, כלומר מול תלמידים אחרים. מה שקרה לאותם תלמידים נמצא בכרטיס "המחזורים שלי". ` : '') +
+    (anyMa5 ? `השורה המודגשת היא הפרש בין שתי שורות בגיליון ולא רשימת תלמידים: אי אפשר לדעת ממנה למי חסר מקצוע מדעי ולמי אנגלית.` : '') +
+    `</div>`;
+  yyBox.style.display = '';
+
+  // ── כרטיס 2: מעקב מחזור. י׳ אשתקד היא יא׳ היום, יא׳ אשתקד היא יב׳ היום ──
+  const steps = [['י','יא'],['יא','יב']].filter(([a,b])=> prev && prev.grades[a] && school.grades[b]);
+  if(!steps.length){ coBox.style.display = 'none'; return; }
+  const coRows = DD_ROWS.filter(r=> steps.some(([a,b])=> ddVal(prev, a, r.idx) > 0 && ddVal(school, b, r.idx) > 0));
+  const coCell = (r, a, b)=>{
+    const was = ddVal(prev, a, r.idx), is = ddVal(school, b, r.idx);
+    if(!(was > 0) || is == null || (r.k === 'en' && !(is > 0))) return `<td style="text-align:center;">${dash}</td>`;
+    const keep = was >= FC_MIN_BASE ? `${(is/was*100).toFixed(0)}%` : 'בסיס קטן';
+    return `<td style="text-align:center;"><strong>${num(was)} ← ${num(is)}</strong>` +
+           `<div style="font-size:11.5px;margin-top:2px;">${ddDelta(is-was, r.good)} · <span style="color:var(--muted);">${keep}</span></div></td>`;
+  };
+  document.getElementById('ddCohortSub').textContent =
+    `אותה שכבה, שנה אחרי: ${prevLbl} ← ${curLbl}`;
+  document.getElementById('ddCohort').innerHTML =
+    `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="cursor:default;"></th>` +
+    steps.map(([a,b])=> th(`המחזור שב${b}׳ היום <span style="font-weight:500;">(${a}׳ ← ${b}׳)</span>`)).join('') +
+    `</tr></thead><tbody>` +
+    coRows.map(r=> `<tr><td class="nm">${r.lbl}</td>` + steps.map(([a,b])=> coCell(r, a, b)).join('') + `</tr>`).join('') +
+    `</tbody></table></div>` +
+    `<div class="cmp-note">האחוז הוא מה שנשאר מהמספר של השנה הקודמת, ומוצג רק כשהבסיס הוא ${FC_MIN_BASE} תלמידים ומעלה. ` +
+    `<strong>נספרת השכבה ולא התלמידים</strong>: תלמיד שעזב ותלמיד שהצטרף מתקזזים, ולכן המספר יכול גם לעלות.</div>`;
+  coBox.style.display = '';
+}
+
 function renderDeepDive(){
   const name=document.getElementById('schoolSelect').value;
   const school=SCHOOLS.find(s=>s.name===name); if(!school) return;
@@ -2840,6 +2981,8 @@ function renderDeepDive(){
   document.getElementById('ddGradPct').textContent = has12? schoolGradePct(school,2).toFixed(1)+'% מהשכבה' : 'אין שכבת יב׳';
   const dp=schoolDropPct(school);
   document.getElementById('ddDrop').textContent  = dp===null? '—' : (dp < 0 ? '▲ ' : '▼ ')+Math.abs(dp).toFixed(1)+'%';
+
+  renderDDWork(school);
 
   // ── התפתחות המדדים הרשמיים של בית הספר (v107) ──────────────────
   // חמשת מדדי הבגרות של משרד החינוך, כלל י"ב, לכל השנים שיש באתר. זה
@@ -6902,7 +7045,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v111';
+const BUILD = 'v112';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 

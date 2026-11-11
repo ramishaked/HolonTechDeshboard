@@ -469,6 +469,38 @@ async function browserRun() {
   else if (!ask.sorted) fail('תצוגה 13 — מפתחות החבילה אינם ממוינים (מטמון)');
   else pass(`תצוגה 13 — חבילה: ${ask.nPer} תקופות · ${ask.nSch} בתי ספר · ${(ask.bytes / 1024).toFixed(0)}KB · מדד יב׳ במצבת ${ask.p12 ?? '—'}`);
 
+  // ── העמקה לבית ספר: שנה מול שנה ומעקב מחזור (v112) ─────────────
+  // התאים מוצלבים מול השורות הגולמיות של אותו בית ספר בשתי התקופות,
+  // לא דרך `renderDDWork`. בית הספר נבחר מהנתונים: הראשון שיש לו י׳ ו-יא׳
+  // בתקופה הנבחרת וגם שנה קודם.
+  const dd = await page.evaluate(`(function(){
+    var cur = ALLDATA[CURRENT_PERIOD];
+    var prevP = periodsSorted().filter(function(p){ return p.year === cur.year-1 && p.half === cur.half; })[0];
+    if(!prevP) return { skip: true };
+    var old = ALLDATA[prevP.key].schools;
+    var pick = SCHOOLS.filter(function(s){ var o = old.filter(function(x){ return x.name === s.name; })[0];
+      return o && s.grades['י'] && s.grades['יא'] && o.grades['י'] && o.grades['י'][4] >= 10; })[0];
+    if(!pick) return { skip: true };
+    var o = old.filter(function(x){ return x.name === pick.name; })[0];
+    switchView('deepdive');
+    document.getElementById('schoolSelect').value = pick.name; renderDeepDive();
+    var rows = document.querySelectorAll('#ddYoy tbody tr');
+    var htCell = rows[1].children[1].innerText, potCell = rows[rows.length-1].children[1].innerText;
+    var coCell = document.querySelectorAll('#ddCohort tbody tr')[1].children[1].innerText;
+    var n = function(v){ return Math.round(v).toLocaleString('he-IL'); };
+    var r = pick.grades['י'], ro = o.grades['י'];
+    return { name: pick.name,
+      ht: htCell.indexOf(n(r[4])) === 0 && htCell.indexOf(String(Math.abs(r[4]-ro[4]))) > 0,
+      pot: potCell.indexOf(n(Math.max(0, r[3]-r[4]))) === 0,
+      co: coCell.indexOf(n(ro[4]) + ' ← ' + n(pick.grades['יא'][4])) === 0,
+      shown: document.getElementById('ddYoyCard').style.display !== 'none' && document.getElementById('ddCohortCard').style.display !== 'none',
+      htCell: htCell, coCell: coCell };
+  })()`);
+  if (dd.skip) pass('העמקה — אין תקופה מקבילה משנה קודמת, ההשוואה אינה מוצגת');
+  else if (!dd.shown) fail('העמקה — כרטיסי "שנה מול שנה" או "המחזורים שלי" מוסתרים אף שיש תקופה מקבילה');
+  else if (!dd.ht || !dd.pot || !dd.co) fail(`העמקה (${dd.name}) — תא אינו תואם לשורות הגולמיות: מדד "${dd.htCell}" · מחזור "${dd.coCell}"`);
+  else pass(`העמקה — שנה מול שנה, פוטנציאל ומעקב מחזור תואמים לשורות הגולמיות (${dd.name})`);
+
   // ── תצוגה 14: צפי מחזור ────────────────────────────────────────
   // הצפי מוצלב מול חישוב עצמאי על השורות הגולמיות (לא דרך `fcCity`),
   // ונבדק שהאקורדיאון של בתי הספר סגור בברירת מחדל.
