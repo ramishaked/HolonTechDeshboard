@@ -176,7 +176,23 @@ body{
    **בקנבס הזה בלבד** — הלגנדה וה-tooltip מקבלים rtl מפורש בהגדרות הגרף,
    ותוויות הציר בעברית מרונדרות ע"י Chart.js ואינן מושפעות. */
 #yyDecade{direction:ltr;}
-#ddMoe{direction:ltr;}     /* אותו תיקון RTL של #yyDecade */
+#ddMoe{direction:ltr;}
+/* העמקה: רצועת "השורה התחתונה" (v114). שעונים · גרף מרכזי · אריחים */
+.dd-hero{display:grid;grid-template-columns:250px minmax(0,1fr) 250px;gap:14px;margin-bottom:18px;align-items:stretch;}
+.dd-hero-col{display:flex;flex-direction:column;gap:14px;}
+.dd-hero-col .kpi{flex:1;display:flex;flex-direction:column;justify-content:center;}
+.dd-hero .card{margin-bottom:0;display:flex;flex-direction:column;}
+.dd-hero .chart-box{flex:1;min-height:300px;}
+#ddHeroChart{direction:ltr;}
+.dd-big{font-size:34px;font-weight:900;line-height:1.05;}
+.dd-big small{font-size:14px;font-weight:700;margin-right:5px;}
+@media(max-width:1150px){.dd-hero{grid-template-columns:1fr;}.dd-hero-col{flex-direction:row;flex-wrap:wrap;}.dd-hero-col .kpi{min-width:220px;}}
+details.dd-detail > summary{list-style:none;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:14px 20px;margin-bottom:18px;font-size:15px;font-weight:900;color:var(--primary-d);display:flex;align-items:center;gap:10px;}
+details.dd-detail > summary::-webkit-details-marker{display:none;}
+details.dd-detail > summary::after{content:'▾';margin-right:auto;font-size:16px;color:var(--muted);transition:transform .15s;}
+details.dd-detail[open] > summary::after{transform:rotate(180deg);}
+details.dd-detail > summary small{font-size:12px;font-weight:500;color:var(--muted);}     /* אותו תיקון RTL של #yyDecade */
 #cityJourney{direction:ltr;}   /* כנ"ל: בלי זה התוויות מוסטות שמאלה והראשונה נחתכת (v109) */
 /* אותו תיקון לגרף המקצועות (v82): עם התוויות הארוכות "883 (42%)" ההסטה
    הפכה לחיתוך של המספרים בקצה השמאלי. */
@@ -1285,6 +1301,24 @@ body{
       <select class="selector-select" id="schoolSelect" onchange="renderDeepDive()"></select>
     </div>
 
+    <!-- השורה התחתונה (v114): שעונים · גרף מרכזי · אריחים. נבנה ב-renderDDHero -->
+    <div class="dd-hero" id="ddHero">
+      <div class="dd-hero-col" id="ddHeroGauges"></div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="ddHeroTitle">—</div>
+            <div class="card-sub" id="ddHeroSub">—</div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="ddHeroChart"></canvas></div>
+      </div>
+      <div class="dd-hero-col" id="ddHeroTiles"></div>
+    </div>
+
+    <details class="dd-detail" id="ddDetail">
+    <summary>הפירוט המלא <small>כל הטבלאות והגרפים של בית הספר</small></summary>
+
     <!-- KPIs for selected school -->
     <div class="kpi-grid">
       <div class="kpi pri">
@@ -1456,6 +1490,7 @@ body{
       </div>
       <div id="ddData"></div>
     </div>
+    </details>
 
   </section>
   <!-- VIEW 5: INSIGHTS -->
@@ -2898,6 +2933,164 @@ function initDeepDiveSelect(){
 }
 function goToDeepDive(name){ switchView('deepdive'); document.getElementById('schoolSelect').value=name; renderDeepDive(); }
 
+// ── העמקה: רצועת "השורה התחתונה" (v114) ─────────────────────────
+// למנהל שאינו קורא טבלאות: שני שעונים, גרף אחד ושלושה אריחים, ומתחתם
+// כל הפירוט באזור נפתח. **תלמידים ולא נקודות אחוז, ומילת הכיוון נגזרת.**
+// הכל הרכבה של מה שכבר מחושב בפירוט; אריח או שעון בלי נתון אינו נבנה.
+function renderDDHero(school){
+  ['ddG1','ddG2','ddHeroChart'].forEach(destroyChart);
+  const prevP = ddPrevPeriod();
+  const prev  = prevP ? (ALLDATA[prevP.key].schools.find(s=> s.name === school.name) || null) : null;
+  const prevS = prevP ? fcShort(prevP.label) : '';
+  const grades = GRADES.filter(g=> school.grades[g] && school.grades[g][0] > 0);
+  const top = grades[grades.length-1] || null;                // השכבה הבוגרת שיש לבית הספר
+  const gauges = [], tiles = [], paint = [];
+  const gauge = (cls, lbl, id, numHtml, color, sub)=> `
+    <div class="kpi ${cls}"><div class="kpi-lbl">${lbl}</div>
+      <div class="pr-g-wrap"><canvas id="${id}"></canvas>
+        <div class="pr-g-num" style="color:${color};">${numHtml}</div></div>
+      <div class="kpi-sub">${sub}</div></div>`;
+  const tile = (cls, lbl, big, color, sub)=> `
+    <div class="kpi ${cls}"><div class="kpi-lbl">${lbl}</div>
+      <div class="dd-big" style="color:${color};">${big}</div>
+      <div class="kpi-sub">${sub}</div></div>`;
+  const GOOD = '#137333', BAD = '#c5221f', NEU = 'var(--text)';
+  const ofN = p => { const k = Math.round(100/p); return (p > 0 && k >= 2 && k <= 20) ? `1 מכל ${k}` : null; };
+
+  if(top){
+    const gi = GRADES.indexOf(top), r = school.grades[top];
+    // ── שעון 1: כמה מתלמידי השכבה הבוגרת במסלול, מול הממוצע בעיר ──
+    const p = r[0] ? r[4]/r[0]*100 : 0, cp = cityPct(gi);
+    const mx = Math.max(30, Math.ceil(Math.max(p, ...SCHOOLS.map(s=> schoolGradePct(s, gi)))/10)*10);
+    const above = p >= cp;
+    gauges.push(gauge(above ? 'good' : 'acc', `תלמידי ${top}׳ במסלול בגרות טק`, 'ddG1', p.toFixed(0)+'%',
+      above ? GOOD : COL.accent,
+      `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} · ${Math.round(p) === Math.round(cp) ? 'כמו הממוצע' : dirWord(p-cp, 'מעל הממוצע', 'מתחת לממוצע')} בעיר, ${cp.toFixed(0)}%`));
+    paint.push(()=> prGauge('ddG1', p, mx, above ? COL.good : COL.accent, {step: mx/5, zone:[cp, mx]}));
+
+    // ── שעון 2: כמה נשארו במסלול מהשנה שעברה. בלי בסיס: חלקן של התלמידות ──
+    const from = GRADES[gi-1];
+    const was = (prev && from && prev.grades[from]) ? prev.grades[from][4] : 0;
+    if(was >= FC_MIN_BASE){
+      const keep = Math.min(100, r[4]/was*100);
+      let cw = 0, ci = 0;
+      SCHOOLS.forEach(s=>{ const o = ALLDATA[prevP.key].schools.find(x=> x.name === s.name);
+        if(o && o.grades[from] && s.grades[top]){ cw += o.grades[from][4]; ci += s.grades[top][4]; } });
+      const ck = cw ? Math.min(100, ci/cw*100) : null, ok = ck == null || keep >= ck;
+      gauges.push(gauge(ok ? 'good' : 'acc', `נשארו במסלול מ${from}׳ ל${top}׳`, 'ddG2', keep.toFixed(0)+'%',
+        ok ? GOOD : COL.accent,
+        `<strong>${num(r[4])} מתוך ${num(was)}</strong> שהיו במסלול ב${from}׳ ב${prevS}` + (ck != null ? ` · בעיר ${ck.toFixed(0)}%` : '')));
+      paint.push(()=> prGauge('ddG2', keep, 100, ok ? COL.good : COL.accent, {step:25, pad:24, zone: ck != null ? [ck, 100] : null}));
+    } else if(schoolTechTotal(school) > 0){
+      const gp = schoolGirlsPctOfTech(school), cg = cityGirlsPctOfTech();
+      gauges.push(gauge('pri', 'תלמידות מתוך לומדי הטק', 'ddG2', gp.toFixed(0)+'%', COL.primary,
+        `<strong>${num(schoolGirlsTotal(school))} מתוך ${num(schoolTechTotal(school))}</strong> · בעיר ${cg.toFixed(0)}%`));
+      paint.push(()=> prGauge('ddG2', gp, 60, COL.primary, {step:10, zone:[cg, 60]}));
+    }
+
+    // ── אריח 1: מול שנה שעברה, באותה שכבה, בתלמידים ──
+    if(prev && prev.grades[top]){
+      const d = r[4] - prev.grades[top][4];
+      tiles.push(tile(d >= 0 ? 'good' : 'warn', 'מול שנה שעברה',
+        d === 0 ? 'ללא שינוי' : `${d > 0 ? '▲' : '▼'} ${num(Math.abs(d))}<small>${Math.abs(d) === 1 ? 'תלמיד' : 'תלמידים'}</small>`,
+        d === 0 ? NEU : d > 0 ? GOOD : BAD,
+        `${num(prev.grades[top][4])} במסלול ב${top}׳ ב${prevS}, <strong>${num(r[4])}</strong> היום`));
+    }
+    // ── אריח 2: המאגר הגדול ביותר, והשכבה שבה הוא נמצא ──
+    const pots = grades.map(g=> ({ g, n: ddPot(school, g) })).sort((a,b)=> b.n - a.n);
+    if(pots[0] && pots[0].n > 0){
+      tiles.push(tile('acc', 'הקרובים ביותר למסלול', `${num(pots[0].n)}<small>תלמידי ${pots[0].g}׳</small>`, '#a04a10',
+        `לומדים מתמטיקה 5 יח״ל ועדיין אינם במסלול. כאן אפשר להוסיף.`));
+    }
+    // ── אריח 3: המקום בין בתי הספר שיש להם י׳ עד יב׳ ──
+    const rk = SCHOOLS.filter(s=> schoolStudentTotal(s) > 0).sort((a,b)=> schoolTechPct(b) - schoolTechPct(a));
+    const pos = rk.findIndex(s=> s.name === school.name) + 1;
+    if(pos > 0 && rk.length > 1){
+      tiles.push(tile('pri', 'המקום בעיר', `${pos}<small>מתוך ${rk.length}</small>`, 'var(--primary-d)',
+        `לפי שיעור התלמידים במסלול בשכבות י׳ עד יב׳ (${schoolTechPct(school).toFixed(0)}%)`));
+    }
+  } else {
+    // ── חטיבה: עתיד טק. ההמרה של השנה השלמה האחרונה, והכניסה של השנה שנפתחה ──
+    const ys = ftYears(), y = ys[0] || null, g = y ? ftGrade([y.start, y.end]) : null;
+    const row = g ? ftFunnelRows(y.start, y.end, g).find(x=> x.name === school.name) : null;
+    if(row && row.convPct != null){
+      const cc = ftCityFunnel(y.start, y.end, g), ok = cc.convPct == null || row.convPct >= cc.convPct;
+      const cv = Math.min(100, row.convPct);
+      gauges.push(gauge(ok ? 'good' : 'acc', `עתיד טק ${y.label}: המשיכו למקצועות הטק`, 'ddG1', cv.toFixed(0)+'%',
+        ok ? GOOD : COL.accent,
+        `<strong>${num(row.chose)} מתוך ${num(row.entered)}</strong> שנכנסו לתוכנית ב${g}׳` + (cc.convPct != null ? ` · בעיר ${cc.convPct.toFixed(0)}%` : '')));
+      paint.push(()=> prGauge('ddG1', cv, 100, ok ? COL.good : COL.accent, {step:25, pad:24, zone: cc.convPct != null ? [cc.convPct, 100] : null}));
+      tiles.push(tile('warn', 'לא המשיכו', `${num(Math.max(0, row.entered - row.chose))}<small>תלמידים</small>`, '#a04a10',
+        `נכנסו לתוכנית ב${y.label} ולא בחרו במקצועות הטק`));
+    }
+    const open = periodsSorted().filter(pp=> pp.half === 1).pop();
+    if(open && g && !ys.some(yy=> yy.year === open.year)){
+      const me = open.schools.find(x=> x.name === school.name), n = me ? ftAt(me, g) : null;
+      if(n != null) tiles.unshift(tile('pri', `נכנסו לעתיד טק ב${fcShort(open.label)}`, `${num(n)}<small>תלמידי ${g}׳</small>`, 'var(--primary-d)',
+        me.grades[g][0] ? `${(n/me.grades[g][0]*100).toFixed(0)}% מהשכבה. ההמשך יימדד בסוף השנה.` : 'ההמשך יימדד בסוף השנה.'));
+    }
+  }
+  document.getElementById('ddHeroGauges').innerHTML = gauges.join('');
+  document.getElementById('ddHeroTiles').innerHTML  = tiles.join('');
+  document.getElementById('ddHeroGauges').style.display = gauges.length ? '' : 'none';
+  document.getElementById('ddHeroTiles').style.display  = tiles.length ? '' : 'none';
+  document.getElementById('ddHero').style.gridTemplateColumns =
+    (gauges.length && tiles.length) ? '' : (gauges.length || tiles.length) ? '250px minmax(0,1fr)' : '1fr';
+  paint.forEach(f=> f());
+
+  // ── הגרף המרכזי: בגרות טק לאורך השנים, בית הספר מול חולון והארץ (רשמי).
+  //    בית ספר בלי נתון רשמי: תלמידים במסלול לפי שכבה, השנה מול שנה שעברה. ──
+  const moe = SCHOOL_MOE[school.name] || null;
+  const lbl = (color, all)=> ({ display: ctx=> all || ctx.dataIndex === ctx.dataset.data.length-1,
+    anchor:'end', align:'top', offset:4, color, backgroundColor:'#fff', borderRadius:3,
+    padding:{top:1,bottom:1,left:3,right:3}, font:{family:'Heebo', size: all ? 12 : 11, weight:'900'},
+    formatter:v=> v == null ? '' : v.toFixed(1)+'%' });
+  if(moe && moe.tech.some(v=> v != null)){
+    const i0 = moe.tech.findIndex(v=> v != null), yrs = SCHOOL_MOE_YEARS.slice(i0);
+    const mine = moe.tech.slice(i0);
+    const city = yrs.map(y=>{ const i = HOLON_MOE.years.indexOf(y); return i >= 0 ? HOLON_MOE.tech[i] : null; });
+    const nat  = yrs.map(y=>{ const i = NAT.years.indexOf(y); return i >= 0 ? NAT.tech[i] : null; });
+    const line = (label, data, color, w, dash, all)=> ({ label, data, borderColor:color, backgroundColor:color,
+      borderWidth:w, borderDash:dash || [], tension:0.25, fill:false, spanGaps:true,
+      pointRadius: all ? 4 : 2, pointBackgroundColor:'#fff', pointBorderColor:color, pointBorderWidth:2,
+      datalabels: lbl(color, all) });
+    const li = mine.length-1, d = (li > 0 && mine[li] != null && mine[li-1] != null) ? mine[li] - mine[li-1] : null;
+    document.getElementById('ddHeroTitle').textContent = 'בגרות טק בבית הספר לאורך השנים';
+    document.getElementById('ddHeroSub').innerHTML =
+      `אחוז הזכאים מכלל תלמידי י״ב, ${yrs[0]}–${yrs[yrs.length-1]}, לפי משרד החינוך` +
+      (mine[li] != null && city[li] != null
+        ? ` · ב-${yrs[li]}: <strong>${mine[li].toFixed(1)}%</strong>, ${dirWord(mine[li]-city[li], 'מעל חולון', 'מתחת לחולון')} (${city[li].toFixed(1)}%)` : '') +
+      (d != null && Math.abs(d) >= 0.05 ? `, ${dirWord(d, 'עלייה', 'ירידה')} מ-${mine[li-1].toFixed(1)}% בשנה הקודמת` : '');
+    charts.ddHeroChart = new Chart(document.getElementById('ddHeroChart'), { type:'line',
+      data:{ labels: yrs.map(String), datasets:[
+        line(school.name, mine, COL.primary, 4, null, true),
+        line('חולון', city, COL.accent, 2.5, null, false),
+        line('ארצי', nat, '#9aa0a6', 2, [5,4], false) ] },
+      options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18,right:26,left:8}},
+        interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
+          tooltip:{callbacks:{label:ctx=> ctx.parsed.y == null ? null : ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+'%'}} },
+        scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
+                 y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } } });
+  } else {
+    const gs = ALL_GRADES.filter(g=> school.grades[g] && school.grades[g][0] > 0);
+    const hasPrev = prev && gs.some(g=> prev.grades[g]);
+    const bar = (label, data, color)=> ({ label, data, backgroundColor:color, borderRadius:6,
+      datalabels:{anchor:'end',align:'end',color:'#5f6368',font:hf2(),formatter:v=> v == null ? '' : num(v)} });
+    document.getElementById('ddHeroTitle').textContent = 'תלמידים במסלול הטק, לפי שכבה';
+    document.getElementById('ddHeroSub').textContent = (DATA_LABEL || '') + (hasPrev ? ` מול ${prevP.label}` : '') +
+      ' · מספר התלמידים שבית הספר רשם למסלול בכל שכבה';
+    charts.ddHeroChart = new Chart(document.getElementById('ddHeroChart'), { type:'bar',
+      data:{ labels: gs.map(g=> g + '׳'), datasets:
+        (hasPrev ? [bar(prevS, gs.map(g=> prev.grades[g] ? prev.grades[g][4] : null), '#f6c9a6')] : [])
+          .concat([bar(fcShort(DATA_LABEL || 'היום'), gs.map(g=> school.grades[g][4]), COL.primary)]) },
+      options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}},
+        plugins:{ legend:{display:hasPrev,position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14}} },
+        scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
+                 y:{beginAtZero:true,grace:'14%',ticks:{font:HF,color:'#5f6368',precision:0},grid:{color:GC}} } } });
+  }
+}
+
 // ── העמקה: שנה מול שנה, פוטנציאל ומעקב מחזור (v112) ─────────────
 // שלוש השאלות של מנהל שהעמוד לא ענה עליהן: האם השתפרנו, מה קרה למחזורים
 // שכבר אצלי, ועל כמה תלמידים מדובר. **אפס נוסחאות חדשות**: אותן שורות
@@ -3147,6 +3340,15 @@ function renderDDPlan(school){
 }
 
 function renderDeepDive(){
+  const _det = document.getElementById('ddDetail');
+  if(_det && !_det._wired){
+    _det._wired = true;
+    try{ _det.open = localStorage.getItem('holon_dd_open') === '1'; }catch(e){}
+    _det.addEventListener('toggle', ()=>{
+      try{ localStorage.setItem('holon_dd_open', _det.open ? '1' : '0'); }catch(e){}
+      if(_det.open) renderDeepDive();
+    });
+  }
   const name=document.getElementById('schoolSelect').value;
   const school=SCHOOLS.find(s=>s.name===name); if(!school) return;
 
@@ -3159,6 +3361,7 @@ function renderDeepDive(){
   const dp=schoolDropPct(school);
   document.getElementById('ddDrop').textContent  = dp===null? '—' : (dp < 0 ? '▲ ' : '▼ ')+Math.abs(dp).toFixed(1)+'%';
 
+  renderDDHero(school);
   renderDDWork(school);
   renderDDPlan(school);
 
@@ -6781,7 +6984,7 @@ function prGauge(id, val, max, color, opts){
       backgroundColor:[color, '#eee6f5'], borderWidth:0 }] },
     options:{ responsive:true, maintainAspectRatio:false,
       rotation:-90, circumference:180, cutout:'70%',
-      layout:{padding:{top:16,left:18,right:18}},
+      layout:{padding:{top:16,left:o.pad || 18,right:o.pad || 18}},
       plugins:{ legend:{display:false}, tooltip:{enabled:false},
                 datalabels:{display:false} } },
     plugins:[{ id:'prScale',
@@ -7225,7 +7428,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v113';
+const BUILD = 'v114';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 

@@ -484,6 +484,16 @@ async function browserRun() {
     var o = old.filter(function(x){ return x.name === pick.name; })[0];
     switchView('deepdive');
     document.getElementById('schoolSelect').value = pick.name; renderDeepDive();
+    // הרצועה העליונה (v114) נבדקת לפני פתיחת הפירוט: הוא סגור בברירת מחדל.
+    var det = document.getElementById('ddDetail');
+    var hero = { closed: !det.open,
+      gauges: document.querySelectorAll('#ddHeroGauges .kpi').length,
+      tiles: document.querySelectorAll('#ddHeroTiles .kpi').length,
+      chart: !!charts.ddHeroChart && charts.ddHeroChart.data.datasets.length > 0,
+      g1: (document.querySelector('#ddHeroGauges .kpi-sub') || {}).innerText || '' };
+    var top = ['יב','יא','י'].filter(function(g){ return pick.grades[g] && pick.grades[g][0] > 0; })[0];
+    hero.g1ok = hero.g1.indexOf(Math.round(pick.grades[top][4]).toLocaleString('he-IL') + ' מתוך ' + Math.round(pick.grades[top][0]).toLocaleString('he-IL')) === 0;
+    det.open = true;
     var rows = document.querySelectorAll('#ddYoy tbody tr');
     var htCell = rows[1].children[1].innerText, potCell = rows[rows.length-1].children[1].innerText;
     var coCell = document.querySelectorAll('#ddCohort tbody tr')[1].children[1].innerText;
@@ -493,10 +503,14 @@ async function browserRun() {
       ht: htCell.indexOf(n(r[4])) === 0 && htCell.indexOf(String(Math.abs(r[4]-ro[4]))) > 0,
       pot: potCell.indexOf(n(Math.max(0, r[3]-r[4]))) === 0,
       co: coCell.indexOf(n(ro[4]) + ' ← ' + n(pick.grades['יא'][4])) === 0,
+      hero: hero,
       shown: document.getElementById('ddYoyCard').style.display !== 'none' && document.getElementById('ddCohortCard').style.display !== 'none',
       htCell: htCell, coCell: coCell };
   })()`);
   if (dd.skip) pass('העמקה — אין תקופה מקבילה משנה קודמת, ההשוואה אינה מוצגת');
+  else if (!dd.hero.closed) fail('העמקה — אזור "הפירוט המלא" פתוח בברירת מחדל');
+  else if (!dd.hero.gauges || !dd.hero.tiles || !dd.hero.chart) fail(`העמקה — הרצועה העליונה חסרה: ${dd.hero.gauges} שעונים · ${dd.hero.tiles} אריחים · גרף ${dd.hero.chart}`);
+  else if (!dd.hero.g1ok) fail(`העמקה — השעון הראשון אינו תואם לשורה הגולמית: "${dd.hero.g1}"`);
   else if (!dd.shown) fail('העמקה — כרטיסי "שנה מול שנה" או "המחזורים שלי" מוסתרים אף שיש תקופה מקבילה');
   else if (!dd.ht || !dd.pot || !dd.co) fail(`העמקה (${dd.name}) — תא אינו תואם לשורות הגולמיות: מדד "${dd.htCell}" · מחזור "${dd.coCell}"`);
   else pass(`העמקה — שנה מול שנה, פוטנציאל ומעקב מחזור תואמים לשורות הגולמיות (${dd.name})`);
