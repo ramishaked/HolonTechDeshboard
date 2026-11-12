@@ -133,11 +133,17 @@ function syntaxGate() {
 }
 
 // ── 2. שרת סטטי ──────────────────────────────────────────────────
+let PLANNER_STUB = '';
 function serve() {
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
                   '.css': 'text/css; charset=utf-8' };
   const srv = http.createServer((req, res) => {
     const rel = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html';
+    // ההורה המדומה של מצב ההטמעה. מוגש מהשרת ולא ביירוט: דף מיורט אינו
+    // נחשב מקומי בעיני Chrome, והמסגרת אל 127.0.0.1 נחסמת.
+    if (rel === '__planner' && PLANNER_STUB) {
+      res.writeHead(200, { 'content-type': types['.html'] }); return res.end(PLANNER_STUB);
+    }
     const file = path.join(ROOT, rel);
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404); return res.end('not found');
@@ -686,6 +692,71 @@ async function browserRun() {
     else fail(`הדף נפתח על gid ${state.gid}, ציפינו ל-${DEFAULT_GID} (התקופה האחרונה)`);
     if (state.amat === 1) pass('amat זוהה בחטיבת גמא, שכבה ט׳');
     else fail(`amat לא זוהה (קיבלנו ${state.amat}) — הכלל בפרסר השתנה?`);
+  }
+
+  // ── מצב הטמעה בפלנר (v116) ──────────────────────────────────────
+  // הפלנר קורא את PUB ואת GID_MAP מקוד הדף (api/_lib/picture.ts שם), ולכן
+  // שתי ההצהרות חייבות להישאר ניתנות לחילוץ באותם ביטויים.
+  {
+    const html = fs.readFileSync(PAGE, 'utf8');
+    const pubDecl = /const PUB\s*=([^;]+);/.exec(html), mapDecl = /const GID_MAP\s*=\s*\{([\s\S]*?)\};/.exec(html);
+    const pub = pubDecl ? (pubDecl[1].match(/'([^']*)'/g) || []).map(x => x.slice(1, -1)).join('') : '';
+    const gids = mapDecl ? [...mapDecl[1].matchAll(/'([^']+)'\s*:\s*'(\d+)'/g)].map(m => m[2]) : [];
+    if (/^https:\/\/docs\.google\.com\//.test(pub) && gids.length) pass(`הטמעה — הפלנר יכול לחלץ את המקור (${gids.length} טאבים)`);
+    else fail('הטמעה — PUB או GID_MAP אינם ניתנים לחילוץ; הפלנר לא ימצא את הגיליון');
+  }
+  if (!LIVE) {
+    console.log('\n── הטמעה בפלנר ──');
+    const OWN = 'תיכון בטא';
+    // מה שהשרת של הפלנר עושה: כל שם שאינו של בית הספר מוחלף בכינוי
+    const alias = new Map();
+    const tabs = PERIODS.map(p => ({ gid: p.gid, name: p.name, csv: csvFor(p.gid).split('\n').map(line => {
+      const m = /^([^,]*),/.exec(line); const nm = m ? m[1] : '';
+      if (!/^(תיכון|חטיבת) /.test(nm) || nm === OWN) return line;
+      if (!alias.has(nm)) alias.set(nm, 'בית ספר ' + (alias.size + 1));
+      return alias.get(nm) + line.slice(nm.length);
+    }).join('\n') }));
+    const parent = `http://localhost:${port}/__planner`;
+    PLANNER_STUB =
+      `<iframe id="f" src="http://127.0.0.1:${port}/index.html?embed=1" style="width:1300px;height:800px"></iframe><script>
+       window.H=[]; const f=document.getElementById('f');
+       addEventListener('message',e=>{ const m=e.data; if(!m||m.source!=='holon-picture')return;
+         if(m.type==='height') H.push(m.height);
+         if(m.type==='ready') f.contentWindow.postMessage(${JSON.stringify({ source: 'holon-planner', type: 'data', school: OWN, tabs })}, '*'); });
+       </script>`;
+    await page.route(`http://localhost:${port}/**`, r => r.continue());
+    let sheetHits = 0;
+    page.on('request', q => { if (/docs\.google\.com/.test(q.url())) sheetHits++; });
+    const before = noise.length;
+    await page.goto(parent, { waitUntil: 'domcontentloaded' });
+    let em = null, fr = null;
+    try {
+      for (let i = 0; i < 50 && !fr; i++) { fr = page.frames().find(f => /embed=1/.test(f.url())); if (!fr) await page.waitForTimeout(100); }
+      if (!fr) throw new Error('המסגרת לא נוצרה');
+      await fr.waitForFunction('typeof ALLDATA!=="undefined" && Object.keys(ALLDATA).length>0 && document.getElementById("loadOverlay").style.display==="none"', { timeout: 15000 });
+      await page.waitForTimeout(400);
+      em = await fr.evaluate(() => {
+        const vis = el => !!el && getComputedStyle(el).display !== 'none';
+        switchView('schools');
+        return { sel: document.getElementById('schoolSelect').value, view: document.querySelector('.view.active').id,
+                 sidebar: vis(document.querySelector('.sidebar')), selector: vis(document.querySelector('#view-deepdive .selector')),
+                 tiles: document.getElementById('ddHeroTiles').children.length, text: document.body.innerText,
+                 names: [...new Set(Object.values(ALLDATA).flatMap(d => d.schools.map(s => s.name)))] };
+      });
+    } catch (e) { fail('הטמעה — הדף לא נטען מתוך מסגרת: ' + String(e.message).split('\n')[0]); }
+    if (em) {
+      const heights = await page.evaluate('H');
+      const others = ['תיכון אלפא', 'חטיבת גמא', 'תיכון דלתא'];
+      if (em.sel !== OWN) fail(`הטמעה — נבחר "${em.sel}" במקום "${OWN}"`);
+      else if (em.view !== 'view-deepdive') fail(`הטמעה — ניווט לתצוגה אחרת לא נחסם (${em.view})`);
+      else if (em.sidebar || em.selector) fail('הטמעה — התפריט או בורר בית הספר גלויים');
+      else if (!em.tiles) fail('הטמעה — רצועת השורה התחתונה ריקה');
+      else if (others.some(n => em.names.includes(n) || em.text.includes(n))) fail('הטמעה — שם של בית ספר אחר הגיע לדף');
+      else if (sheetHits) fail(`הטמעה — הדף פנה לגיליון ${sheetHits} פעמים; במצב הזה הנתונים מגיעים רק מהפלנר`);
+      else if (!heights.length) fail('הטמעה — הגובה לא דווח להורה');
+      else if (noise.length > before) fail(`הטמעה — ${noise.length - before} שגיאות קונסול`);
+      else pass(`הטמעה — "${OWN}" בלבד, ${em.names.length - 1} בתי ספר אחרים בכינוי, בלי פנייה לגיליון, גובה ${heights[heights.length - 1]}px`);
+    }
   }
 
   if (strays.size) fail('תלות חיצונית לא מוכרת: ' + [...strays].join(', '));

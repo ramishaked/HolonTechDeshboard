@@ -141,6 +141,12 @@ body{
 /* min-width:0 — בלעדיו `.main`, כפריט flex, לא יורד מתחת לרוחב המינימלי
    של תוכנו (טבלה רחבה, כרטיס צר), והעודף הופך לגלילה אופקית של כל הדף. */
 .main{flex:1;min-width:0;padding:32px 40px 48px;max-width:1400px;}
+/* מצב הטמעה בפלנר (v116): עמוד בית הספר בלבד, בלי תפריט ובלי בורר */
+html.embed,html.embed body{height:auto;}
+body.embed{display:block;min-height:0;}
+body.embed .sidebar{display:none;}
+body.embed .main{padding:4px 2px 16px;max-width:none;}
+body.embed #view-deepdive .page-head,body.embed #view-deepdive .selector{display:none;}
 
 .page-head{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;}
 /* קישור חזרה — רק בתצוגות ההמשך, שאין להן פריט בתפריט */
@@ -7414,6 +7420,7 @@ let CURRENT_VIEW='overview';
 const PARENT_OF = { deepdive:'schools', cities:'national' };
 
 function switchView(viewId){
+  if(EMBED && viewId !== 'deepdive') return;      // בהטמעה יש עמוד אחד
   CURRENT_VIEW=viewId;
   document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i=> i.classList.remove('active'));
@@ -7496,7 +7503,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v115';
+const BUILD = 'v116';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
@@ -7508,6 +7515,15 @@ const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
 // התלות החיצונית היחידה מעבר לגיליון, ומבודדת לתצוגה הזו: ריק = הכפתור
 // מנוטרל והדף מסביר, ושום תצוגה אחרת לא מושפעת. ראה ask/README.md.
 const ASK_URL = 'https://holon-tech-ask.vercel.app';
+
+// ── מצב הטמעה בפלנר (v116) ──────────────────────────────────────
+// `?embed` מציג את עמוד בית הספר בלבד, בתוך מתחם "התמונה החינוכית" שבפלנר.
+// במצב הזה הדף **אינו פונה לגיליון**: הנתונים מגיעים מהפלנר ב-postMessage,
+// אחרי שהשרת שלו זיהה את בית הספר לפי הכניסה והחליף את שמות שאר בתי הספר.
+// לכן אין כאן בורר, אין ניווט לתצוגות אחרות ואין "נסה שוב" שחוזר לגיליון.
+const EMBED = /[?&]embed\b/.test(location.search);
+const EMBED_ORIGIN = /^(https:\/\/holon-edplaner[a-z0-9-]*\.vercel\.app|http:\/\/localhost(:\d+)?)$/;
+let EMBED_DATA = null;      // { school, csv:{gid:text} }
 
 const GID_MAP = {
   'תשפ"ה (סוף שנה)'   : '392061415',
@@ -7666,6 +7682,11 @@ function csvParse(text){
 
 // ── טעינת CSV של טאב ────────────────────────────────────────────
 async function fetchRows(gid){
+  if(EMBED){
+    const t = EMBED_DATA && EMBED_DATA.csv[String(gid)];
+    if(!t) throw new Error('הטאב לא התקבל מהפלנר');
+    return csvParse(t);
+  }
   const res = await fetchT(PUB+'?output=csv&single=true'+(gid?'&gid='+gid:'')+'&_='+Date.now(), 20000);
   if(!res.ok) throw new Error('HTTP '+res.status);
   const text = await res.text();
@@ -7757,6 +7778,12 @@ function hideLoad(){ document.getElementById('loadOverlay').style.display='none'
 
 function showError(msg){
   hideLoad();
+  if(EMBED){
+    document.querySelector('main').innerHTML =
+      '<div class="err-box"><h2>התמונה החינוכית אינה זמינה כרגע</h2>'+
+      '<p><span style="font-size:12px;color:#9aa0a6;">'+String(msg).replace(/</g,'&lt;')+'</span></p></div>';
+    return;
+  }
   document.querySelector('main').innerHTML =
     '<div class="err-box"><div style="font-size:46px;">🔌</div>'+
     '<h2>לא הצלחתי לטעון את הנתונים</h2>'+
@@ -7788,6 +7815,11 @@ function applyPeriod(key){
   const sel=document.getElementById('schoolSelect'), prev=sel? sel.value:null;
   initDeepDiveSelect();
   if(prev && SCHOOLS.some(x=> x.name===prev)) sel.value=prev;
+  if(EMBED){
+    const me = EMBED_DATA && SCHOOLS.find(x=> _strip(x.name) === _strip(EMBED_DATA.school));
+    if(!me){ showError('בית הספר אינו מופיע בנתוני התקופה'); return; }
+    sel.value = me.name;
+  }
 
   switchView(CURRENT_VIEW);
 }
@@ -8368,6 +8400,7 @@ function buildPeriodSelect(keys){
 
 // ── BOOT / רענון ────────────────────────────────────────────────
 async function boot(force){
+  if(EMBED) force = false;                        // לעולם לא חוזרים לגיליון מתוך הטמעה
   const btn=document.getElementById('btnRefresh');
   if(btn){ btn.disabled=true; btn.classList.add('busy'); }
   showLoad(force?'מרענן מהגיליון…':'טוען נתונים מהגיליון…','מאתר את טאבי הדגימה');
@@ -8427,7 +8460,33 @@ document.getElementById('btnSource').addEventListener('click', openSource);
 document.getElementById('srcSave').addEventListener('click', saveSource);
 document.getElementById('srcClear').addEventListener('click', clearSource);
 document.getElementById('srcCancel').addEventListener('click', closeSource);
-boot();
+
+function embedInit(){
+  document.documentElement.classList.add('embed');
+  document.body.classList.add('embed');
+  CURRENT_VIEW = 'deepdive';
+  const post = m => { try{ parent.postMessage(Object.assign({source:'holon-picture'}, m), '*'); }catch(_){} };
+  if(parent === window){ showError('הדף הזה נפתח מתוך הפלנר בלבד.'); return; }
+  showLoad('טוען את נתוני בית הספר…','');
+  window.addEventListener('message', ev=>{
+    const d = ev.data;
+    if(!EMBED_ORIGIN.test(ev.origin) || !d || d.source !== 'holon-planner') return;
+    if(d.type !== 'data' || !Array.isArray(d.tabs) || !d.tabs.length) return;
+    EMBED_DATA = { school:_clean(d.school), csv:{} };
+    d.tabs.forEach(t=>{ EMBED_DATA.csv[String(t.gid)] = String(t.csv || ''); });
+    PERIODS = toPeriods(d.tabs.map(t=> ({name:t.name, gid:t.gid})));
+    SOURCE_MODE = 'הפלנר';
+    boot();
+  });
+  // הגובה נשלח להורה כדי שהמסגרת תגדל עם התוכן ולא תיווצר גלילה כפולה
+  const main = document.querySelector('main');
+  let last = 0;
+  const size = ()=>{ const h = Math.ceil(main.getBoundingClientRect().height) + 24;
+                     if(h !== last){ last = h; post({type:'height', height:h}); } };
+  if(window.ResizeObserver) new ResizeObserver(size).observe(main);
+  post({type:'ready'});
+}
+if(EMBED) embedInit(); else boot();
 
 
 </script>
