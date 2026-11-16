@@ -2480,8 +2480,23 @@ function ftYears(){
 function ftSumAtGrade(schools, g){
   return schools.reduce((s,sch)=>{ const r=sch.grades[g]; return s + (r? r[FT]:0); }, 0);
 }
-// השכבה שבה התוכנית מוזנת — נגזרת מהנתונים ולא מקובעת (§3.6: "בד"כ ט׳").
+// שכבות התוכנית, נגזרות מהנתונים ולא מקובעות (§3.6). מתשפ"ז התוכנית מוזנת גם
+// בח׳ (v118), ובגיליון יש גם ערכים בודדים בשכבות אחרות (ז׳, תיכון) אצל שניים
+// או שלושה בתי ספר. שכבה נחשבת שכבת תוכנית רק כשלפחות חצי מבתי הספר שמזינים
+// את השורה באותו טאב מזינים אותה בשכבה הזו.
+function ftGrades(periods){
+  return ALL_GRADES.filter(g=> periods.some(p=>{
+    const rep = p.schools.filter(s=> ALL_GRADES.some(x=> ftAt(s, x) != null)).length;
+    const at  = p.schools.filter(s=> ftAt(s, g) != null).length;
+    return at > 0 && at * 2 >= rep;
+  }));
+}
+// השכבה שבה נמדדת ההמרה: הגבוהה מבין שכבות התוכנית. "בחרו במקצועות הטק לקראת
+// י׳" מוגדר רק בסוף ט׳; שכבה צעירה יותר היא כניסה בלבד, וההמרה שלה תימדד
+// כשתגיע לשם. הנפילה לכלל הישן (השכבה הראשונה שיש בה נתון) היא לנתונים דלילים.
 function ftGrade(periods){
+  const gs = ftGrades(periods);
+  if(gs.length) return gs[gs.length-1];
   return ALL_GRADES.find(g=> periods.some(p=> ftSumAtGrade(p.schools, g) > 0)) || null;
 }
 // null = לא הוזן. הגיליון משאיר תא ריק ולא אפס, והפרסר ממפה את שניהם ל-0,
@@ -3329,13 +3344,17 @@ function renderDDPlan(school){
     const open = periodsSorted().filter(p=> p.half === 1).pop();
     const years = ftYears();
     if(open && !years.some(y=> y.year === open.year)){
-      // אותה שכבה של השנה השלמה האחרונה, כמו בתצוגת עתיד טק; בתשפ"ז השורה מוזנת בכל השכבות.
-      const g = years[0] ? ftGrade([years[0].start, years[0].end]) : ftGrade([open]);
-      const me = g ? open.schools.find(x=> x.name === school.name) : null;
-      const n = me ? ftAt(me, g) : null;
-      if(n != null){ const coh = me.grades[g][0];
+      // שכבות התוכנית של השנה שנפתחה (v118: מתשפ"ז גם ח׳), מהגבוהה לנמוכה.
+      // ערכים בשכבות אחרות (ז׳, תיכון) אינם שכבות תוכנית ואינם מוצגים.
+      const gs = ftGrades([open]), top = gs[gs.length-1];
+      const me = open.schools.find(x=> x.name === school.name);
+      gs.slice().reverse().forEach(g=>{
+        const n = me ? ftAt(me, g) : null;
+        if(n == null) return;
+        const coh = me.grades[g][0];
         lines.push(`<tr><td class="nm">${fcShort(open.label)} · ${g}׳</td>${td(`<strong>${num(n)}</strong>` + (coh ? ` <span class="alt-num">${(n/coh*100).toFixed(0)}% מהשכבה</span>` : ''))}` +
-          td('<span style="color:var(--muted);">יימדד בסוף השנה</span>') + td(dash) + td(dash) + `</tr>`); }
+          td(`<span style="color:var(--muted);">${g === top ? 'יימדד בסוף השנה' : 'יימדד בסוף ' + top + '׳'}</span>`) + td(dash) + td(dash) + `</tr>`);
+      });
     }
     years.forEach(y=>{
       const g = ftGrade([y.start, y.end]); if(!g) return;
@@ -4754,10 +4773,21 @@ function renderFutureTech(){
   // ייעלם עד סוף השנה. המשפך עצמו נשאר על השנה השלמה האחרונה.
   const _open = periodsSorted().filter(p=> p.half === 1 && p.year > y.year).pop();
   if(_open){
-    const eN = ftSumAtGrade(_open.schools, g), coh = studentsAtGrade(_open.schools, g);
-    if(eN > 0) empty.innerHTML = `<div class="insight" style="margin:0 0 16px;">
-      <div class="insight-t">${fcShort(_open.label)}: ${eN.toLocaleString('he-IL')} תלמידי ${g}׳ נכנסו לתוכנית${coh ? ` (${(eN/coh*100).toFixed(1)}% מהשכבה)` : ''}</div>
-      <div class="insight-b">ההמרה של ${fcShort(_open.label)} תימדד כשיוזן טאב סוף השנה. עד אז המשפך שלמטה מציג את <strong>${y.label}</strong>, השנה השלמה האחרונה.</div>
+    // v118: בשנה שנפתחה ייתכנו כמה שכבות תוכנית (מתשפ"ז גם ח׳). כל אחת מוצגת
+    // בנפרד מול השכבה שלה; ההמרה נמדדת רק בשכבה הגבוהה (ftGrade).
+    const L = v => v.toLocaleString('he-IL');
+    const gs = ftGrades([_open]), top = gs[gs.length-1], nm = fcShort(_open.label);
+    const parts = gs.map(x=>{ const n = ftSumAtGrade(_open.schools, x), coh = studentsAtGrade(_open.schools, x);
+      return { g:x, n, coh, isNew: !periodsSorted().some(p=> p !== _open && ftGrades([p]).indexOf(x) >= 0) }; }).filter(x=> x.n > 0);
+    const sum = parts.reduce((s,x)=> s + x.n, 0);
+    const stray = ALL_GRADES.filter(x=> gs.indexOf(x) < 0 && ftSumAtGrade(_open.schools, x) > 0)
+      .map(x=> `${x}׳ (${L(ftSumAtGrade(_open.schools, x))})`);
+    const fresh = parts.filter(x=> x.isNew).map(x=> x.g + '׳'), young = parts.filter(x=> x.g !== top).map(x=> x.g + '׳');
+    if(sum > 0) empty.innerHTML = `<div class="insight" style="margin:0 0 16px;">
+      <div class="insight-t">${nm}: ${L(sum)} תלמידים נכנסו לתוכנית${parts.length > 1 ? ', ' : ' '}${parts.map(x=>
+        `${parts.length > 1 ? L(x.n) + ' ' : ''}ב${x.g}׳${x.coh ? ` (${(x.n/x.coh*100).toFixed(1)}% מהשכבה)` : ''}`).join(' ו-')}</div>
+      <div class="insight-b">${fresh.length ? `שכבת ${fresh.join(', ')} מוזנת <strong>לראשונה</strong>. ` : ''}ההמרה נמדדת בסוף ${top}׳, עם הבחירה במקצועות הטק לקראת י׳: לשכבת ${top}׳ של ${nm} כשיוזן טאב סוף השנה${young.length ? `, ולשכבת ${young.join(', ')} רק כשתסיים את ${top}׳` : ''}. עד אז המשפך שלמטה מציג את <strong>${y.label}</strong>, השנה השלמה האחרונה.${
+        stray.length ? ` <span style="color:var(--muted);">בטאב הוזנו ערכים גם בשכבות ${stray.join(', ')}, במיעוט בתי הספר. הם אינם נספרים כאן.</span>` : ''}</div>
     </div>`;
   }
 
@@ -7504,7 +7534,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v117';
+const BUILD = 'v118';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
