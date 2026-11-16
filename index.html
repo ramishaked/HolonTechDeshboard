@@ -196,6 +196,12 @@ body.embed #view-deepdive .page-head,body.embed #view-deepdive .selector{display
 .dd-big{font-size:34px;font-weight:900;line-height:1.05;}
 .dd-big small{font-size:14px;font-weight:700;margin-right:5px;}
 @media(max-width:1150px){.dd-hero{grid-template-columns:1fr;}.dd-hero-col{flex-direction:row;flex-wrap:wrap;}.dd-hero-col .kpi{min-width:220px;}}
+/* v120: עמוד בית הספר בטלפון (ההטמעה בפלנר). האריחים בשתי עמודות, וטבלה
+   רחבה מהמסך נגללת בתוך הכרטיס שלה ולא נחתכת. מעל 600px אין שינוי. */
+@media(max-width:600px){
+  #view-deepdive .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #view-deepdive .card{overflow-x:auto;}
+}
 details.dd-detail > summary{list-style:none;cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:14px;
   padding:14px 20px;margin-bottom:18px;font-size:15px;font-weight:900;color:var(--primary-d);display:flex;align-items:center;gap:10px;}
 details.dd-detail > summary::-webkit-details-marker{display:none;}
@@ -3105,7 +3111,10 @@ function renderDDHero(school){
   // ── הגרף המרכזי: בגרות טק לאורך השנים, בית הספר מול חולון והארץ (רשמי).
   //    בית ספר בלי נתון רשמי: תלמידים במסלול לפי שכבה, השנה מול שנה שעברה. ──
   const moe = SCHOOL_MOE[school.name] || null;
-  const lbl = (color, all)=> ({ display: ctx=> all || ctx.dataIndex === ctx.dataset.data.length-1,
+  // במסך צר (טלפון, הטמעה בפלנר) 12 תוויות על קו אחד נערמות זו על זו: שם
+  // מתויגות רק נקודות המפתח שהסדרה מוסרת ב-keys (ראשונה, שיא, אחרונה).
+  const lbl = (color, all)=> ({ display: ctx=> ctx.dataIndex === ctx.dataset.data.length-1 ||
+      (all && (ctx.chart.width >= 560 || !ctx.dataset.keys || ctx.dataset.keys.includes(ctx.dataIndex))),
     anchor:'end', align:'top', offset:4, color, backgroundColor:'#fff', borderRadius:3,
     padding:{top:1,bottom:1,left:3,right:3}, font:{family:'Heebo', size: all ? 12 : 11, weight:'900'},
     formatter:v=> v == null ? '' : v.toFixed(1)+'%' });
@@ -3132,6 +3141,8 @@ function renderDDHero(school){
     const xl = yrs.map(String).concat(samp.map(s=> String(s.y)));
     const pad = a => a.concat(samp.map(()=> null));
     const sData = mine.map((v,i)=> i === mine.length-1 ? v : null).concat(samp.map(s=> s.v));
+    const mx = mine.reduce((m,v,i)=> v != null && (m < 0 || v > mine[m]) ? i : m, -1);
+    const mineKeys = [mine.findIndex(v=> v != null), mx, mine.length-1];
     const li = mine.length-1, d = (li > 0 && mine[li] != null && mine[li-1] != null) ? mine[li] - mine[li-1] : null;
     document.getElementById('ddHeroTitle').textContent = 'בגרות טק בבית הספר לאורך השנים';
     document.getElementById('ddHeroSub').innerHTML =
@@ -3142,17 +3153,22 @@ function renderDDHero(school){
       (samp.length ? ` · <span style="color:var(--muted);">הקו המקווקו: ${samp.map(s=> `${s.lab} (${s.y}${s.open ? ', תחילת שנה' : ''})`).join(', ')}, שכבת יב׳ לפי הגיליון של בית הספר, לא נתון רשמי</span>` : '');
     charts.ddHeroChart = new Chart(document.getElementById('ddHeroChart'), { type:'line',
       data:{ labels: xl, datasets:[
-        line(school.name, pad(mine), COL.primary, 4, null, true),
+        Object.assign(line(school.name, pad(mine), COL.primary, 4, null, true), { keys: mineKeys }),
         line('חולון', pad(city), COL.accent, 2.5, null, false),
         line('ארצי', pad(nat), '#9aa0a6', 2, [5,4], false) ].concat(samp.length ? [
         Object.assign(line(school.name + ', מהגיליון', sData, COL.primary, 3, [6,5], true), {
           pointStyle:'rectRot', pointRadius: sData.map((v,i)=> i >= mine.length ? 6 : 0),
-          datalabels: Object.assign(lbl(COL.primary, true), { display: ctx=> ctx.dataIndex >= mine.length }) }) ] : []) },
+          clip:false,
+          // נקודת שפל מתויגת מתחתיה: מעליה התווית יושבת על הקו המקווקו
+          datalabels: Object.assign(lbl(COL.primary, true), { display: ctx=> ctx.dataIndex >= mine.length,
+            align: ctx=>{ const a = ctx.dataset.data, i = ctx.dataIndex, v = a[i], pv = a[i-1], nx = a[i+1];
+                          return (pv != null && nx != null && v < pv && v < nx) ? 'bottom' : 'top'; } }) }) ] : []) },
       options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18,right:26,left:8}},
         interaction:{mode:'index',intersect:false},
         plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
           tooltip:{callbacks:{label:ctx=> ctx.parsed.y == null ? null : ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+'%'}} },
-        scales:{ x:{ticks:{font: samp.length ? {family:'Heebo',size:11,weight:'700'} : hf2(),color:'#5f6368',autoSkip:!samp.length,maxRotation:samp.length?0:50,minRotation:0},grid:{display:false}},
+        scales:{ x:{ticks:{font: samp.length ? {family:'Heebo',size:11,weight:'700'} : hf2(),color:'#5f6368',autoSkip:!samp.length,maxRotation:samp.length?0:50,minRotation:0,
+                   callback:function(v,i){ return (this.chart.width < 560 && (xl.length-1-i) % 2) ? '' : xl[i]; }},grid:{display:false}},
                  y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } } });
   } else {
     const gs = ALL_GRADES.filter(g=> school.grades[g] && school.grades[g][0] > 0);
@@ -7557,7 +7573,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v119';
+const BUILD = 'v120';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 
