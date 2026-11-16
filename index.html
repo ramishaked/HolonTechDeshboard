@@ -3000,20 +3000,25 @@ function renderDDHero(school){
     // ── שעון 1: היחס ליעד העירוני, כמו במפגש המנהלים (v115). הרצועה הירוקה
     //    מתחילה ביעד (`execTgtIn`, מתורגם למכנה בתי הספר). בלי יעד: מול הממוצע בעיר. ──
     const p = r[0] ? r[4]/r[0]*100 : 0, cp = cityPct(gi);
+    // v119: השנה והמקור צמודים לשעון. בלי זה מנהל קורא את המספר כסתירה לסוף
+    // הגרף הרשמי שלצדו, שהוא שנה אחרת ומקור אחר.
+    const curP = ALLDATA[CURRENT_PERIOD] || null;
+    const curY = curP ? fcShort(curP.label) : '';
+    const curSrc = curP ? ` · <span style="color:var(--muted);">${curP.half === 1 ? 'רישום תחילת שנה' : 'סוף שנה'}, מהגיליון</span>` : '';
     const ex = execCtx(), tgtIn = (ex.tgtPct != null && ex.gap != null) ? execTgtIn(ex) : null;
     const mx = Math.max(30, Math.ceil(Math.max(p, tgtIn || 0, ...SCHOOLS.map(s=> schoolGradePct(s, gi)))/10)*10);
     if(tgtIn != null){
       const need = Math.round(tgtIn/100 * r[0]), hit = r[4] >= need;
-      gauges.push(gauge(hit ? 'good' : 'acc', `היחס ליעד העירוני · שכבת ${top}׳`, 'ddG1', p.toFixed(0)+'%',
+      gauges.push(gauge(hit ? 'good' : 'acc', `היחס ליעד העירוני · ${top}׳ ${curY}`, 'ddG1', p.toFixed(0)+'%',
         hit ? GOOD : COL.accent,
         `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} במסלול · ` +
-        `הרצועה הירוקה: היעד, ${tgtIn.toFixed(0)}% · ` + (hit ? '<strong>ביעד</strong>' : `<strong>חסרים ${num(need - r[4])}</strong>`)));
+        `הרצועה הירוקה: היעד, ${tgtIn.toFixed(0)}% · ` + (hit ? '<strong>ביעד</strong>' : `<strong>חסרים ${num(need - r[4])}</strong>`) + curSrc));
       paint.push(()=> prGauge('ddG1', p, mx, hit ? COL.good : COL.accent, {step: mx/5, zone:[tgtIn, mx]}));
     } else {
       const above = p >= cp;
-      gauges.push(gauge(above ? 'good' : 'acc', `תלמידי ${top}׳ במסלול בגרות טק`, 'ddG1', p.toFixed(0)+'%',
+      gauges.push(gauge(above ? 'good' : 'acc', `תלמידי ${top}׳ במסלול בגרות טק · ${curY}`, 'ddG1', p.toFixed(0)+'%',
         above ? GOOD : COL.accent,
-        `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} · ${Math.round(p) === Math.round(cp) ? 'כמו הממוצע' : dirWord(p-cp, 'מעל הממוצע', 'מתחת לממוצע')} בעיר, ${cp.toFixed(0)}%`));
+        `<strong>${num(r[4])} מתוך ${num(r[0])}</strong>${ofN(p) ? ` (${ofN(p)})` : ''} · ${Math.round(p) === Math.round(cp) ? 'כמו הממוצע' : dirWord(p-cp, 'מעל הממוצע', 'מתחת לממוצע')} בעיר, ${cp.toFixed(0)}%` + curSrc));
       paint.push(()=> prGauge('ddG1', p, mx, above ? COL.good : COL.accent, {step: mx/5, zone:[cp, mx]}));
     }
 
@@ -3113,23 +3118,41 @@ function renderDDHero(school){
       borderWidth:w, borderDash:dash || [], tension:0.25, fill:false, spanGaps:true,
       pointRadius: all ? 4 : 2, pointBackgroundColor:'#fff', pointBorderColor:color, pointBorderWidth:2,
       datalabels: lbl(color, all) });
+    // v119: אחרי השנה הרשמית האחרונה הקו ממשיך אל שורת יב׳ של בית הספר
+    // בגיליון: לכל שנה דגימת סוף השנה, ולשנה שנפתחה דגימת תחילת השנה. זו
+    // אותה שורה שהשעון מציג, ולכן הנקודה האחרונה והשעון הם אותו מספר כשהתקופה
+    // הנבחרת היא האחרונה. מקווקו ומעוין, כמו התפר בגרף העשור: המקור אחר
+    // (הגיליון ולא משה"ח) והמכנה אחר (שכבת יב׳ של בית הספר ולא כלל י"ב).
+    const lastOff = yrs[yrs.length-1], byY = {};
+    periodsSorted().filter(pp=> pp.year > lastOff).forEach(pp=>{ byY[pp.year] = pp; });   // half 2 דורס half 1
+    const samp = Object.keys(byY).map(Number).sort((a,b)=> a-b).map(yy=>{
+      const pp = byY[yy], me = pp.schools.find(s=> s.name === school.name), rr = me && me.grades['יב'];
+      return (rr && rr[0] > 0) ? { y:yy, v: rr[4]/rr[0]*100, lab: fcShort(pp.label), open: pp.half === 1 } : null;
+    }).filter(Boolean);
+    const xl = yrs.map(String).concat(samp.map(s=> String(s.y)));
+    const pad = a => a.concat(samp.map(()=> null));
+    const sData = mine.map((v,i)=> i === mine.length-1 ? v : null).concat(samp.map(s=> s.v));
     const li = mine.length-1, d = (li > 0 && mine[li] != null && mine[li-1] != null) ? mine[li] - mine[li-1] : null;
     document.getElementById('ddHeroTitle').textContent = 'בגרות טק בבית הספר לאורך השנים';
     document.getElementById('ddHeroSub').innerHTML =
       `אחוז הזכאים מכלל תלמידי י״ב, ${yrs[0]}–${yrs[yrs.length-1]}, לפי משרד החינוך` +
       (mine[li] != null && city[li] != null
         ? ` · ב-${yrs[li]}: <strong>${mine[li].toFixed(1)}%</strong>, ${dirWord(mine[li]-city[li], 'מעל חולון', 'מתחת לחולון')} (${city[li].toFixed(1)}%)` : '') +
-      (d != null && Math.abs(d) >= 0.05 ? `, ${dirWord(d, 'עלייה', 'ירידה')} מ-${mine[li-1].toFixed(1)}% בשנה הקודמת` : '');
+      (d != null && Math.abs(d) >= 0.05 ? `, ${dirWord(d, 'עלייה', 'ירידה')} מ-${mine[li-1].toFixed(1)}% בשנה הקודמת` : '') +
+      (samp.length ? ` · <span style="color:var(--muted);">הקו המקווקו: ${samp.map(s=> `${s.lab} (${s.y}${s.open ? ', תחילת שנה' : ''})`).join(', ')}, שכבת יב׳ לפי הגיליון של בית הספר, לא נתון רשמי</span>` : '');
     charts.ddHeroChart = new Chart(document.getElementById('ddHeroChart'), { type:'line',
-      data:{ labels: yrs.map(String), datasets:[
-        line(school.name, mine, COL.primary, 4, null, true),
-        line('חולון', city, COL.accent, 2.5, null, false),
-        line('ארצי', nat, '#9aa0a6', 2, [5,4], false) ] },
+      data:{ labels: xl, datasets:[
+        line(school.name, pad(mine), COL.primary, 4, null, true),
+        line('חולון', pad(city), COL.accent, 2.5, null, false),
+        line('ארצי', pad(nat), '#9aa0a6', 2, [5,4], false) ].concat(samp.length ? [
+        Object.assign(line(school.name + ', מהגיליון', sData, COL.primary, 3, [6,5], true), {
+          pointStyle:'rectRot', pointRadius: sData.map((v,i)=> i >= mine.length ? 6 : 0),
+          datalabels: Object.assign(lbl(COL.primary, true), { display: ctx=> ctx.dataIndex >= mine.length }) }) ] : []) },
       options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18,right:26,left:8}},
         interaction:{mode:'index',intersect:false},
         plugins:{ legend:{position:'top',align:'end',labels:{font:HF,color:'#5f6368',boxWidth:14,padding:10}},
           tooltip:{callbacks:{label:ctx=> ctx.parsed.y == null ? null : ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+'%'}} },
-        scales:{ x:{ticks:{font:hf2(),color:'#5f6368'},grid:{display:false}},
+        scales:{ x:{ticks:{font: samp.length ? {family:'Heebo',size:11,weight:'700'} : hf2(),color:'#5f6368',autoSkip:!samp.length,maxRotation:samp.length?0:50,minRotation:0},grid:{display:false}},
                  y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>v+'%',font:HF,color:'#5f6368'},grid:{color:GC}} } } });
   } else {
     const gs = ALL_GRADES.filter(g=> school.grades[g] && school.grades[g][0] > 0);
@@ -7534,7 +7557,7 @@ const NAV_HIDE = 'holon_nav_collapsed';
 // גילוי אוטומטי של הטאבים → טעינה מקבילה → פרסינג → רינדור.
 // אין כאן שום נתון צרוב. לעדכון: עורכים את הגיליון ולוחצים "רענן".
 // ════════════════════════════════════════════════════════════════
-const BUILD = 'v118';
+const BUILD = 'v119';
 const PUB = 'https://docs.google.com/spreadsheets/d/e/' +
   '2PACX-1vTh1LxJwgfVoabbtv0fn85ODhbzF1Br0njIWMEkuUEpRaSfgCgE9L6zwmRS7I6w7er1edHk5D1JjcOw/pub';
 

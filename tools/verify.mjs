@@ -499,6 +499,11 @@ async function browserRun() {
       g1: (document.querySelector('#ddHeroGauges .kpi-sub') || {}).innerText || '' };
     var top = ['יב','יא','י'].filter(function(g){ return pick.grades[g] && pick.grades[g][0] > 0; })[0];
     hero.g1ok = hero.g1.indexOf(Math.round(pick.grades[top][4]).toLocaleString('he-IL') + ' מתוך ' + Math.round(pick.grades[top][0]).toLocaleString('he-IL')) === 0;
+    // v119: כשיש המשך נדגם בגרף, הנקודה האחרונה שלו היא המספר שבשעון.
+    hero.samp = (function(){ var c = charts.ddHeroChart, d = c && c.data.datasets.filter(function(x){ return /מהגיליון/.test(x.label || ''); })[0];
+      var r12 = pick.grades['יב'];
+      if(!d || !r12 || !r12[0] || ALLDATA[CURRENT_PERIOD] !== periodsSorted().pop()) return null;
+      return Math.abs(d.data[d.data.length-1] - r12[4]/r12[0]*100) < 0.01; })();
     det.open = true;
     var rows = document.querySelectorAll('#ddYoy tbody tr');
     var htCell = rows[1].children[1].innerText, potCell = rows[rows.length-1].children[1].innerText;
@@ -516,6 +521,7 @@ async function browserRun() {
   if (dd.skip) pass('העמקה — אין תקופה מקבילה משנה קודמת, ההשוואה אינה מוצגת');
   else if (!dd.hero.closed) fail('העמקה — אזור "הפירוט המלא" פתוח בברירת מחדל');
   else if (!dd.hero.gauges || !dd.hero.tiles || !dd.hero.chart) fail(`העמקה — הרצועה העליונה חסרה: ${dd.hero.gauges} שעונים · ${dd.hero.tiles} אריחים · גרף ${dd.hero.chart}`);
+  else if (dd.hero.samp === false) fail('העמקה — הנקודה הנדגמת האחרונה בגרף אינה המספר שבשעון הראשון');
   else if (!dd.hero.g1ok) fail(`העמקה — השעון הראשון אינו תואם לשורה הגולמית: "${dd.hero.g1}"`);
   else if (!dd.shown) fail('העמקה — כרטיסי "שנה מול שנה" או "המחזורים שלי" מוסתרים אף שיש תקופה מקבילה');
   else if (!dd.ht || !dd.pot || !dd.co) fail(`העמקה (${dd.name}) — תא אינו תואם לשורות הגולמיות: מדד "${dd.htCell}" · מחזור "${dd.coCell}"`);
